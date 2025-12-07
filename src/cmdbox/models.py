@@ -106,6 +106,7 @@ class CommandTag(BaseModel):
     Attributes:
         command (ForeignKeyField): Refers to a command associated with a tag.
         tag (ForeignKeyField): Refers to a tag associated with a command.
+        date_created (DateTimeField): DateTimeField indicating when the relationship was created.
     """
 
     command = ForeignKeyField(Command, backref='tags')
@@ -121,10 +122,9 @@ class VariableTag(BaseModel):
     between a variable and a tag.
 
     Attributes:
-        variable: ForeignKeyField pointing to the Variable model. Represents the
-            variable associated with the tag.
-        tag: ForeignKeyField pointing to the Tag model. Represents the tag
-            associated with the variable.
+        variable: (ForeignKeyField) Refers to a variable associated with a tag.
+        tag: (ForeignKeyField) Refers to a tag associated with a variable.
+        date_created (DateTimeField): DateTimeField indicating when the relationship was created.
     """
 
     variable = ForeignKeyField(Variable, backref='tags')
