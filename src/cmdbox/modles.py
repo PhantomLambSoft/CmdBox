@@ -1,6 +1,13 @@
 from datetime import datetime
 
-from peewee import Model, CharField, IntegerField, DateTimeField, TextField
+from peewee import (
+    Model,
+    CharField,
+    IntegerField,
+    DateTimeField,
+    TextField,
+    ForeignKeyField,
+)
 from cmdbox.database import init_database
 
 
@@ -64,3 +71,58 @@ class Variable(BaseModel):
 
     name = CharField(unique=True)
     value = CharField()
+
+
+class Tag(BaseModel):
+    """
+    Represents a Tag model with attributes for tagging, description, and timestamps.
+
+    This class is designed to store tag information as a name and description to allow
+    users to organize their commands and variables into categories and to give them a
+     convenient way to search for and filter them later.
+
+    Attributes:
+        name (CharField): A unique name identifier for the tag.
+        description (TextField): A detailed textual description of the tag.
+        date_created (DateTimeField): The timestamp indicating when the tag was created.
+        last_updated (DateTimeField): The timestamp indicating the last update for the tag.
+    """
+
+    name = CharField(unique=True)
+    description = TextField()
+    date_created = DateTimeField(default=datetime.now)
+    last_updated = DateTimeField(default=datetime.now)
+
+
+class CommandTag(BaseModel):
+    """
+    Represents the relationship between commands and tags.
+
+    This class is used as an intermediary table to establish a many-to-many
+    relationship between a command and a tag.
+
+    Attributes:
+        command (ForeignKeyField): Refers to a command associated with a tag.
+        tag (ForeignKeyField): Refers to a tag associated with a command.
+    """
+
+    command = ForeignKeyField(Command, backref='tags')
+    tag = ForeignKeyField(Tag, backref='commands')
+
+
+class VariableTag(BaseModel):
+    """
+    Represents a many-to-many relationship between Variable and Tag models.
+
+    This class serves as an intermediary table to establish a many-to-many relationship
+    between a variable and a tag.
+
+    Attributes:
+        variable: ForeignKeyField pointing to the Variable model. Represents the
+            variable associated with the tag.
+        tag: ForeignKeyField pointing to the Tag model. Represents the tag
+            associated with the variable.
+    """
+
+    variable = ForeignKeyField(Variable, backref='tags')
+    tag = ForeignKeyField(Tag, backref='variables')
