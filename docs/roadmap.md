@@ -60,6 +60,7 @@ Tasks:
    - Implement `cmdbox.models` with Peewee `Model` subclasses:
      - `Command`
      - `Variable`
+     - `Tag`
    - Define fields consistent with the design doc:
      - `Command.alias` (unique), `Command.template`, `Command.description`, `Command.tags` (serialized list or separate table if needed).
      - `Variable.name` (unique), `Variable.value`.
