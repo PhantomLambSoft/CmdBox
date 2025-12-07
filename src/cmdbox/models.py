@@ -54,7 +54,7 @@ class Command(BaseModel):
     date_created = DateTimeField(default=datetime.now)
     last_updated = DateTimeField(default=datetime.now)
     used = IntegerField(default=0)
-    last_used = DateTimeField()
+    last_used = DateTimeField(null=True, default=None)
 
 
 class Variable(BaseModel):
@@ -71,6 +71,8 @@ class Variable(BaseModel):
 
     name = CharField(unique=True)
     value = CharField()
+    date_created = DateTimeField(default=datetime.now)
+    last_updated = DateTimeField(default=datetime.now)
 
 
 class Tag(BaseModel):
@@ -108,6 +110,7 @@ class CommandTag(BaseModel):
 
     command = ForeignKeyField(Command, backref='tags')
     tag = ForeignKeyField(Tag, backref='commands')
+    date_created = DateTimeField(default=datetime.now)
 
 
 class VariableTag(BaseModel):
@@ -126,3 +129,4 @@ class VariableTag(BaseModel):
 
     variable = ForeignKeyField(Variable, backref='tags')
     tag = ForeignKeyField(Tag, backref='variables')
+    date_created = DateTimeField(default=datetime.now)
