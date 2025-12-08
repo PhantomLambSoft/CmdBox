@@ -41,7 +41,6 @@ cmdbox = ["*.yaml", "*.json", "*.txt"]
 [tool.black]
 line-length = 88
 target-version = ["py310", "py311"]
-skip_string_normalization = true
 
 [tool.isort]
 profile = "black"
