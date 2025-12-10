@@ -1,26 +1,24 @@
 import unittest
 from datetime import datetime
 
-from peewee import SqliteDatabase
-from src.cmdbox.models import Command, Variable, Tag, CommandTag, VariableTag
-
-# Setup in-memory database for testing
-test_db = SqliteDatabase(":memory:")
+from cmdbox.database import db, init_database
+from cmdbox.models import Command, Variable, Tag, CommandTag, VariableTag
 
 
 class TestCommandModel(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Bind models to the in-memory test database
-        test_db.bind([Command])
-        test_db.connect()
-        test_db.create_tables([Command])
+        init_database(testing=True)
+        db.connect()
+        db.bind([Command])
+        db.create_tables([Command])
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        test_db.close()
+        db.drop_tables([Command])
+        db.close()
 
     def setUp(self):
         # Clean the table for each test
@@ -107,15 +105,15 @@ class TestVariableModule(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        # Bind models to the in-memory test database
-        test_db.bind([Variable])
-        test_db.connect()
-        test_db.create_tables([Variable])
+        init_database(testing=True)
+        db.connect()
+        db.bind([Variable])
+        db.create_tables([Variable])
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        test_db.close()
+        db.close()
 
     def setUp(self):
         # Clean the table for each test
@@ -183,13 +181,14 @@ class TestTagModule(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        test_db.bind([Tag])
-        test_db.connect()
-        test_db.create_tables([Tag])
+        init_database(testing=True)
+        db.connect()
+        db.bind([Tag])
+        db.create_tables([Tag])
 
     @classmethod
     def tearDownClass(cls):
-        test_db.close()
+        db.close()
 
     def setUp(self):
         Tag.delete().execute()
@@ -230,13 +229,14 @@ class TestCommandTagModule(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        test_db.bind([CommandTag, Command, Tag])
-        test_db.connect()
-        test_db.create_tables([CommandTag, Command, Tag])
+        init_database(testing=True)
+        db.connect()
+        db.bind([CommandTag, Command, Tag])
+        db.create_tables([CommandTag, Command, Tag])
 
     @classmethod
     def tearDownClass(cls):
-        test_db.close()
+        db.close()
 
     def setUp(self):
         CommandTag.delete().execute()
@@ -268,13 +268,14 @@ class TestVariableTagModule(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        test_db.bind([VariableTag, Variable, Tag])
-        test_db.connect()
-        test_db.create_tables([VariableTag, Variable, Tag])
+        init_database(testing=True)
+        db.connect()
+        db.bind([VariableTag, Variable, Tag])
+        db.create_tables([VariableTag, Variable, Tag])
 
     @classmethod
     def tearDownClass(cls):
-        test_db.close()
+        db.close()
 
     def setUp(self):
         VariableTag.delete().execute()
