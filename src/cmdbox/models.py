@@ -8,10 +8,7 @@ from peewee import (
     TextField,
     ForeignKeyField,
 )
-from cmdbox.database import init_database
-
-
-db = init_database()
+from cmdbox.database import db
 
 
 class BaseModel(Model):
@@ -50,7 +47,7 @@ class Command(BaseModel):
 
     alias = CharField(unique=True)
     template = TextField()
-    description = TextField()
+    description = TextField(null=True, default=None)
     date_created = DateTimeField(default=datetime.now)
     last_updated = DateTimeField(default=datetime.now)
     used = IntegerField(default=0)
@@ -109,8 +106,8 @@ class CommandTag(BaseModel):
         date_created (DateTimeField): DateTimeField indicating when the relationship was created.
     """
 
-    command = ForeignKeyField(Command, backref='tags')
-    tag = ForeignKeyField(Tag, backref='commands')
+    command = ForeignKeyField(Command, backref="tags")
+    tag = ForeignKeyField(Tag, backref="commands")
     date_created = DateTimeField(default=datetime.now)
 
 
@@ -127,6 +124,6 @@ class VariableTag(BaseModel):
         date_created (DateTimeField): DateTimeField indicating when the relationship was created.
     """
 
-    variable = ForeignKeyField(Variable, backref='tags')
-    tag = ForeignKeyField(Tag, backref='variables')
+    variable = ForeignKeyField(Variable, backref="tags")
+    tag = ForeignKeyField(Tag, backref="variables")
     date_created = DateTimeField(default=datetime.now)
