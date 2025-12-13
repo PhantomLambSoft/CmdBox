@@ -67,7 +67,7 @@ class NameConflictError(CmdboxError):
     """
 
     def __init__(self, name: str) -> None:
-        super().__init__(f"Variable with name '{name}' already exists.")
+        super().__init__(f"Name '{name}' already exists.")
 
 
 class ResolutionError(CmdboxError):
