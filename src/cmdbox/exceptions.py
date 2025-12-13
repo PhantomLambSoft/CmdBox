@@ -10,7 +10,7 @@ class CmdboxError(Exception):
     pass
 
 
-class UnknownAlias(CmdboxError):
+class UnknownAliasError(CmdboxError):
     """
     Exception raised when an unknown alias is encountered.
 
@@ -22,10 +22,10 @@ class UnknownAlias(CmdboxError):
     """
 
     def __init__(self, alias: str) -> None:
-        super().__init__(f"Alias {alias} not found.")
+        super().__init__(f"Alias '{alias}' not found.")
 
 
-class AliasConflict(CmdboxError):
+class AliasConflictError(CmdboxError):
     """
     Indicates a conflict caused by an already existing alias.
 
@@ -37,10 +37,10 @@ class AliasConflict(CmdboxError):
     """
 
     def __init__(self, alias: str) -> None:
-        super().__init__(f"Alias {alias} already exists.")
+        super().__init__(f"Alias '{alias}' already exists.")
 
 
-class UnknownVariable(CmdboxError):
+class UnknownNameError(CmdboxError):
     """
     Exception raised for accessing an unknown variable.
 
@@ -51,11 +51,11 @@ class UnknownVariable(CmdboxError):
         variable (str): The name of the variable that was not found.
     """
 
-    def __init__(self, variable: str) -> None:
-        super().__init__(f"Variable {variable} not found.")
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Variable name '{name}' not found.")
 
 
-class VariableConflict(CmdboxError):
+class NameConflictError(CmdboxError):
     """
     Exception caused by an already existing variable.
 
@@ -63,11 +63,11 @@ class VariableConflict(CmdboxError):
     already exists.
 
     Attributes:
-        variable (str): The name of the variable that caused the conflict.
+        name (str): The name of the variable that caused the conflict.
     """
 
-    def __init__(self, variable: str) -> None:
-        super().__init__(f"Variable {variable} already exists.")
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Variable with name '{name}' already exists.")
 
 
 class ResolutionError(CmdboxError):
@@ -88,6 +88,19 @@ class CommandSyntaxError(CmdboxError):
 
     This class is used to handle exceptions that occur due to syntax errors
     in command parsing or execution.
+    """
+
+    pass
+
+
+class ValidationError(CmdboxError):
+    """
+    Represents an error related to invalid data.
+
+    This class is used to handle exceptions that occur due to invalid data.
+    Invalid data is data that technically can be stored in the database, but
+    is against the use principles allowed by the application.
+    ex: Creating a command with an empty alias or template.
     """
 
     pass
