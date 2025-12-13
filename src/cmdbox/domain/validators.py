@@ -186,3 +186,65 @@ class VariableValidator:
             raise ValidationError(
                 f"Variable value cannot contain self-reference: {self_reference}"
             )
+
+
+@dataclass(frozen=True)
+class VariableValidatorConfig:
+    """Configuration for variable validation rules."""
+
+    reserved_names: frozenset[str] = frozenset(
+        {
+            "help",
+            "init",
+            "list",
+            "ls",
+            "add",
+            "rm",
+            "delete",
+        }
+    )
+    max_name_length: int = 100
+    max_description_length: int = 1000
+
+
+class TagValidator:
+
+    def __init__(self, config: VariableValidatorConfig | None = None):
+        self.config = config or VariableValidatorConfig()
+
+    def validate_create(self, name: str, description: str | None) -> None:
+        self.validate_name(name)
+        self.validate_description(description)
+
+    def validate_update(self, name: str | None, description: str | None) -> None:
+        if name is not None:
+            self.validate_name(name)
+        if description is not None:
+            self.validate_description(description)
+
+    def validate_name(self, name: str) -> None:
+        if not name:
+            raise ValidationError("Variable name cannot be empty.")
+
+        stripped = name.strip()
+        if not stripped:
+            raise ValidationError("Variable name cannot contain only whitespace.")
+
+        if " " in stripped:
+            raise ValidationError("Variable name cannot contain spaces.")
+
+        if stripped in self.config.reserved_names:
+            raise ValidationError(f"Variable name '{stripped}' is reserved.")
+
+        if len(stripped) > self.config.max_name_length:
+            raise ValidationError(
+                f"Variable name '{stripped}' is too long. Maximum length is {self.config.max_name_length}."
+            )
+
+    def validate_description(self, description: str | None) -> None:
+        if not description:
+            return
+        if len(description) > self.config.max_description_length:
+            raise ValidationError(
+                f"Description is too long. Maximum length is {self.config.max_description_length}."
+            )
