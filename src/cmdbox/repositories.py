@@ -2,7 +2,7 @@ from typing import Sequence, Generic, TypeVar, Type
 
 from peewee import Model, fn, IntegrityError, Node
 
-from cmdbox.domain.validators import CommandValidator, VariableValidator
+from cmdbox.domain.validators import CommandValidator, VariableValidator, TagValidator
 from cmdbox.exceptions import (
     ValidationError,
     AliasConflictError,
@@ -168,6 +168,25 @@ class BaseRepository(Generic[M]):
             return [item.strip() for item in items.split(",") if item.strip()]
         else:
             return [item.strip() for item in items if item.strip()]
+
+    def _is_unique_name_violation(self, exc: IntegrityError) -> bool:
+        """
+        Checks if the exception indicates a unique constraint violation.
+
+        This method analyzes the provided IntegrityError to determine if the
+        error was caused by a UNIQUE constraint violation on a field of the
+        database table associated with the model.
+
+        Args:
+            exc (IntegrityError): The IntegrityError exception to be checked.
+
+        Returns:
+            bool: True if the exception indicates a unique constraint violation;
+            otherwise, False.
+        """
+        msg = str(exc)
+        table = self.model._meta.table_name
+        return "UNIQUE constraint failed" in msg and f"{table}.name" in msg
 
 
 class CommandRepository(BaseRepository[Command]):
@@ -531,50 +550,62 @@ class VariableRepository(BaseRepository[Variable]):
         var.delete_instance()
         return True
 
-    def _is_unique_name_violation(self, exc: IntegrityError) -> bool:
-        """
-        Checks if the exception indicates a unique constraint violation.
-
-        This method analyzes the provided IntegrityError to determine if the
-        error was caused by a UNIQUE constraint violation on a field of the
-        database table associated with the model.
-
-        Args:
-            exc (IntegrityError): The IntegrityError exception to be checked.
-
-        Returns:
-            bool: True if the exception indicates a unique constraint violation;
-            otherwise, False.
-        """
-        msg = str(exc)
-        table = self.model._meta.table_name
-        return "UNIQUE constraint failed" in msg and f"{table}.name" in msg
-
 
 class TagRepository(BaseRepository[Tag]):
 
     model = Tag
 
-    def create(self, name: str, description: str) -> Tag:
-        return Tag.create(name=name, description=description)
+    def __init__(self, validator: TagValidator | None = None):
+        self.validator = validator or TagValidator()
+
+    def create(self, name: str, description: str | None = None) -> Tag:
+        name = name.strip() if name else None
+        self.validator.validate_create(name=name, description=description)
+        try:
+            return Tag.create(name=name, description=description)
+        except IntegrityError as exc:
+            if name is not None and self._is_unique_name_violation(exc):
+                raise NameConflictError(name=name) from exc
+            raise
 
     def get_by_name(self, name: str) -> Tag | None:
-        return Tag.get_or_none(Tag.name == name)
-
-    def update(self, name: str, **fields) -> Tag | None:
-        tag = self.get_by_name(name)
-        if not tag:
-            return None
-        for key, value in fields.items():
-            if not hasattr(tag, key):
-                raise ValueError(f"Invalid field: {key}")
-            setattr(tag, key, value)
-        tag.save()
+        name = name.lower()
+        tag = Tag.get_or_none(Tag.name == name)
+        if tag is None:
+            raise UnknownNameError(name=name)
         return tag
 
-    def list_all(self, order_by: str | Sequence[str] = "name") -> list[Tag]:
+    def update(self, tag_name: str, **fields) -> Tag | None:
+        tag = self.get_by_name(tag_name)
+        if not fields:
+            raise ValueError("No fields provided for update.")
+
+        if "name" in fields and fields.get("name") is not None:
+            fields["name"] = fields.get("name").strip()
+
+        self.validator.validate_update(
+            name=fields.get("name", tag.name),
+            description=fields.get("description", tag.description),
+        )
+        try:
+            for key, value in fields.items():
+                if not hasattr(tag, key):
+                    raise ValidationError(f"Invalid field: {key}")
+                if value is not None:
+                    setattr(tag, key, value)
+            tag.save()
+            return tag
+        except IntegrityError as exc:
+            name = fields.get("name", "")
+            if name is not None and self._is_unique_name_violation(exc):
+                raise NameConflictError(name=name) from exc
+            raise
+
+    def list_all(
+        self, order_by: str | Sequence[str] = "name", limit: int = 25
+    ) -> list[Tag]:
         ordering = self._resolve_ordering(order_by)
-        return list(Tag.select().order_by(ordering))
+        return list(Tag.select().order_by(*ordering).limit(limit))
 
     def search(
         self, query: str, fields: str | Sequence[str] | None = ("name", "description")
