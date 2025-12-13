@@ -88,7 +88,7 @@ class Tag(BaseModel):
     """
 
     name = CharField(unique=True)
-    description = TextField()
+    description = TextField(null=True, default=None)
     date_created = DateTimeField(default=datetime.now)
     last_updated = DateTimeField(default=datetime.now)
 
