@@ -70,6 +70,21 @@ class NameConflictError(CmdboxError):
         super().__init__(f"Name '{name}' already exists.")
 
 
+class UnknownTagError(CmdboxError):
+
+    def __init__(self, tag_name: str) -> None:
+        super().__init__(f"Tag '{tag_name}' not found.")
+
+
+class TagAttachError(CmdboxError):
+
+    pass
+
+
+class TagDetachError(CmdboxError):
+    pass
+
+
 class ResolutionError(CmdboxError):
     """
     Represents an error encountered during resolution processes.
