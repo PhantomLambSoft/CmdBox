@@ -119,6 +119,18 @@ class TestCommandRepository(unittest.TestCase):
             alias="test5", template="echo a", description="Length aligator gator"
         )
 
+    def _tag_command_group(self):
+        self.tag_one = Tag.create(name="tag_one")
+        self.tag_two = Tag.create(name="tag_two")
+        self.tag_three = Tag.create(name="tag_three")
+        self.cmd_tag_one = CommandTag.create(command=self.cmd_one, tag=self.tag_one)
+        self.cmd_tag_two = CommandTag.create(command=self.cmd_two, tag=self.tag_one)
+        self.cmd_tag_three = CommandTag.create(command=self.cmd_two, tag=self.tag_two)
+        self.cmd_tag_four = CommandTag.create(command=self.cmd_two, tag=self.tag_three)
+        self.cmd_tag_five = CommandTag.create(
+            command=self.cmd_three, tag=self.tag_three
+        )
+
     def test_create(self):
         command = self.repo.create(
             alias="test", template="echo test", description="Test command"
@@ -434,7 +446,7 @@ class TestCommandRepository(unittest.TestCase):
         commands = self.repo.list_all(limit=2)
         self.assertEqual(2, len(commands))
 
-    def test_none_limit_does_not_limit(self):
+    def test_list_none_limit_does_not_limit(self):
         self._create_command_group()
         commands = self.repo.list_all(limit=None)
         self.assertEqual(5, len(commands))
@@ -443,6 +455,43 @@ class TestCommandRepository(unittest.TestCase):
         self._create_command_group()
         commands = self.repo.list_all(limit=0)
         self.assertEqual(0, len(commands))
+
+    def test_list_by_tag(self):
+        self._create_command_group()
+        self._tag_command_group()
+        cmds = self.repo.list_by_tag(["tag_one"])
+        self.assertEqual(2, len(cmds))
+        self.assertTrue(self.cmd_one in cmds)
+        self.assertTrue(self.cmd_two in cmds)
+
+    def test_list_by_multiple_tags(self):
+        self._create_command_group()
+        self._tag_command_group()
+        cmds = self.repo.list_by_tag(["tag_one", "tag_three"])
+        self.assertEqual(3, len(cmds))
+        self.assertTrue(self.cmd_one in cmds)
+        self.assertTrue(self.cmd_two in cmds)
+        self.assertTrue(self.cmd_three in cmds)
+
+    def test_list_by_nonexistent_tag_raises_error(self):
+        self._create_command_group()
+        with self.assertRaises(UnknownTagError):
+            self.repo.list_by_tag(["invalid_tag"])
+
+    def test_list_by_tag_order_by_template_changes_order(self):
+        self._create_command_group()
+        self._tag_command_group()
+        cmds = self.repo.list_by_tag(["tag_one", "tag_three"], order_by="template")
+        self.assertEqual(3, len(cmds))
+        self.assertEqual(self.cmd_three, cmds[0])
+        self.assertEqual(self.cmd_two, cmds[1])
+        self.assertEqual(self.cmd_one, cmds[2])
+
+    def test_list_by_tag_limits_apply(self):
+        self._create_command_group()
+        self._tag_command_group()
+        cmds = self.repo.list_by_tag(["tag_one", "tag_three"], limit=2)
+        self.assertEqual(2, len(cmds))
 
     def test_search_empty_term_returns_empty_list(self):
         self._create_command_group()

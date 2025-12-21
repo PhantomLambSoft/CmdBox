@@ -442,8 +442,41 @@ class CommandRepository(BaseRepository[Command]):
         ordering = self._resolve_ordering(order_by)
         return list(Command.select().order_by(*ordering).limit(limit))
 
-    def list_by_tag(self, *tags: str) -> list[Command]:
-        pass
+    def list_by_tag(
+        self,
+        tags: Sequence[str],
+        order_by: str | Sequence[str] = "alias",
+        limit: int = 25,
+    ) -> list[Command]:
+        """
+        Fetches a list of commands filtered by specified tags and ordered by specific
+        criteria.
+
+        This method retrieves a list of `Command` objects associated with the tags
+        provided in the `tags` parameter. The results can be customized through
+        ordering and limited in number.
+
+        Args:
+            tags (Sequence[str]): A sequence of tag names used to filter the commands.
+                Only commands associated with these tags will be retrieved.
+            order_by (str | Sequence[str], optional): Specifies the criteria to order
+                the commands. Defaults to "alias".
+            limit (int, optional): The maximum number of commands to retrieve. Defaults
+                to 25.
+
+        Returns:
+            list[Command]: A list of `Command` objects that meet the specified filters
+            and ordering criteria.
+        """
+        tags_actual = self._get_tags_by_name(*tags)
+        commands = (
+            Command.select()
+            .join(CommandTag)
+            .where(CommandTag.tag << tags_actual)
+            .distinct()
+        )
+        ordering = self._resolve_ordering(order_by)
+        return list(commands.order_by(*ordering).limit(limit))
 
     def search(
         self, query: str, fields: str | Sequence[str] | None = ("alias", "description")
