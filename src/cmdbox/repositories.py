@@ -14,7 +14,7 @@ from cmdbox.exceptions import (
     TagAttachError,
     TagDetachError,
 )
-from cmdbox.models import Command, Variable, Tag, CommandTag
+from cmdbox.models import Command, Variable, Tag, CommandTag, VariableTag
 from cmdbox._types import TagAttachResult, TagDetachResult
 
 
@@ -579,13 +579,16 @@ class VariableRepository(BaseRepository[Variable]):
     def __init__(self, validator: VariableValidator | None = None):
         self.validator = validator or VariableValidator()
 
-    def create(self, name: str, value: str) -> Variable:
+    def create(
+        self, name: str, value: str, tags: Sequence[str] | None = None
+    ) -> Variable:
         """
         Validates and creates a new Variable object based on provided input parameters.
 
         Args:
             name (str): Unique identifier for the variable to be created.
             value (str): The value that will be subbed for the name when executing.
+            tags (Sequence[str] | None): Optional sequence of tag names to associate with the variable.
 
         Returns:
             Variable: The created Variable object.
@@ -678,6 +681,89 @@ class VariableRepository(BaseRepository[Variable]):
                 raise NameConflictError(name=name) from exc
             raise
 
+    def add_tags(self, name: str, tags: Sequence[str]) -> TagAttachResult:
+        """
+        Attach tags to a variable identified by its name.
+
+        This function associates tags with a specified variable. If the tags already
+        exist for the variable, they are added to an existing list. Otherwise, new tags
+        are created and linked to the variable. If no tags are provided, it returns
+        immediately with empty results. In case of a database integrity issue, an
+        appropriate error is raised.
+
+        Args:
+            name (str): The name identifier of the variable to which the tags are to
+                be attached.
+            tags (Sequence[str]): A collection of tag names to be attached to the
+                variable.
+
+        Returns:
+            TagAttachResult: An object containing lists of newly added tags and
+                tags that already existed.
+
+        Raises:
+            TagAttachError: If there is an issue attaching the tags to the variable,
+                typically due to database integrity constraints.
+        """
+        if not tags:
+            return TagAttachResult(added=[], existing=[])
+        tags_actual = self._get_tags_by_name(*tags)
+        variable = self.get_by_name(name)
+        try:
+            with db.atomic():
+                return self._attach_tags(variable, tags_actual)
+        except UnknownTagError:
+            raise
+        except IntegrityError as exc:
+            raise TagAttachError("Could not attach tags to variable.") from exc
+
+    def remove_tags(self, name: str, tags: Sequence[str]) -> TagDetachResult:
+        """
+        Removes tags from a variable identified by the provided name. The method first validates
+        the tags to ensure they exist in the database, then attempts to remove the associations
+        between the variable and the respective tags. If a tag is not attached to the variable, it
+        is recorded in the `not_attached` list, while successfully removed tags are recorded in
+        the `removed` list. Any errors during detachment raise a `TagDetachError`.
+
+        Args:
+            name (str): The unique identifier or name of the variable from which the tags will
+                be detached.
+            tags (Sequence[str]): A list of tag names to be detached from the variable.
+
+        Returns:
+            TagDetachResult: Object that contains two lists:
+                - `removed`: A list of successfully detached tags.
+                - `not_attached`: A list of tags that were not associated with the variable.
+
+        Raises:
+            TagDetachError: If the detachment process encounters an issue, such as database
+                integrity errors.
+        """
+        if not tags:
+            return TagDetachResult(removed=[], not_attached=[])
+        tags_actual = self._get_tags_by_name(*tags)
+        variable = self.get_by_name(name)
+        removed = []
+        not_attached = []
+        try:
+            with db.atomic():
+                for tag in tags_actual:
+                    deleted = (
+                        VariableTag.delete()
+                        .where(
+                            (VariableTag.variable == variable)
+                            & (VariableTag.tag == tag)
+                        )
+                        .execute()
+                    )
+                    if deleted:
+                        removed.append(tag.name)
+                    else:
+                        not_attached.append(tag.name)
+        except IntegrityError as exc:
+            raise TagDetachError("Could not detach tags from variable.") from exc
+        return TagDetachResult(removed=removed, not_attached=not_attached)
+
     def list_all(
         self, order_by: str | Sequence[str] = "name", limit: int = 25
     ) -> list[Variable]:
@@ -695,6 +781,44 @@ class VariableRepository(BaseRepository[Variable]):
         """
         ordering = self._resolve_ordering(order_by)
         return list(Variable.select().order_by(*ordering).limit(limit))
+
+    def list_by_tag(
+        self,
+        tags: Sequence[str],
+        order_by: str | Sequence[str] = "name",
+        limit: int = 25,
+    ) -> list[Variable]:
+        """
+        Fetches a list of variables filtered by specified tags and ordered by specific
+        criteria.
+
+        This method retrieves a list of `Variable` objects associated with the tags
+        provided in the `tags` argument. The results are optionally ordered based on the
+        `order_by` field and limited by the `limit` argument.
+
+        Args:
+            tags (Sequence[str]): A list of tag names to filter variables by.
+            order_by (str | Sequence[str]): Criteria to order the resulting variable
+                list. Defaults to "name".
+            limit (int): The maximum number of variables to return. Defaults to 25.
+
+        Returns:
+            list[Variable]: A list of `Variable` objects matching the tags and ordered as
+                requested.
+
+        Raises:
+            UnknownTagError: If one or more provided tags do not exist in the database.
+        """
+        tags_actual = self._get_tags_by_name(*tags)
+        ordering = self._resolve_ordering(order_by)
+        return list(
+            Variable.select()
+            .join(VariableTag)
+            .where(VariableTag.tag << tags_actual)
+            .order_by(*ordering)
+            .distinct()
+            .limit(limit)
+        )
 
     def search(
         self, query: str, fields: str | Sequence[str] | None = "name"
@@ -736,6 +860,38 @@ class VariableRepository(BaseRepository[Variable]):
             return False
         var.delete_instance()
         return True
+
+    def _attach_tags(self, var: Variable, tags: Sequence[Tag]) -> TagAttachResult:
+        """
+        Attaches tags to the given variable. If a tag is already associated with the
+        variable, it is grouped under existing tags; otherwise, it is added to newly
+        attached tags.
+
+        Args:
+            var (Variable): The variable to which tags are to be attached.
+            tags (Sequence[Tag]): A sequence of tags to be attached to the variable.
+
+        Returns:
+            TagAttachResult: An object containing lists of newly added and
+            previously existing tags.
+        """
+        added = []
+        existing = []
+        for tag in tags:
+            var_tag, created = VariableTag.get_or_create(variable=var, tag=tag)
+            if created:
+                added.append(tag.name)
+            else:
+                existing.append(tag.name)
+        return TagAttachResult(added=added, existing=existing)
+
+    def _is_unique_variable_tag_violation(self, exc: IntegrityError) -> bool:
+        msg = str(exc)
+        return (
+            "UNIQUE constraint failed" in msg
+            and "variabletag.variable_id" in msg
+            and "variabletag.tag_id" in msg
+        )
 
 
 class TagRepository(BaseRepository[Tag]):
