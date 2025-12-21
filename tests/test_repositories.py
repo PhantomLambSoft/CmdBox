@@ -87,17 +87,19 @@ class TestCommandRepository(unittest.TestCase):
     def setUpClass(cls):
         init_database(testing=True)
         db.connect()
-        db.bind([Command])
-        db.create_tables([Command])
+        db.bind([Command, Tag, CommandTag])
+        db.create_tables([Command, Tag, CommandTag])
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        db.drop_tables([Command])
+        db.drop_tables([Command, Tag, CommandTag])
         db.close()
 
     def setUp(self):
         Command.delete().execute()
+        Tag.delete().execute()
+        CommandTag.delete().execute()
         self.repo = CommandRepository()
 
     def _create_command_group(self):
@@ -208,6 +210,39 @@ class TestCommandRepository(unittest.TestCase):
             alias="test", template="echo test", description="Test command"
         )
         self.assertEqual(command, self.repo.get_by_alias(alias="test"))
+
+    def test_create_with_tags(self):
+        tag = Tag.create(name="tag_one")
+        cmd = self.repo.create(alias="test", template="echo test", tags=["tag_one"])
+        self.assertTrue(isinstance(cmd, Command))
+        Command.select()
+        CommandTag.get(CommandTag.command == cmd, CommandTag.tag == tag)
+
+    def test_create_with_tags_multiple(self):
+        tag_one = Tag.create(name="tag_one")
+        tag_two = Tag.create(name="tag_two")
+        cmd = self.repo.create(
+            alias="test", template="echo test", tags=["tag_one", "tag_two"]
+        )
+        self.assertTrue(isinstance(cmd, Command))
+        command = Command.select()
+        CommandTag.get(CommandTag.command == command, CommandTag.tag == tag_one)
+        CommandTag.get(CommandTag.command == command, CommandTag.tag == tag_two)
+
+    def test_create_with_tags_duplicate_does_not_raise_error(self):
+        tag = Tag.create(name="tag_one")
+        cmd = self.repo.create(
+            alias="test", template="echo test", tags=["tag_one", "tag_one"]
+        )
+        self.assertTrue(isinstance(cmd, Command))
+        Command.select()
+        CommandTag.get(CommandTag.command == cmd, CommandTag.tag == tag)
+
+    def test_create_with_tags_non_existent_tag_is_atomic_and_raises_error(self):
+        with self.assertRaises(UnknownTagError):
+            self.repo.create(alias="test", template="echo test", tags=["tag_one"])
+        with self.assertRaises(DoesNotExist):
+            Command.get(Command.alias == "test")
 
     def test_get_by_alias_raises_exception_if_not_found(self):
         """None should be returned if no command is found with the given alias."""

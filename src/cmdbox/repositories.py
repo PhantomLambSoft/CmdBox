@@ -194,6 +194,8 @@ class BaseRepository(Generic[M]):
         return "UNIQUE constraint failed" in msg and f"{table}.name" in msg
 
     def _get_tags_by_name(self, *tags: str) -> list[Tag]:
+        if not tags:
+            return []
         queryset = Tag.select().where(Tag.name << tags)
         tags_by_name = {t.name for t in queryset}
         missing = [name for name in tags if name not in tags_by_name]
@@ -238,12 +240,16 @@ class CommandRepository(BaseRepository[Command]):
         self.validator.validate_create(
             alias=alias, template=template, description=description
         )
+        tags_actual = self._get_tags_by_name(*tags or [])
         try:
-            return Command.create(
-                alias=alias,
-                template=template,
-                description=description,
-            )
+            with db.atomic():
+                cmd = Command.create(
+                    alias=alias,
+                    template=template,
+                    description=description,
+                )
+                self._attach_tags(cmd, tags_actual)
+                return cmd
         except IntegrityError as exc:
             if alias is not None and self._is_unique_alias_violation(exc):
                 raise AliasConflictError(alias=alias) from exc
@@ -352,21 +358,13 @@ class CommandRepository(BaseRepository[Command]):
             return TagAttachResult(added=[], existing=[])
         tags_actual = self._get_tags_by_name(*tags)
         command = self.get_by_alias(alias)
-        added = []
-        existing = []
         try:
             with db.atomic():
-                for tag in tags_actual:
-                    cmd_tag, created = CommandTag.get_or_create(
-                        command=command, tag=tag
-                    )
-                    if created:
-                        added.append(tag.name)
-                    else:
-                        existing.append(tag.name)
+                return self._attach_tags(command, tags_actual)
+        except UnknownTagError:
+            raise
         except IntegrityError as exc:
             raise TagAttachError("Could not attach tags to command.") from exc
-        return TagAttachResult(added=added, existing=existing)
 
     def remove_tags(self, alias: str, tags: Sequence[str]) -> TagDetachResult:
         """
@@ -476,6 +474,30 @@ class CommandRepository(BaseRepository[Command]):
             return False
         cmd.delete_instance()
         return True
+
+    def _attach_tags(self, cmd: Command, tags: Sequence[Tag]) -> TagAttachResult:
+        """
+        Attaches tags to the given command. If a tag is already associated with the
+        command, it is grouped under existing tags; otherwise, it is added to newly
+        attached tags.
+
+        Args:
+            cmd (Command): The command to which tags are to be attached.
+            tags (Sequence[Tag]): A sequence of tags to be attached to the command.
+
+        Returns:
+            TagAttachResult: An object containing lists of newly added and
+            previously existing tags.
+        """
+        added = []
+        existing = []
+        for tag in tags:
+            cmd_tag, created = CommandTag.get_or_create(command=cmd, tag=tag)
+            if created:
+                added.append(tag.name)
+            else:
+                existing.append(tag.name)
+        return TagAttachResult(added=added, existing=existing)
 
     def _is_unique_alias_violation(self, exc: IntegrityError) -> bool:
         """
