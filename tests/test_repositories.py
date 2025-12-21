@@ -216,13 +216,6 @@ class TestCommandRepository(unittest.TestCase):
         self.assertTrue(isinstance(command, Command))
         self.assertEqual("test", command.alias)
 
-    def test_get_command_by_alias(self):
-        """Test retrieving a command by its alias."""
-        command = Command.create(
-            alias="test", template="echo test", description="Test command"
-        )
-        self.assertEqual(command, self.repo.get_by_alias(alias="test"))
-
     def test_create_with_tags(self):
         tag = Tag.create(name="tag_one")
         cmd = self.repo.create(alias="test", template="echo test", tags=["tag_one"])
@@ -255,6 +248,13 @@ class TestCommandRepository(unittest.TestCase):
             self.repo.create(alias="test", template="echo test", tags=["tag_one"])
         with self.assertRaises(DoesNotExist):
             Command.get(Command.alias == "test")
+
+    def test_get_command_by_alias(self):
+        """Test retrieving a command by its alias."""
+        command = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
+        self.assertEqual(command, self.repo.get_by_alias(alias="test"))
 
     def test_get_by_alias_raises_exception_if_not_found(self):
         """None should be returned if no command is found with the given alias."""
@@ -581,17 +581,19 @@ class TestVariableRepository(unittest.TestCase):
     def setUpClass(cls):
         init_database(testing=True)
         db.connect()
-        db.bind([Variable])
-        db.create_tables([Variable])
+        db.bind([Variable, Tag, VariableTag])
+        db.create_tables([Variable, Tag, VariableTag])
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        db.drop_tables([Variable])
+        db.drop_tables([Variable, Tag, VariableTag])
         db.close()
 
     def setUp(self):
         Variable.delete().execute()
+        Tag.delete().execute()
+        VariableTag.delete().execute()
         self.repo = VariableRepository()
 
     def _create_variable_group(self):
@@ -653,10 +655,38 @@ class TestVariableRepository(unittest.TestCase):
         self.repo.create(name=" test", value="test_value")
         self.assertEqual("test", Variable.get(Variable.name == "test").name)
 
-    def test_get_variable_by_name(self):
-        variable = Variable.create(name="test", value="test_value")
-        var = self.repo.get_by_name("test")
-        self.assertEqual(variable, var)
+    def test_create_with_tags(self):
+        tag = Tag.create(name="tag_one")
+        var = self.repo.create(name="test", value="test_value", tags=["tag_one"])
+        self.assertTrue(isinstance(var, Variable))
+        Variable.select()
+        VariableTag.get(VariableTag.variable == var, VariableTag.tag == tag)
+
+    def test_create_with_multiple_tags(self):
+        tag_one = Tag.create(name="tag_one")
+        tag_two = Tag.create(name="tag_two")
+        var = self.repo.create(
+            name="test", value="test_value", tags=["tag_one", "tag_two"]
+        )
+        self.assertTrue(isinstance(var, Variable))
+        Variable.select()
+        VariableTag.get(VariableTag.variable == var, VariableTag.tag == tag_one)
+        VariableTag.get(VariableTag.variable == var, VariableTag.tag == tag_two)
+
+    def create_with_duplicate_tags_does_not_raise_error(self):
+        tag_one = Tag.create(name="tag_one")
+        var = self.repo.create(
+            name="test", value="test_value", tags=["tag_one", "tag_one"]
+        )
+        self.assertTrue(isinstance(var, Variable))
+        Variable.select()
+        VariableTag.get(VariableTag.variable == var, VariableTag.tag == tag_one)
+
+    def test_create_with_tags_non_existent_tag_is_atomic_and_raises_error(self):
+        with self.assertRaises(UnknownTagError):
+            self.repo.create(name="test", value="test_value", tags=["invalid_tag"])
+        with self.assertRaises(DoesNotExist):
+            Variable.get(Variable.name == "test")
 
     def test_get_unknown_variable_raises_exception(self):
         with self.assertRaises(UnknownNameError):
@@ -665,6 +695,11 @@ class TestVariableRepository(unittest.TestCase):
     def test_variable_name_capitalisation_does_not_matter(self):
         variable = Variable.create(name="test", value="test_value")
         var = self.repo.get_by_name("TEST")
+        self.assertEqual(variable, var)
+
+    def test_get_variable_by_name(self):
+        variable = Variable.create(name="test", value="test_value")
+        var = self.repo.get_by_name("test")
         self.assertEqual(variable, var)
 
     def test_get_by_blank_field_raises_exception(self):

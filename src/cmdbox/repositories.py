@@ -600,8 +600,12 @@ class VariableRepository(BaseRepository[Variable]):
         """
         name = name.strip() if name else None
         self.validator.validate_create(name=name, value=value)
+        tags_actual = self._get_tags_by_name(*tags or [])
         try:
-            return Variable.create(name=name, value=value)
+            with db.atomic():
+                var = Variable.create(name=name, value=value)
+                self._attach_tags(var, tags_actual)
+                return var
         except IntegrityError as exc:
             if name is not None and self._is_unique_name_violation(exc):
                 raise NameConflictError(name=name) from exc
