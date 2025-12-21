@@ -110,6 +110,9 @@ class CommandTag(BaseModel):
     tag = ForeignKeyField(Tag, backref="commands")
     date_created = DateTimeField(default=datetime.now)
 
+    class Meta:
+        indexes = ((("command", "tag"), True),)
+
 
 class VariableTag(BaseModel):
     """
@@ -127,3 +130,6 @@ class VariableTag(BaseModel):
     variable = ForeignKeyField(Variable, backref="tags")
     tag = ForeignKeyField(Tag, backref="variables")
     date_created = DateTimeField(default=datetime.now)
+
+    class Meta:
+        indexes = ((("variable", "tag"), True),)
