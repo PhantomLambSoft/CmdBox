@@ -2,6 +2,7 @@ from typing import Sequence, Generic, TypeVar, Type
 
 from peewee import Model, fn, IntegrityError, Node
 
+from cmdbox.database import db
 from cmdbox.domain.validators import CommandValidator, VariableValidator, TagValidator
 from cmdbox.exceptions import (
     ValidationError,
@@ -9,8 +10,12 @@ from cmdbox.exceptions import (
     UnknownAliasError,
     NameConflictError,
     UnknownNameError,
+    UnknownTagError,
+    TagAttachError,
+    TagDetachError,
 )
-from cmdbox.models import Command, Variable, Tag
+from cmdbox.models import Command, Variable, Tag, CommandTag
+from cmdbox._types import TagAttachResult, TagDetachResult
 
 
 M = TypeVar("M", bound=Model)
@@ -188,6 +193,15 @@ class BaseRepository(Generic[M]):
         table = self.model._meta.table_name
         return "UNIQUE constraint failed" in msg and f"{table}.name" in msg
 
+    def _get_tags_by_name(self, *tags: str) -> list[Tag]:
+        queryset = Tag.select().where(Tag.name << tags)
+        tags_by_name = {t.name for t in queryset}
+        missing = [name for name in tags if name not in tags_by_name]
+        if missing:
+            missing_names = ", ".join(missing)
+            raise UnknownTagError(tag_name=missing_names)
+        return list(queryset)
+
 
 class CommandRepository(BaseRepository[Command]):
 
@@ -197,7 +211,11 @@ class CommandRepository(BaseRepository[Command]):
         self.validator = validator or CommandValidator()
 
     def create(
-        self, alias: str, template: str, description: str | None = None
+        self,
+        alias: str,
+        template: str,
+        description: str | None = None,
+        tags: Sequence[str] | None = None,
     ) -> Command:
         """
         Validates and creates a new Command object based on provided input parameters.
@@ -206,6 +224,7 @@ class CommandRepository(BaseRepository[Command]):
             alias (str): Unique identifier for the command to be created.
             template (str): Template string associated with the command.
             description (str | None): Optional description of the command.
+            tags (Sequence[str] | None): Optional sequence of tag names to associate with the command.
 
         Returns:
             Command: The created Command object.
@@ -305,6 +324,96 @@ class CommandRepository(BaseRepository[Command]):
                 raise AliasConflictError(alias=alias) from exc
             raise
 
+    def add_tags(self, alias: str, tags: Sequence[str]) -> TagAttachResult:
+        """
+        Attach tags to a command identified by its alias.
+
+        This function associates tags with a specified command. If the tags already
+        exist for the command, they are added to an existing list. Otherwise, new tags
+        are created and linked to the command. If no tags are provided, it returns
+        immediately with empty results. In case of a database integrity issue, an
+        appropriate error is raised.
+
+        Args:
+            alias (str): The alias identifier of the command to which the tags are to
+                be attached.
+            tags (Sequence[str]): A collection of tag names to be attached to the
+                command.
+
+        Returns:
+            TagAttachResult: An object containing lists of newly added tags and
+                tags that already existed.
+
+        Raises:
+            TagAttachError: If there is an issue attaching the tags to the command,
+                typically due to database integrity constraints.
+        """
+        if not tags:
+            return TagAttachResult(added=[], existing=[])
+        tags_actual = self._get_tags_by_name(*tags)
+        command = self.get_by_alias(alias)
+        added = []
+        existing = []
+        try:
+            with db.atomic():
+                for tag in tags_actual:
+                    cmd_tag, created = CommandTag.get_or_create(
+                        command=command, tag=tag
+                    )
+                    if created:
+                        added.append(tag.name)
+                    else:
+                        existing.append(tag.name)
+        except IntegrityError as exc:
+            raise TagAttachError("Could not attach tags to command.") from exc
+        return TagAttachResult(added=added, existing=existing)
+
+    def remove_tags(self, alias: str, tags: Sequence[str]) -> TagDetachResult:
+        """
+        Removes tags from a command identified by the provided alias. The method first validates
+        the tags to ensure they exist in the database, then attempts to remove the associations
+        between the command and the respective tags. If a tag is not attached to the command, it
+        is recorded in the `not_attached` list, while successfully removed tags are recorded in
+        the `removed` list. Any errors during detachment raise a `TagDetachError`.
+
+        Args:
+            alias (str): The unique identifier or alias of the command from which the tags will
+                be detached.
+            tags (Sequence[str]): A list of tag names to be detached from the command.
+
+        Returns:
+            TagDetachResult: Object that contains two lists:
+                - `removed`: A list of successfully detached tags.
+                - `not_attached`: A list of tags that were not associated with the command.
+
+        Raises:
+            TagDetachError: If the detachment process encounters an issue, such as database
+                integrity errors.
+        """
+        if not tags:
+            return TagDetachResult(removed=[], not_attached=[])
+        tags_actual = self._get_tags_by_name(*tags)
+        command = self.get_by_alias(alias)
+        removed = []
+        not_attached = []
+        try:
+            with db.atomic():
+                for tag in tags_actual:
+                    deleted = (
+                        CommandTag.delete()
+                        .where(
+                            (CommandTag.command == command) & (CommandTag.tag == tag)
+                        )
+                        .execute()
+                    )
+                    if deleted:
+                        removed.append(tag.name)
+                    else:
+                        not_attached.append(tag.name)
+        except IntegrityError as exc:
+            raise TagDetachError("Could not detach tags from command.") from exc
+        return TagDetachResult(removed=removed, not_attached=not_attached)
+
     def list_all(
         self, order_by: str | Sequence[str] = "alias", limit: int = 25
     ) -> list[Command]:
@@ -322,6 +431,9 @@ class CommandRepository(BaseRepository[Command]):
         """
         ordering = self._resolve_ordering(order_by)
         return list(Command.select().order_by(*ordering).limit(limit))
+
+    def list_by_tag(self, *tags: str) -> list[Command]:
+        pass
 
     def search(
         self, query: str, fields: str | Sequence[str] | None = ("alias", "description")
@@ -383,6 +495,14 @@ class CommandRepository(BaseRepository[Command]):
         msg = str(exc)
         table = self.model._meta.table_name
         return "UNIQUE constraint failed" in msg and f"{table}.alias" in msg
+
+    def _is_unique_command_tag_violation(self, exc: IntegrityError) -> bool:
+        msg = str(exc)
+        return (
+            "UNIQUE constraint failed" in msg
+            and "commandtag.command_id" in msg
+            and "commandtag.tag_id" in msg
+        )
 
 
 class VariableRepository(BaseRepository[Variable]):

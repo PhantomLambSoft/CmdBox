@@ -1,5 +1,4 @@
 import unittest
-from pydoc import describe
 
 from peewee import DoesNotExist
 
@@ -10,6 +9,9 @@ from cmdbox.exceptions import (
     UnknownAliasError,
     NameConflictError,
     UnknownNameError,
+    UnknownTagError,
+    CmdboxError,
+    TagAttachError,
 )
 from cmdbox.repositories import (
     CommandRepository,
@@ -17,7 +19,7 @@ from cmdbox.repositories import (
     TagRepository,
     BaseRepository,
 )
-from cmdbox.models import Command, Variable, Tag
+from cmdbox.models import Command, Variable, Tag, CommandTag
 
 
 class TestBaseRepository(unittest.TestCase):
@@ -1058,3 +1060,153 @@ class TestTagRepository(unittest.TestCase):
         with self.assertRaises(DoesNotExist):
             Tag.get(Tag.id == self.tag_two)
             Tag.get(Tag.id == self.tag_five)
+
+
+class TestCommandTagging(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        init_database(testing=True)
+        db.connect()
+        db.bind([Command, Tag, CommandTag])
+        db.create_tables([Command, Tag, CommandTag])
+
+    @classmethod
+    def tearDownClass(cls):
+        # Close database connection after all tests
+        db.drop_tables([Command, Tag, CommandTag])
+        db.close()
+
+    def setUp(self):
+        Tag.delete().execute()
+        Command.delete().execute()
+        CommandTag.delete().execute()
+        self.repo = CommandRepository()
+
+    def _create_cmd_tags(self):
+        self.cmd_one = Command.create(alias="cmd_one", template="echo Command one")
+        self.cmd_two = Command.create(alias="cmd_two", template="echo Command two")
+        self.tag_one = Tag.create(name="tag_one", description="Tag One Description")
+        self.tag_two = Tag.create(name="tag_two", description="Tag Two Description")
+        self.cmd_tag_one = CommandTag.create(command=self.cmd_one, tag=self.tag_one)
+        self.cmd_tag_two = CommandTag.create(command=self.cmd_two, tag=self.tag_one)
+        self.cmd_tag_three = CommandTag.create(command=self.cmd_two, tag=self.tag_two)
+
+    def test_add_tag(self):
+        cmd = Command.create(alias="test_cmd", template="echo test")
+        tag = Tag.create(name="test_tag", description="test_description")
+        results = self.repo.add_tags(alias="test_cmd", tags=["test_tag"])
+        cmd_tag = CommandTag.get(command=cmd, tag=tag)
+        self.assertTrue(isinstance(cmd_tag, CommandTag))
+        self.assertEqual("test_tag", results.added[0])
+        self.assertEqual(0, len(results.existing))
+
+    def test_add_multiple_tags(self):
+        cmd = Command.create(alias="test_cmd", template="echo test")
+        tag1 = Tag.create(name="test_tag1", description="test_description1")
+        tag2 = Tag.create(name="test_tag2", description="test_description2")
+        results = self.repo.add_tags(alias="test_cmd", tags=["test_tag1", "test_tag2"])
+        fetched_cmd_tag1 = CommandTag.get(command=cmd, tag=tag1)
+        fetched_cmd_tag2 = CommandTag.get(command=cmd, tag=tag2)
+        self.assertTrue(isinstance(fetched_cmd_tag1, CommandTag))
+        self.assertTrue(isinstance(fetched_cmd_tag2, CommandTag))
+        self.assertEqual("test_tag1", results.added[0])
+        self.assertEqual("test_tag2", results.added[1])
+        self.assertEqual(0, len(results.existing))
+
+    def test_mixed_tagging_of_existing_and_new_works_correctly(self):
+        cmd = Command.create(alias="test_cmd", template="echo test")
+        tag1 = Tag.create(name="test_tag1", description="test_description1")
+        cmd_tag1 = CommandTag.create(command=cmd, tag=tag1)
+        tag2 = Tag.create(name="test_tag2", description="test_description2")
+        results = self.repo.add_tags(alias="test_cmd", tags=["test_tag1", "test_tag2"])
+        self.assertEqual(1, len(results.added))
+        self.assertEqual(1, len(results.existing))
+
+    def test_add_tag_with_no_tags_does_nothing(self):
+        cmd = Command.create(alias="test_cmd", template="echo test")
+        results = self.repo.add_tags(alias="test_cmd", tags=[])
+        self.assertEqual(0, len(results.added))
+        self.assertEqual(0, len(results.existing))
+
+    def test_add_tag_with_non_existent_tag_raises_exception(self):
+        Command.create(alias="test_cmd", template="echo test")
+        with self.assertRaises(UnknownTagError):
+            self.repo.add_tags(alias="test_cmd", tags=["invalid_tag"])
+
+    def test_add_tag_with_non_existent_command_alias_raises_exception(self):
+        Tag.create(name="test_tag", description="test_description")
+        with self.assertRaises(UnknownAliasError):
+            self.repo.add_tags(alias="invalid_alias", tags=["test_tag"])
+
+    def test_double_tagging_does_not_raise_error(self):
+        cmd = Command.create(alias="test_cmd", template="echo test")
+        tag = Tag.create(name="test_tag")
+        cmd_tag = CommandTag.create(command=cmd, tag=tag)
+
+        results = self.repo.add_tags(alias="test_cmd", tags=["test_tag"])
+        self.assertTrue(isinstance(cmd_tag, CommandTag))
+        self.assertEqual(0, len(results.added))
+        self.assertEqual("test_tag", results.existing[0])
+
+    def test_add_tag_is_atomic_and_no_tags_are_added_if_one_fails(self):
+        cmd = Command.create(alias="test_cmd", template="echo test")
+        tag = Tag.create(name="test_tag")
+        with self.assertRaises(UnknownTagError):
+            self.repo.add_tags(alias="test_cmd", tags=["test_tag", "invalid_tag"])
+        self.assertEqual(0, CommandTag.select().count())
+
+    def test_remove_tag(self):
+        self._create_cmd_tags()
+        CommandTag.get(command=self.cmd_one, tag=self.tag_one)
+        self.repo.remove_tags(alias="cmd_one", tags=["tag_one"])
+        with self.assertRaises(DoesNotExist):
+            CommandTag.get(command=self.cmd_one, tag=self.tag_one)
+
+    def test_remove_multiple_tags(self):
+        self._create_cmd_tags()
+        result = self.repo.remove_tags(alias="cmd_two", tags=["tag_one", "tag_two"])
+        self.assertEqual(2, len(result.removed))
+        self.assertEqual(0, len(result.not_attached))
+        with self.assertRaises(DoesNotExist):
+            CommandTag.get(command=self.cmd_two, tag=self.tag_one)
+            CommandTag.get(command=self.cmd_two, tag=self.tag_two)
+
+    def test_remove_tag_with_mix_of_existing_and_non_existing_tagged_commands(self):
+        self._create_cmd_tags()
+        result = self.repo.remove_tags(alias="cmd_one", tags=["tag_one", "tag_two"])
+        self.assertEqual(1, len(result.removed))
+        self.assertEqual(1, len(result.not_attached))
+        with self.assertRaises(DoesNotExist):
+            CommandTag.get(command=self.cmd_one, tag=self.tag_one)
+
+    def test_remove_tag_with_no_tags_does_nothing(self):
+        self._create_cmd_tags()
+        result = self.repo.remove_tags(alias="cmd_one", tags=[])
+        self.assertEqual(0, len(result.removed))
+        self.assertEqual(0, len(result.not_attached))
+
+    def test_remove_tag_with_non_existent_tag_raises_exception(self):
+        self._create_cmd_tags()
+        with self.assertRaises(UnknownTagError):
+            self.repo.remove_tags(alias="cmd_one", tags=["invalid_tag"])
+
+    def test_remove_tag_with_non_existent_command_alias_raises_exception(self):
+        self._create_cmd_tags()
+        with self.assertRaises(UnknownAliasError):
+            self.repo.remove_tags(alias="invalid_alias", tags=["tag_one"])
+
+    def test_removing_a_tag_twice_does_not_raise_error(self):
+        self._create_cmd_tags()
+        r1 = self.repo.remove_tags(alias="cmd_two", tags=["tag_one"])
+        self.assertEqual(1, len(r1.removed))
+        self.assertEqual(0, len(r1.not_attached))
+        r2 = self.repo.remove_tags(alias="cmd_two", tags=["tag_one"])
+        self.assertEqual(0, len(r2.removed))
+        self.assertEqual(1, len(r2.not_attached))
+
+    def test_remove_tag_is_atomic_and_no_tags_are_removed_if_one_fails(self):
+        self._create_cmd_tags()
+        with self.assertRaises(UnknownTagError):
+            self.repo.remove_tags(alias="cmd_two", tags=["tag_one", "invalid_tag"])
+        CommandTag.get(command=self.cmd_one, tag=self.tag_one)
