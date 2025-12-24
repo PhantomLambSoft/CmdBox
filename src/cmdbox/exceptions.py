@@ -85,6 +85,19 @@ class TagDetachError(CmdboxError):
     pass
 
 
+class ValidationError(CmdboxError):
+    """
+    Represents an error related to invalid data.
+
+    This class is used to handle exceptions that occur due to invalid data.
+    Invalid data is data that technically can be stored in the database, but
+    is against the use principles allowed by the application.
+    ex: Creating a command with an empty alias or template.
+    """
+
+    pass
+
+
 class ResolutionError(CmdboxError):
     """
     Represents an error encountered during resolution processes.
@@ -97,7 +110,7 @@ class ResolutionError(CmdboxError):
     pass
 
 
-class CommandSyntaxError(CmdboxError):
+class CommandSyntaxError(ResolutionError):
     """
     Represents an error related to command syntax.
 
@@ -108,14 +121,42 @@ class CommandSyntaxError(CmdboxError):
     pass
 
 
-class ValidationError(CmdboxError):
+class UnknownReference(ResolutionError):
     """
-    Represents an error related to invalid data.
+    Represents an error related to references in a string being resolved.
 
-    This class is used to handle exceptions that occur due to invalid data.
-    Invalid data is data that technically can be stored in the database, but
-    is against the use principles allowed by the application.
-    ex: Creating a command with an empty alias or template.
+    This class is used to handle exceptions when a reference is stored in a
+    string being resolved, but the reference cannot be found in the database.
     """
 
-    pass
+    def __init__(self, kind: str, key: str):
+        super().__init__(f"Unknown {kind}: {key}")
+        self.kind = kind
+        self.key = key
+
+
+class MaxDepthExceeded(ResolutionError):
+    """
+    Exception raised when the maximum depth is exceeded.
+
+    Represents a specific error condition where a resolution process exceeds
+    the allowed or configured maximum depth. This exception is typically used
+    to prevent excessively deep recursion by enforcing depth limits.
+    """
+
+    def __init__(self, max_depth: int):
+        super().__init__(f"Maximum resolution depth exceeded: ({max_depth})")
+        self.max_depth = max_depth
+
+
+class CycleDetectionError(ResolutionError):
+    """
+    An error raised when a circular reference is detected.
+
+    Raised when a circular reference is detected while attempting to resolve
+    a string.  Ex: Command A references command B, which references command A.
+    """
+
+    def __init__(self, path: list[str]):
+        super().__init__(f"Cycle detected: {' -> '.join(path)}")
+        self.path = path
