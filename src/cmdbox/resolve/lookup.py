@@ -29,3 +29,75 @@ class ResolverLookup(Protocol):
 
     def get_variable(self, name: str) -> Optional[VariableRecord]:
         pass
+
+
+class MemoizedLookup(ResolverLookup):
+    """
+    Caches and retrieves command and variable lookups for improved performance.
+
+    The MemoizedLookup class acts as a wrapper for a ResolverLookup instance,
+    adding caching functionality to minimize redundant lookups. Commands and
+    variables are cached after their first retrieval, improving performance
+    for subsequent requests. Use this class when frequent lookups are
+    expected and caching them can significantly enhance speed.
+
+    Attributes:
+        inner (ResolverLookup): The wrapped ResolverLookup instance used for
+            retrieving commands and variables.
+        cmd_cache (dict): A dictionary used to cache CommandRecord results
+            for quick retrieval based on their aliases.
+        var_cache (dict): A dictionary used to cache VariableRecord results
+            for quick retrieval based on their names.
+    """
+    def __init__(self, inner: ResolverLookup):
+        self._inner = inner
+        self._cmd_cache: dict[str, Optional[CommandRecord]] = {}
+        self._var_cache: dict[str, Optional[VariableRecord]] = {}
+
+    def get_command(self, alias: str) -> Optional[CommandRecord]:
+        """
+        Retrieves a command by its alias, leveraging the cache for faster access.
+
+        This method checks if the command associated with the given alias exists
+        in the cache. If found, it retrieves the command from the cache. If not,
+        it fetches the command from an internal source, stores it in the cache,
+        and then returns it.
+
+        Args:
+            alias (str): The alias of the command to retrieve.
+
+        Returns:
+            Optional[CommandRecord]: The command associated with the alias if
+                                     it exists, otherwise None.
+        """
+        if alias in self._cmd_cache:
+            return self._cmd_cache[alias]
+        cmd = self._inner.get_command(alias)
+        self._cmd_cache[alias] = cmd
+        return cmd
+
+    def get_variable(self, name: str) -> Optional[VariableRecord]:
+        """
+        Retrieves a variable by its alias, leveraging the cache for faster access.
+
+        This method checks if the variable associated with the given name exists
+        in the cache. If found, it retrieves the variable from the cache. If not,
+        it fetches the variable from an internal source, stores it in the cache,
+        and then returns it.
+
+        Args:
+            name (str): The name of the variable to retrieve.
+
+        Returns:
+            Optional[VariableRecord]: The variable associated with the alias if
+                                     it exists, otherwise None.
+        """
+        if name in self._var_cache:
+            return self._var_cache[name]
+        var = self._inner.get_variable(name)
+        self._var_cache[name] = var
+        return var
+
+    def clear(self) -> None:
+        self._cmd_cache.clear()
+        self._var_cache.clear()
