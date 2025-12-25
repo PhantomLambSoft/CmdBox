@@ -14,7 +14,7 @@ from cmdbox.exceptions import (
     TagDetachError,
 )
 from cmdbox.models import Command, Tag, CommandTag
-from cmdbox._types import TagAttachResult, TagDetachResult
+from cmdbox.repositories.results import TagAttachResult, TagDetachResult
 
 
 class CommandRepository(BaseRepository[Command]):
