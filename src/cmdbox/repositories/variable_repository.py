@@ -4,7 +4,7 @@ from peewee import IntegrityError
 
 from .base_repository import BaseRepository
 from cmdbox.database import db
-from cmdbox.domain.validators import VariableValidator
+from cmdbox.repositories.validators import VariableValidator
 from cmdbox.exceptions import (
     ValidationError,
     NameConflictError,

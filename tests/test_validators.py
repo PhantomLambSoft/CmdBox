@@ -1,6 +1,6 @@
 import unittest
 
-from cmdbox.domain.validators import (
+from cmdbox.repositories.validators import (
     CommandValidator,
     CommandValidatorConfig,
     VariableValidator,

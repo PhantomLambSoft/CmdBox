@@ -3,7 +3,7 @@ from typing import Sequence
 from peewee import IntegrityError
 
 from .base_repository import BaseRepository
-from cmdbox.domain.validators import TagValidator
+from cmdbox.repositories.validators import TagValidator
 from cmdbox.exceptions import NameConflictError, UnknownNameError, ValidationError
 from cmdbox.models import Tag
 
