@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from cmdbox.exceptions import ValidationError
+from .errors import ValidationError
 
 
 @dataclass(frozen=True)

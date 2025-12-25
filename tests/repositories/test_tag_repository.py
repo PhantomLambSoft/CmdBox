@@ -3,7 +3,11 @@ import unittest
 from peewee import DoesNotExist
 
 from cmdbox.database import init_database, db
-from cmdbox.exceptions import ValidationError, NameConflictError, UnknownNameError
+from cmdbox.repositories.errors import (
+    ValidationError,
+    NameConflictError,
+    UnknownNameError,
+)
 from cmdbox.models import Tag
 from cmdbox.repositories.tag_repository import TagRepository
 

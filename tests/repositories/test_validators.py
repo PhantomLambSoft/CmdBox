@@ -7,7 +7,7 @@ from cmdbox.repositories.validators import (
     VariableValidatorConfig,
     TagValidator,
 )
-from cmdbox.exceptions import ValidationError
+from cmdbox.repositories.errors import ValidationError
 
 
 class TestCommandValidator(unittest.TestCase):

@@ -3,7 +3,7 @@ import unittest
 from peewee import DoesNotExist
 
 from cmdbox.database import init_database, db
-from cmdbox.exceptions import (
+from cmdbox.repositories.errors import (
     ValidationError,
     NameConflictError,
     UnknownTagError,

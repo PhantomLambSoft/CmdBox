@@ -3,9 +3,7 @@ from typing import Sequence
 from peewee import IntegrityError
 
 from .base_repository import BaseRepository
-from cmdbox.database import db
-from cmdbox.repositories.validators import VariableValidator
-from cmdbox.exceptions import (
+from .errors import (
     ValidationError,
     NameConflictError,
     UnknownNameError,
@@ -13,6 +11,8 @@ from cmdbox.exceptions import (
     TagAttachError,
     TagDetachError,
 )
+from cmdbox.database import db
+from cmdbox.repositories.validators import VariableValidator
 from cmdbox.models import Variable, Tag, VariableTag
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
 
