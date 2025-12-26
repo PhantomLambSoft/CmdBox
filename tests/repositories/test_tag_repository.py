@@ -7,6 +7,7 @@ from cmdbox.repositories.errors import (
     ValidationError,
     NameConflictError,
     UnknownNameError,
+    UpdateError,
 )
 from cmdbox.models import Tag
 from cmdbox.repositories.tag_repository import TagRepository
@@ -145,53 +146,53 @@ class TestTagRepository(unittest.TestCase):
     # =================================================================================
 
     def test_update_tag_name_works(self):
-        Tag.create(name="test", description="test_description")
-        self.repo.update(tag_name="test", name="new_name")
+        tag = Tag.create(name="test", description="test_description")
+        self.repo.update(tag=tag, name="new_name")
         Tag.get(Tag.name == "new_name")
 
     def test_update_tag_description_works(self):
         tag = Tag.create(name="test", description="test_description")
-        tag = self.repo.update(tag_name="test", description="new_description")
+        tag = self.repo.update(tag=tag, description="new_description")
         self.assertEqual("new_description", Tag.get(Tag.name == "test").description)
         self.assertEqual(tag, tag)
 
     def test_update_tag_with_blank_name_raises_exception(self):
-        Tag.create(name="test", description="test_description")
+        tag = Tag.create(name="test", description="test_description")
         with self.assertRaises(ValidationError):
-            self.repo.update(tag_name="test", name="")
+            self.repo.update(tag=tag, name="")
 
     def test_update_tag_with_null_name_does_nothing(self):
         tag = Tag.create(name="test", description="test_description")
-        self.repo.update(tag_name="test", name=None)
+        self.repo.update(tag=tag, name=None)
         self.assertEqual(tag, Tag.get(Tag.name == "test"))
 
     def test_update_tag_with_duplicate_name_raises_exception(self):
         Tag.create(name="test", description="test_description")
-        Tag.create(name="test2", description="test_description2")
+        tag = Tag.create(name="test2", description="test_description2")
         with self.assertRaises(NameConflictError):
-            self.repo.update(tag_name="test2", name="test")
+            self.repo.update(tag=tag, name="test")
 
     def test_update_tag_description_to_an_existing_tag_is_allowed(self):
         """Multiple tags can have the same description."""
         Tag.create(name="test", description="test_description")
-        Tag.create(name="test2", description="test_description2")
-        self.repo.update(tag_name="test2", description="test")
+        tag = Tag.create(name="test2", description="test_description2")
+        self.repo.update(tag=tag, description="test")
 
     def test_update_with_no_fields_throws_exception(self):
-        Tag.create(name="test", description="test_description")
-        with self.assertRaises(ValueError):
-            self.repo.update(tag_name="test")
+        tag = Tag.create(name="test", description="test_description")
+        with self.assertRaises(UpdateError):
+            self.repo.update(tag=tag)
 
     def test_update_name_with_white_space_in_middle_of_name_is_not_allowed(self):
-        Tag.create(name="test", description="test_description")
+        tag = Tag.create(name="test", description="test_description")
         with self.assertRaises(ValidationError):
-            self.repo.update(tag_name="test", name="test2 test")
+            self.repo.update(tag=tag, name="test2 test")
 
     def test_update_name_with_white_space_at_beginning_and_end_of_name_is_stripped(
         self,
     ):
-        Tag.create(name="test", description="test_description")
-        self.repo.update(tag_name="test", name=" test2 ")
+        tag = Tag.create(name="test", description="test_description")
+        self.repo.update(tag=tag, name=" test2 ")
         self.assertEqual("test2", Tag.get(Tag.name == "test2").name)
 
     # =================================================================================
@@ -318,9 +319,9 @@ class TestTagRepository(unittest.TestCase):
     def test_delete_tag_works(self):
         self._create_tag_group()
         self.assertEqual(5, Tag.select().count())
-        self.repo.delete("test2")
+        self.repo.delete(self.tag_two)
         self.assertEqual(4, Tag.select().count())
-        self.repo.delete("test5")
+        self.repo.delete(self.tag_five)
         self.assertEqual(3, Tag.select().count())
         with self.assertRaises(DoesNotExist):
             Tag.get(Tag.id == self.tag_two)

@@ -3,7 +3,7 @@ from typing import Sequence
 from peewee import IntegrityError
 
 from .base_repository import BaseRepository
-from .errors import NameConflictError, UnknownNameError, ValidationError
+from .errors import NameConflictError, UnknownNameError, ValidationError, UpdateError
 from .validators import TagValidator
 from cmdbox.models import Tag
 
@@ -31,10 +31,11 @@ class TagRepository(BaseRepository[Tag]):
             raise UnknownNameError(name=name)
         return tag
 
-    def update(self, tag_name: str, **fields) -> Tag | None:
-        tag = self.get_by_name(tag_name)
+    def update(self, tag: Tag, **fields) -> Tag | None:
+        if not tag:
+            raise UpdateError("Tag not found.")
         if not fields:
-            raise ValueError("No fields provided for update.")
+            raise UpdateError("No fields provided for update.")
 
         if "name" in fields and fields.get("name") is not None:
             fields["name"] = fields.get("name").strip()
@@ -68,8 +69,7 @@ class TagRepository(BaseRepository[Tag]):
     ) -> list[Tag]:
         return self._search(query, "name", fields)
 
-    def delete(self, name: str) -> bool:
-        tag = self.get_by_name(name)
+    def delete(self, tag: Tag) -> bool:
         if not tag:
             return False
         tag.delete_instance()
