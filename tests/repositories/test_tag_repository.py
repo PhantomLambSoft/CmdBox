@@ -48,6 +48,10 @@ class TestTagRepository(unittest.TestCase):
             name="test5", description="test_description_a Bee Goldfish"
         )
 
+    # =================================================================================
+    # SECTION: CREATE TESTS
+    # =================================================================================
+
     def test_create_tag_works(self):
         tag = self.repo.create(name="test", description="test_description")
         q_tag = Tag.get(Tag.name == "test")
@@ -99,6 +103,10 @@ class TestTagRepository(unittest.TestCase):
         self.repo.create(name=" test", description="test_description")
         self.assertEqual("test", Tag.get(Tag.name == "test").name)
 
+    # =================================================================================
+    # SECTION: GET TESTS
+    # =================================================================================
+
     def test_get_tag_by_name(self):
         tag = Tag.create(name="test", description="test_description")
         tag = self.repo.get_by_name("test")
@@ -131,6 +139,10 @@ class TestTagRepository(unittest.TestCase):
     def test_get_by_unicode_characters_is_allowed(self):
         Tag.create(name="git-✨", description="test_description")
         self.repo.get_by_name(name="git-✨")
+
+    # =================================================================================
+    # SECTION: UPDATE TESTS
+    # =================================================================================
 
     def test_update_tag_name_works(self):
         Tag.create(name="test", description="test_description")
@@ -181,6 +193,10 @@ class TestTagRepository(unittest.TestCase):
         Tag.create(name="test", description="test_description")
         self.repo.update(tag_name="test", name=" test2 ")
         self.assertEqual("test2", Tag.get(Tag.name == "test2").name)
+
+    # =================================================================================
+    # SECTION: LIST TESTS
+    # =================================================================================
 
     def test_list_all_works(self):
         self._create_tag_group()
@@ -238,6 +254,10 @@ class TestTagRepository(unittest.TestCase):
         tags = self.repo.list_all(limit=None)
         self.assertEqual(5, len(tags))
 
+    # =================================================================================
+    # SECTION: SEARCH TESTS
+    # =================================================================================
+
     def test_search_empty_term_returns_empty_list(self):
         self._create_tag_group()
         tags = self.repo.search("")
@@ -290,6 +310,10 @@ class TestTagRepository(unittest.TestCase):
         self.assertEqual(self.tag_two, tags[2])
         self.assertEqual(self.tag_one, tags[3])
         self.assertEqual(self.tag_three, tags[4])
+
+    # =================================================================================
+    # SECTION: DELETE TESTS
+    # =================================================================================
 
     def test_delete_tag_works(self):
         self._create_tag_group()
