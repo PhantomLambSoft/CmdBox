@@ -11,6 +11,7 @@ from .errors import (
     UnknownTagError,
     TagAttachError,
     TagDetachError,
+    UpdateError,
 )
 from .results import TagAttachResult, TagDetachResult
 from cmdbox.database import db
@@ -83,7 +84,7 @@ class CommandRepository(BaseRepository[Command]):
             raise UnknownAliasError(alias=alias)
         return cmd
 
-    def update(self, cmd_alias: str, **fields) -> Command:
+    def update(self, command: Command, **fields) -> Command:
         """
         Updates an existing command based on the provided alias and fields.
 
@@ -93,7 +94,7 @@ class CommandRepository(BaseRepository[Command]):
         appropriate actions are taken.
 
         Args:
-            cmd_alias: The alias of the command to update.
+            command: The command to update.
             **fields: Arbitrary keyword arguments representing the fields to update.
                 Supported fields include 'alias', 'template', and 'description'.
 
@@ -108,27 +109,28 @@ class CommandRepository(BaseRepository[Command]):
             IntegrityError: If there is a general integrity constraint violation during
                 the update process.
         """
-        cmd = self.get_by_alias(cmd_alias)
+        if not command:
+            raise UpdateError("No command provided for update.")
         if not fields:
-            raise ValueError("No fields provided for update.")
+            raise UpdateError("No fields provided for update.")
 
         # Strip whitespace from alias field if alias field is supplied
         if "alias" in fields and fields.get("alias") is not None:
             fields["alias"] = fields.get("alias").strip()
 
         self.validator.validate_update(
-            alias=fields.get("alias", cmd_alias),
-            template=fields.get("template", cmd.template),
+            alias=fields.get("alias", command.alias),
+            template=fields.get("template", command.template),
             description=fields.get("description", None),
         )
         try:
             for key, value in fields.items():
-                if not hasattr(cmd, key):
+                if not hasattr(command, key):
                     raise ValidationError(f"Invalid field: {key}")
                 if value is not None:
-                    setattr(cmd, key, value)
-            cmd.save()
-            return cmd
+                    setattr(command, key, value)
+            command.save()
+            return command
         except IntegrityError as exc:
             alias = fields.get("alias", "")
             if alias is not None and self._is_unique_alias_violation(exc):

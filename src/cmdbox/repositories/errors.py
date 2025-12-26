@@ -61,6 +61,12 @@ class NameConflictError(CmdboxError):
         super().__init__(f"Name '{name}' already exists.")
 
 
+class UpdateError(CmdboxError):
+
+    def __init__(self, message: str | None = None) -> None:
+        super().__init__(f"Failed to update: {message}")
+
+
 class UnknownTagError(CmdboxError):
 
     def __init__(self, tag_name: str) -> None:

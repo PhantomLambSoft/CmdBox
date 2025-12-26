@@ -10,6 +10,7 @@ from cmdbox.repositories.errors import (
     UnknownAliasError,
     TagAttachError,
     TagDetachError,
+    UpdateError,
 )
 from cmdbox.models import Command, Tag, CommandTag
 from cmdbox.repositories.command_repository import CommandRepository
@@ -213,23 +214,27 @@ class TestCommandRepository(unittest.TestCase):
         command = Command.create(
             alias="test", template="echo test", description="Test command"
         )
-        cmd = self.repo.update(cmd_alias=command.alias, alias="new_test")
+        cmd = self.repo.update(command=command, alias="new_test")
         self.assertEqual("new_test", Command.get(Command.alias == "new_test").alias)
         self.assertEqual(command, cmd)
 
     def test_update_alias_to_duplicate_not_allowed(self):
         """Updating a command alias to a duplicate should raise an exception."""
-        Command.create(alias="test", template="echo test", description="Test command")
+        cmd = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
         Command.create(
             alias="new_test", template="echo test", description="Test command"
         )
         with self.assertRaises(AliasConflictError):
-            self.repo.update(cmd_alias="test", alias="new_test")
+            self.repo.update(command=cmd, alias="new_test")
 
     def test_update_alias_to_itself_does_not_throw_exception(self):
         """Updating a command alias to itself should not raise an exception and should not change the command."""
-        Command.create(alias="test", template="echo test", description="Test command")
-        self.repo.update(cmd_alias="test", alias="test")
+        cmd = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
+        self.repo.update(command=cmd, alias="test")
         self.assertIsNotNone(Command.get(Command.alias == "test"))
 
     def test_update_command_template_works(self):
@@ -237,28 +242,32 @@ class TestCommandRepository(unittest.TestCase):
         command = Command.create(
             alias="test", template="echo test", description="Test command"
         )
-        cmd = self.repo.update(cmd_alias="test", template="echo new test")
+        cmd = self.repo.update(command=command, template="echo new test")
         self.assertEqual("echo new test", Command.get(Command.alias == "test").template)
         self.assertEqual(command, cmd)
 
     def test_updating_with_unknown_alias_raises_exception(self):
         """Updating a command with an unknown alias should raise an exception."""
-        with self.assertRaises(UnknownAliasError):
-            self.repo.update(cmd_alias="invalid_name", template="echo new test")
+        with self.assertRaises(UpdateError):
+            self.repo.update(command=None, template="echo new test")
 
     def test_updating_template_to_blank_string_raises_exception(self):
         """Updating a command template to an empty string should raise an exception."""
-        Command.create(alias="test", template="echo test", description="Test command")
+        cmd = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
         with self.assertRaises(ValidationError):
-            self.repo.update(cmd_alias="test", template="")
+            self.repo.update(command=cmd, template="")
 
     def test_updating_template_to_existing_template_is_allowed(self):
         """
         Updating a command template to an existing template should not raise an exception.
         Commands are allowed to have duplicate templates.
         """
-        Command.create(alias="test", template="echo test", description="Test command")
-        self.repo.update(cmd_alias="test", template="echo new test")
+        cmd = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
+        self.repo.update(command=cmd, template="echo new test")
         self.assertEqual("echo new test", Command.get(Command.alias == "test").template)
 
     def test_updating_command_description_works(self):
@@ -266,7 +275,7 @@ class TestCommandRepository(unittest.TestCase):
         command = Command.create(
             alias="test", template="echo test", description="Test command"
         )
-        cmd = self.repo.update(cmd_alias="test", description="New description")
+        cmd = self.repo.update(command=command, description="New description")
         self.assertEqual(
             "New description", Command.get(Command.alias == "test").description
         )
@@ -274,20 +283,26 @@ class TestCommandRepository(unittest.TestCase):
 
     def test_updating_command_to_remove_description_is_allowed(self):
         """Updating a command to remove its description should not raise an exception."""
-        Command.create(alias="test", template="echo test", description="Test command")
-        self.repo.update(cmd_alias="test", description="")
+        cmd = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
+        self.repo.update(command=cmd, description="")
         self.assertEqual("", Command.get(Command.alias == "test").description)
 
     def test_update_with_no_fields_throws_exception(self):
-        Command.create(alias="test", template="echo test", description="Test command")
-        with self.assertRaises(ValueError):
-            self.repo.update(cmd_alias="test")
+        cmd = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
+        with self.assertRaises(UpdateError):
+            self.repo.update(command=cmd)
 
     def test_update_with_white_space_in_middle_of_alias_is_not_allowed(self):
         """Aliases with whitespace should be throw validation error."""
-        Command.create(alias="test", template="echo test", description="Test command")
+        cmd = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
         with self.assertRaises(ValidationError):
-            self.repo.update(cmd_alias="test", alias="test2 test")
+            self.repo.update(command=cmd, alias="test2 test")
 
     def test_update_with_white_space_at_beginning_and_end_of_alias_is_stripped_and_allowed(
         self,
@@ -296,7 +311,7 @@ class TestCommandRepository(unittest.TestCase):
         cmd = Command.create(
             alias="test", template="echo test", description="Test command"
         )
-        self.repo.update(cmd_alias="test", alias=" test2 ")
+        self.repo.update(command=cmd, alias=" test2 ")
         self.assertEqual("test2", Command.get(Command.id == cmd.id).alias)
 
     # =================================================================================
