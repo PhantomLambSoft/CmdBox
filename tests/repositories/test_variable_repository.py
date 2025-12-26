@@ -8,6 +8,7 @@ from cmdbox.repositories.errors import (
     NameConflictError,
     UnknownTagError,
     UnknownNameError,
+    UpdateError,
 )
 from cmdbox.models import Variable, Tag, VariableTag
 from cmdbox.repositories.variable_repository import VariableRepository
@@ -42,6 +43,10 @@ class TestVariableRepository(unittest.TestCase):
         )
         self.var_four = Variable.create(name="test4", value="test_value_b Bee Bee Bee")
         self.var_five = Variable.create(name="test5", value="test_value_a Bee Goldfish")
+
+    # =================================================================================
+    # SECTION: CREATE TESTS
+    # =================================================================================
 
     def test_create_variable_works(self):
         var = self.repo.create(name="test", value="test_value")
@@ -102,6 +107,10 @@ class TestVariableRepository(unittest.TestCase):
         var = self.repo.get_by_name("TEST")
         self.assertEqual(variable, var)
 
+    # =================================================================================
+    # SECTION: GET TESTS
+    # =================================================================================
+
     def test_get_variable_by_name(self):
         variable = Variable.create(name="test", value="test_value")
         var = self.repo.get_by_name("test")
@@ -124,55 +133,63 @@ class TestVariableRepository(unittest.TestCase):
         Variable.create(name="git-✨", value="test_value")
         self.repo.get_by_name(name="git-✨")
 
+    # =================================================================================
+    # SECTION: UPDATE TESTS
+    # =================================================================================
+
     def test_update_variable_name_works(self):
-        Variable.create(name="test", value="test_value")
-        self.repo.update(var_name="test", name="new_name")
+        var = Variable.create(name="test", value="test_value")
+        self.repo.update(variable=var, name="new_name")
         Variable.get(Variable.name == "new_name")
 
     def test_update_variable_value_works(self):
         variable = Variable.create(name="test", value="test_value")
-        var = self.repo.update(var_name="test", value="new_value")
+        var = self.repo.update(variable=variable, value="new_value")
         self.assertEqual("new_value", Variable.get(Variable.name == "test").value)
         self.assertEqual(variable, var)
 
     def test_update_variable_with_blank_name_raises_exception(self):
-        Variable.create(name="test", value="test_value")
+        var = Variable.create(name="test", value="test_value")
         with self.assertRaises(ValidationError):
-            self.repo.update(var_name="test", name="")
+            self.repo.update(variable=var, name="")
 
     def test_update_variable_with_null_name_does_nothing(self):
         var = Variable.create(name="test", value="test_value")
-        self.repo.update(var_name="test", name=None)
+        self.repo.update(variable=var, name=None)
         self.assertEqual(var, Variable.get(Variable.name == "test"))
 
     def test_update_variable_with_duplicate_name_raises_exception(self):
         Variable.create(name="test", value="test_value")
-        Variable.create(name="test2", value="test_value2")
+        var = Variable.create(name="test2", value="test_value2")
         with self.assertRaises(NameConflictError):
-            self.repo.update(var_name="test2", name="test")
+            self.repo.update(variable=var, name="test")
 
     def test_update_variable_value_to_an_existing_variable_is_allowed(self):
         """Multiple variables can have the same value."""
         Variable.create(name="test", value="test_value")
-        Variable.create(name="test2", value="test_value2")
-        self.repo.update(var_name="test2", value="test")
+        var = Variable.create(name="test2", value="test_value2")
+        self.repo.update(variable=var, value="test")
 
     def test_update_with_no_fields_throws_exception(self):
-        Variable.create(name="test", value="test_value")
-        with self.assertRaises(ValueError):
-            self.repo.update(var_name="test")
+        var = Variable.create(name="test", value="test_value")
+        with self.assertRaises(UpdateError):
+            self.repo.update(variable=var)
 
     def test_update_name_with_white_space_in_middle_of_name_is_not_allowed(self):
-        Variable.create(name="test", value="test_value")
+        var = Variable.create(name="test", value="test_value")
         with self.assertRaises(ValidationError):
-            self.repo.update(var_name="test", name="test2 test")
+            self.repo.update(variable=var, name="test2 test")
 
     def test_update_name_with_white_space_at_beginning_and_end_of_name_is_stripped(
         self,
     ):
-        Variable.create(name="test", value="test_value")
-        self.repo.update(var_name="test", name=" test2 ")
+        var = Variable.create(name="test", value="test_value")
+        self.repo.update(variable=var, name=" test2 ")
         self.assertEqual("test2", Variable.get(Variable.name == "test2").name)
+
+    # =================================================================================
+    # SECTION: LIST TESTS
+    # =================================================================================
 
     def test_list_all_works(self):
         self._create_variable_group()
@@ -230,6 +247,10 @@ class TestVariableRepository(unittest.TestCase):
         vars = self.repo.list_all(limit=None)
         self.assertEqual(5, len(vars))
 
+    # =================================================================================
+    # SECTION: SEARCH TESTS
+    # =================================================================================
+
     def test_search_empty_term_returns_empty_list(self):
         self._create_variable_group()
         vars = self.repo.search("")
@@ -282,6 +303,10 @@ class TestVariableRepository(unittest.TestCase):
         self.assertEqual(self.var_two, vars[2])
         self.assertEqual(self.var_one, vars[3])
         self.assertEqual(self.var_three, vars[4])
+
+    # =================================================================================
+    # SECTION: DELETE TESTS
+    # =================================================================================
 
     def test_delete_variable_works(self):
         self._create_variable_group()

@@ -10,6 +10,7 @@ from .errors import (
     UnknownTagError,
     TagAttachError,
     TagDetachError,
+    UpdateError,
 )
 from .validators import VariableValidator
 from .results import TagAttachResult, TagDetachResult
@@ -71,7 +72,7 @@ class VariableRepository(BaseRepository[Variable]):
             raise UnknownNameError(name=name)
         return var
 
-    def update(self, var_name: str, **fields) -> Variable:
+    def update(self, variable: Variable, **fields) -> Variable:
         """
         Updates an existing variable based on the provided name and fields.
 
@@ -81,7 +82,7 @@ class VariableRepository(BaseRepository[Variable]):
         appropriate actions are taken.
 
         Args:
-            var_name: The name of the variable to update.
+            variable (Variable): The variable to update.
             **fields: Arbitrary keyword arguments representing the fields to update.
                 Supported fields include 'name' and 'value'.
 
@@ -97,25 +98,27 @@ class VariableRepository(BaseRepository[Variable]):
             IntegrityError: If there is a general integrity constraint violation during
                 the update process.
         """
-        var = self.get_by_name(var_name)
+        if not variable:
+            raise UpdateError("No variable provided for update.")
         if not fields:
-            raise ValueError("No fields provided for update.")
+            raise UpdateError("No fields provided for update.")
 
         if "name" in fields and fields.get("name") is not None:
             fields["name"] = fields.get("name").strip()
 
         self.validator.validate_update(
-            name=fields.get("name", var_name), value=fields.get("value", var.value)
+            name=fields.get("name", variable.name),
+            value=fields.get("value", variable.value),
         )
 
         try:
             for key, value in fields.items():
-                if not hasattr(var, key):
+                if not hasattr(variable, key):
                     raise ValidationError(f"Invalid field: {key}")
                 if value is not None:
-                    setattr(var, key, value)
-            var.save()
-            return var
+                    setattr(variable, key, value)
+            variable.save()
+            return variable
         except IntegrityError as exc:
             name = fields.get("name", "")
             if name is not None and self._is_unique_name_violation(exc):
