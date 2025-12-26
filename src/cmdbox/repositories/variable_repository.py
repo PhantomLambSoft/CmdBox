@@ -125,7 +125,7 @@ class VariableRepository(BaseRepository[Variable]):
                 raise NameConflictError(name=name) from exc
             raise
 
-    def add_tags(self, name: str, tags: Sequence[str]) -> TagAttachResult:
+    def add_tags(self, variable: Variable, tags: Sequence[Tag]) -> TagAttachResult:
         """
         Attach tags to a variable identified by its name.
 
@@ -136,9 +136,8 @@ class VariableRepository(BaseRepository[Variable]):
         appropriate error is raised.
 
         Args:
-            name (str): The name identifier of the variable to which the tags are to
-                be attached.
-            tags (Sequence[str]): A collection of tag names to be attached to the
+            variable (Variable): The variable to which the tags are to be attached.
+            tags (Sequence[Tag]): A collection of tags to be attached to the
                 variable.
 
         Returns:
@@ -151,14 +150,14 @@ class VariableRepository(BaseRepository[Variable]):
         """
         if not tags:
             return TagAttachResult(added=[], existing=[])
-        tags_actual = self._get_tags_by_name(*tags)
-        var = self.get_by_name(name)
         try:
             with db.atomic():
                 added = []
                 existing = []
-                for tag in tags_actual:
-                    var_tag, created = VariableTag.get_or_create(variable=var, tag=tag)
+                for tag in tags:
+                    var_tag, created = VariableTag.get_or_create(
+                        variable=variable, tag=tag
+                    )
                     if created:
                         added.append(tag.name)
                     else:
@@ -169,7 +168,7 @@ class VariableRepository(BaseRepository[Variable]):
         except IntegrityError as exc:
             raise TagAttachError("Could not attach tags to variable.") from exc
 
-    def remove_tags(self, name: str, tags: Sequence[str]) -> TagDetachResult:
+    def remove_tags(self, variable: Variable, tags: Sequence[Tag]) -> TagDetachResult:
         """
         Removes tags from a variable identified by the provided name. The method first validates
         the tags to ensure they exist in the database, then attempts to remove the associations
@@ -178,9 +177,8 @@ class VariableRepository(BaseRepository[Variable]):
         the `removed` list. Any errors during detachment raise a `TagDetachError`.
 
         Args:
-            name (str): The unique identifier or name of the variable from which the tags will
-                be detached.
-            tags (Sequence[str]): A list of tag names to be detached from the variable.
+            variable (Variable): The variable from which the tags will be detached.
+            tags (Sequence[Tag]): A list of tags to be detached from the variable.
 
         Returns:
             TagDetachResult: Object that contains two lists:
@@ -191,15 +189,13 @@ class VariableRepository(BaseRepository[Variable]):
             TagDetachError: If the detachment process encounters an issue, such as database
                 integrity errors.
         """
-        if not tags:
+        if not variable and not tags:
             return TagDetachResult(removed=[], not_attached=[])
-        tags_actual = self._get_tags_by_name(*tags)
-        variable = self.get_by_name(name)
         removed = []
         not_attached = []
         try:
             with db.atomic():
-                for tag in tags_actual:
+                for tag in tags:
                     deleted = (
                         VariableTag.delete()
                         .where(
@@ -214,6 +210,8 @@ class VariableRepository(BaseRepository[Variable]):
                         not_attached.append(tag.name)
         except IntegrityError as exc:
             raise TagDetachError("Could not detach tags from variable.") from exc
+        except AttributeError:
+            raise TagDetachError("Invalid tag provided.")
         return TagDetachResult(removed=removed, not_attached=not_attached)
 
     def list_all(

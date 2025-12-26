@@ -9,6 +9,8 @@ from cmdbox.repositories.errors import (
     UnknownTagError,
     UnknownNameError,
     UpdateError,
+    TagAttachError,
+    TagDetachError,
 )
 from cmdbox.models import Variable, Tag, VariableTag
 from cmdbox.repositories.variable_repository import VariableRepository
@@ -353,7 +355,7 @@ class TestVariableTagging(unittest.TestCase):
     def test_add_tag(self):
         var = Variable.create(name="test_var", value="test")
         tag = Tag.create(name="test_tag", description="test_description")
-        results = self.repo.add_tags(name="test_var", tags=["test_tag"])
+        results = self.repo.add_tags(variable=var, tags=[tag])
         var_tag = VariableTag.get(variable=var, tag=tag)
         self.assertTrue(isinstance(var_tag, VariableTag))
         self.assertEqual("test_tag", results.added[0])
@@ -363,7 +365,7 @@ class TestVariableTagging(unittest.TestCase):
         var = Variable.create(name="test_var", value="test")
         tag1 = Tag.create(name="test_tag1", description="test_description1")
         tag2 = Tag.create(name="test_tag2", description="test_description2")
-        results = self.repo.add_tags(name="test_var", tags=["test_tag1", "test_tag2"])
+        results = self.repo.add_tags(variable=var, tags=[tag1, tag2])
         fetched_var_tag1 = VariableTag.get(variable=var, tag=tag1)
         fetched_var_tag2 = VariableTag.get(variable=var, tag=tag2)
         self.assertTrue(isinstance(fetched_var_tag1, VariableTag))
@@ -377,32 +379,32 @@ class TestVariableTagging(unittest.TestCase):
         tag1 = Tag.create(name="test_tag1", description="test_description1")
         var_tag1 = VariableTag.create(variable=var, tag=tag1)
         tag2 = Tag.create(name="test_tag2", description="test_description2")
-        results = self.repo.add_tags(name="test_var", tags=["test_tag1", "test_tag2"])
+        results = self.repo.add_tags(variable=var, tags=[tag1, tag2])
         self.assertEqual(1, len(results.added))
         self.assertEqual(1, len(results.existing))
 
     def test_add_tag_with_no_tags_does_nothing(self):
         var = Variable.create(name="test_var", value="test")
-        results = self.repo.add_tags(name="test_var", tags=[])
+        results = self.repo.add_tags(variable=var, tags=[])
         self.assertEqual(0, len(results.added))
         self.assertEqual(0, len(results.existing))
 
     def test_add_tag_with_non_existent_tag_raises_exception(self):
-        Variable.create(name="test_var", value="test")
-        with self.assertRaises(UnknownTagError):
-            self.repo.add_tags(name="test_var", tags=["invalid_tag"])
+        var = Variable.create(name="test_var", value="test")
+        with self.assertRaises(TagAttachError):
+            self.repo.add_tags(variable=var, tags=[None])
 
     def test_add_tag_with_non_existent_variable_name_raises_exception(self):
-        Tag.create(name="test_tag", description="test_description")
-        with self.assertRaises(UnknownNameError):
-            self.repo.add_tags(name="invalid_name", tags=["test_tag"])
+        tag = Tag.create(name="test_tag", description="test_description")
+        with self.assertRaises(TagAttachError):
+            self.repo.add_tags(variable=None, tags=[tag])
 
     def test_double_tagging_does_not_raise_error(self):
         var = Variable.create(name="test_var", value="test")
         tag = Tag.create(name="test_tag")
         var_tag = VariableTag.create(variable=var, tag=tag)
 
-        results = self.repo.add_tags(name="test_var", tags=["test_tag"])
+        results = self.repo.add_tags(variable=var, tags=[tag])
         self.assertTrue(isinstance(var_tag, VariableTag))
         self.assertEqual(0, len(results.added))
         self.assertEqual("test_tag", results.existing[0])
@@ -410,20 +412,22 @@ class TestVariableTagging(unittest.TestCase):
     def test_add_tag_is_atomic_and_no_tags_are_added_if_one_fails(self):
         var = Variable.create(name="test_var", value="test")
         tag = Tag.create(name="test_tag")
-        with self.assertRaises(UnknownTagError):
-            self.repo.add_tags(name="test_var", tags=["test_tag", "invalid_tag"])
+        with self.assertRaises(TagAttachError):
+            self.repo.add_tags(variable=var, tags=[tag, None])
         self.assertEqual(0, VariableTag.select().count())
 
     def test_remove_tag(self):
         self._create_var_tags()
-        VariableTag.get(variable=self.var_one, tag=self.tag_one)
-        self.repo.remove_tags(name="var_one", tags=["tag_one"])
+        var = VariableTag.get(variable=self.var_one, tag=self.tag_one)
+        self.repo.remove_tags(variable=var, tags=[self.tag_one])
         with self.assertRaises(DoesNotExist):
             VariableTag.get(variable=self.var_one, tag=self.tag_one)
 
     def test_remove_multiple_tags(self):
         self._create_var_tags()
-        result = self.repo.remove_tags(name="var_two", tags=["tag_one", "tag_two"])
+        result = self.repo.remove_tags(
+            variable=self.var_two, tags=[self.tag_one, self.tag_two]
+        )
         self.assertEqual(2, len(result.removed))
         self.assertEqual(0, len(result.not_attached))
         with self.assertRaises(DoesNotExist):
@@ -432,7 +436,9 @@ class TestVariableTagging(unittest.TestCase):
 
     def test_remove_tag_with_mix_of_existing_and_non_existing_tagged_variables(self):
         self._create_var_tags()
-        result = self.repo.remove_tags(name="var_one", tags=["tag_one", "tag_two"])
+        result = self.repo.remove_tags(
+            variable=self.var_one, tags=[self.tag_one, self.tag_two]
+        )
         self.assertEqual(1, len(result.removed))
         self.assertEqual(1, len(result.not_attached))
         with self.assertRaises(DoesNotExist):
@@ -440,31 +446,32 @@ class TestVariableTagging(unittest.TestCase):
 
     def test_remove_tag_with_no_tags_does_nothing(self):
         self._create_var_tags()
-        result = self.repo.remove_tags(name="var_one", tags=[])
+        result = self.repo.remove_tags(variable=self.var_one, tags=[])
         self.assertEqual(0, len(result.removed))
         self.assertEqual(0, len(result.not_attached))
 
     def test_remove_tag_with_non_existent_tag_raises_exception(self):
         self._create_var_tags()
-        with self.assertRaises(UnknownTagError):
-            self.repo.remove_tags(name="var_one", tags=["invalid_tag"])
+        with self.assertRaises(TagDetachError):
+            self.repo.remove_tags(variable=self.var_one, tags=[None])
 
     def test_remove_tag_with_non_existent_variable_name_raises_exception(self):
         self._create_var_tags()
-        with self.assertRaises(UnknownNameError):
-            self.repo.remove_tags(name="invalid_name", tags=["tag_one"])
+        result = self.repo.remove_tags(variable=None, tags=[self.tag_one])
+        self.assertEqual(0, len(result.removed))
+        self.assertEqual(1, len(result.not_attached))
 
     def test_removing_a_tag_twice_does_not_raise_error(self):
         self._create_var_tags()
-        r1 = self.repo.remove_tags(name="var_two", tags=["tag_one"])
+        r1 = self.repo.remove_tags(variable=self.var_two, tags=[self.tag_one])
         self.assertEqual(1, len(r1.removed))
         self.assertEqual(0, len(r1.not_attached))
-        r2 = self.repo.remove_tags(name="var_two", tags=["tag_one"])
+        r2 = self.repo.remove_tags(variable=self.var_two, tags=[self.tag_one])
         self.assertEqual(0, len(r2.removed))
         self.assertEqual(1, len(r2.not_attached))
 
     def test_remove_tag_is_atomic_and_no_tags_are_removed_if_one_fails(self):
         self._create_var_tags()
-        with self.assertRaises(UnknownTagError):
-            self.repo.remove_tags(name="var_two", tags=["tag_one", "invalid_tag"])
+        with self.assertRaises(TagDetachError):
+            self.repo.remove_tags(variable=self.var_two, tags=[self.tag_one, None])
         VariableTag.get(variable=self.var_one, tag=self.tag_one)
