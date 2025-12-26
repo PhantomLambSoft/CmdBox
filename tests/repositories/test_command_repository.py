@@ -503,21 +503,13 @@ class TestCommandRepository(unittest.TestCase):
     def testa_delete_functions_correctly(self):
         self._create_command_group()
         self.assertEqual(5, Command.select().count())
-        self.repo.delete(self.cmd_two.alias)
+        self.repo.delete(self.cmd_two)
         self.assertEqual(4, Command.select().count())
-        self.repo.delete(self.cmd_five.alias)
+        self.repo.delete(self.cmd_five)
         self.assertEqual(3, Command.select().count())
         with self.assertRaises(DoesNotExist):
             Command.get(Command.id == self.cmd_two)
             Command.get(Command.id == self.cmd_five)
-
-    def test_delete_nonexistent_command_raises_exception(self):
-        cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
-        )
-        with self.assertRaises(UnknownAliasError):
-            self.repo.delete("invlaid_name")
-        Command.get(Command.id == cmd.id)
 
 
 class TestCommandTagging(unittest.TestCase):

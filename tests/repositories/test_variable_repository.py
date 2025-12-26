@@ -313,9 +313,9 @@ class TestVariableRepository(unittest.TestCase):
     def test_delete_variable_works(self):
         self._create_variable_group()
         self.assertEqual(5, Variable.select().count())
-        self.repo.delete("test2")
+        self.repo.delete(self.var_two)
         self.assertEqual(4, Variable.select().count())
-        self.repo.delete("test5")
+        self.repo.delete(self.var_five)
         self.assertEqual(3, Variable.select().count())
         with self.assertRaises(DoesNotExist):
             Variable.get(Variable.id == self.var_two)

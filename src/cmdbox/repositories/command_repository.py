@@ -306,20 +306,19 @@ class CommandRepository(BaseRepository[Command]):
         """
         return self._search(query, "alias", fields)
 
-    def delete(self, alias: str) -> bool:
+    def delete(self, command: Command) -> bool:
         """
         Deletes the command with the specified alias.
 
         Args:
-            alias (str): The alias of the command to delete.
+            command (Command): The command to delete.
 
         Returns:
             bool: True if the command was deleted, False otherwise.
         """
-        cmd = self.get_by_alias(alias)
-        if not cmd:
+        if not command:
             return False
-        cmd.delete_instance()
+        command.delete_instance()
         return True
 
     def _is_unique_alias_violation(self, exc: IntegrityError) -> bool:

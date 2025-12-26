@@ -295,20 +295,19 @@ class VariableRepository(BaseRepository[Variable]):
         """
         return self._search(query, "name", fields)
 
-    def delete(self, name: str) -> bool:
+    def delete(self, variable: Variable) -> bool:
         """
         Deletes the variable with the specified name.
 
         Args:
-            name (str): The name of the variable to delete.
+            variable (Variable): The variable to delete.
 
         Returns:
             bool: True if the variable was deleted, False otherwise.
         """
-        var = self.get_by_name(name)
-        if not var:
+        if not variable:
             return False
-        var.delete_instance()
+        variable.delete_instance()
         return True
 
     def _is_unique_variable_tag_violation(self, exc: IntegrityError) -> bool:
