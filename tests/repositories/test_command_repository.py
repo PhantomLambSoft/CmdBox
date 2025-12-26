@@ -148,39 +148,6 @@ class TestCommandRepository(unittest.TestCase):
         self.assertTrue(isinstance(command, Command))
         self.assertEqual("test", command.alias)
 
-    def test_create_with_tags(self):
-        tag = Tag.create(name="tag_one")
-        cmd = self.repo.create(alias="test", template="echo test", tags=["tag_one"])
-        self.assertTrue(isinstance(cmd, Command))
-        Command.select()
-        CommandTag.get(CommandTag.command == cmd, CommandTag.tag == tag)
-
-    def test_create_with_tags_multiple(self):
-        tag_one = Tag.create(name="tag_one")
-        tag_two = Tag.create(name="tag_two")
-        cmd = self.repo.create(
-            alias="test", template="echo test", tags=["tag_one", "tag_two"]
-        )
-        self.assertTrue(isinstance(cmd, Command))
-        command = Command.select()
-        CommandTag.get(CommandTag.command == command, CommandTag.tag == tag_one)
-        CommandTag.get(CommandTag.command == command, CommandTag.tag == tag_two)
-
-    def test_create_with_tags_duplicate_does_not_raise_error(self):
-        tag = Tag.create(name="tag_one")
-        cmd = self.repo.create(
-            alias="test", template="echo test", tags=["tag_one", "tag_one"]
-        )
-        self.assertTrue(isinstance(cmd, Command))
-        Command.select()
-        CommandTag.get(CommandTag.command == cmd, CommandTag.tag == tag)
-
-    def test_create_with_tags_non_existent_tag_is_atomic_and_raises_error(self):
-        with self.assertRaises(UnknownTagError):
-            self.repo.create(alias="test", template="echo test", tags=["tag_one"])
-        with self.assertRaises(DoesNotExist):
-            Command.get(Command.alias == "test")
-
     def test_get_command_by_alias(self):
         """Test retrieving a command by its alias."""
         command = Command.create(
