@@ -11,10 +11,10 @@ from .errors import (
     TagAttachError,
     TagDetachError,
 )
+from .validators import VariableValidator
+from .results import TagAttachResult, TagDetachResult
 from cmdbox.database import db
-from cmdbox.repositories.validators import VariableValidator
 from cmdbox.models import Variable, Tag, VariableTag
-from cmdbox.repositories.results import TagAttachResult, TagDetachResult
 
 
 class VariableRepository(BaseRepository[Variable]):

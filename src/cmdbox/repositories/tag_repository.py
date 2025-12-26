@@ -4,7 +4,7 @@ from peewee import IntegrityError
 
 from .base_repository import BaseRepository
 from .errors import NameConflictError, UnknownNameError, ValidationError
-from cmdbox.repositories.validators import TagValidator
+from .validators import TagValidator
 from cmdbox.models import Tag
 
 

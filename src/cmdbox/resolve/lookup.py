@@ -1,6 +1,6 @@
 from typing import Protocol, Optional
 
-from cmdbox.resolve.types import CommandRecord, VariableRecord
+from .types import CommandRecord, VariableRecord
 
 
 class ResolverLookup(Protocol):

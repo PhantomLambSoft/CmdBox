@@ -3,8 +3,7 @@ from typing import Sequence
 from peewee import IntegrityError
 
 from .base_repository import BaseRepository
-from cmdbox.database import db
-from cmdbox.repositories.validators import CommandValidator
+from .validators import CommandValidator
 from .errors import (
     ValidationError,
     AliasConflictError,
@@ -13,8 +12,9 @@ from .errors import (
     TagAttachError,
     TagDetachError,
 )
+from .results import TagAttachResult, TagDetachResult
+from cmdbox.database import db
 from cmdbox.models import Command, Tag, CommandTag
-from cmdbox.repositories.results import TagAttachResult, TagDetachResult
 
 
 class CommandRepository(BaseRepository[Command]):
