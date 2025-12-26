@@ -396,7 +396,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_list_by_tag(self):
         self._create_command_group()
         self._tag_command_group()
-        cmds = self.repo.list_by_tag(["tag_one"])
+        cmds = self.repo.list_by_tag([self.tag_one])
         self.assertEqual(2, len(cmds))
         self.assertTrue(self.cmd_one in cmds)
         self.assertTrue(self.cmd_two in cmds)
@@ -404,7 +404,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_list_by_multiple_tags(self):
         self._create_command_group()
         self._tag_command_group()
-        cmds = self.repo.list_by_tag(["tag_one", "tag_three"])
+        cmds = self.repo.list_by_tag([self.tag_one, self.tag_three])
         self.assertEqual(3, len(cmds))
         self.assertTrue(self.cmd_one in cmds)
         self.assertTrue(self.cmd_two in cmds)
@@ -412,13 +412,15 @@ class TestCommandRepository(unittest.TestCase):
 
     def test_list_by_nonexistent_tag_raises_error(self):
         self._create_command_group()
-        with self.assertRaises(UnknownTagError):
-            self.repo.list_by_tag(["invalid_tag"])
+        cmds = self.repo.list_by_tag([None])
+        self.assertEqual([], cmds)
 
     def test_list_by_tag_order_by_template_changes_order(self):
         self._create_command_group()
         self._tag_command_group()
-        cmds = self.repo.list_by_tag(["tag_one", "tag_three"], order_by="template")
+        cmds = self.repo.list_by_tag(
+            [self.tag_one, self.tag_three], order_by="template"
+        )
         self.assertEqual(3, len(cmds))
         self.assertEqual(self.cmd_three, cmds[0])
         self.assertEqual(self.cmd_two, cmds[1])
@@ -427,7 +429,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_list_by_tag_limits_apply(self):
         self._create_command_group()
         self._tag_command_group()
-        cmds = self.repo.list_by_tag(["tag_one", "tag_three"], limit=2)
+        cmds = self.repo.list_by_tag([self.tag_one, self.tag_three], limit=2)
         self.assertEqual(2, len(cmds))
 
     # =================================================================================

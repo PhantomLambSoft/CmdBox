@@ -246,7 +246,7 @@ class CommandRepository(BaseRepository[Command]):
 
     def list_by_tag(
         self,
-        tags: Sequence[str],
+        tags: Sequence[Tag],
         order_by: str | Sequence[str] = "alias",
         limit: int = 25,
     ) -> list[Command]:
@@ -259,7 +259,7 @@ class CommandRepository(BaseRepository[Command]):
         ordering and limited in number.
 
         Args:
-            tags (Sequence[str]): A sequence of tag names used to filter the commands.
+            tags (Sequence[Tag]): A sequence of tag objects used to filter the commands.
                 Only commands associated with these tags will be retrieved.
             order_by (str | Sequence[str], optional): Specifies the criteria to order
                 the commands. Defaults to "alias".
@@ -270,12 +270,10 @@ class CommandRepository(BaseRepository[Command]):
             list[Command]: A list of `Command` objects that meet the specified filters
             and ordering criteria.
         """
-        tags_actual = self._get_tags_by_name(*tags)
+        if not tags:
+            return []
         commands = (
-            Command.select()
-            .join(CommandTag)
-            .where(CommandTag.tag << tags_actual)
-            .distinct()
+            Command.select().join(CommandTag).where(CommandTag.tag << tags).distinct()
         )
         ordering = self._resolve_ordering(order_by)
         return list(commands.order_by(*ordering).limit(limit))
