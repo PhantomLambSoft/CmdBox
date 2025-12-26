@@ -106,8 +106,8 @@ class CommandTag(BaseModel):
         date_created (DateTimeField): DateTimeField indicating when the relationship was created.
     """
 
-    command = ForeignKeyField(Command, backref="tags")
-    tag = ForeignKeyField(Tag, backref="commands")
+    command = ForeignKeyField(Command, backref="tags", on_delete="CASCADE")
+    tag = ForeignKeyField(Tag, backref="commands", on_delete="CASCADE")
     date_created = DateTimeField(default=datetime.now)
 
     class Meta:
@@ -127,8 +127,8 @@ class VariableTag(BaseModel):
         date_created (DateTimeField): DateTimeField indicating when the relationship was created.
     """
 
-    variable = ForeignKeyField(Variable, backref="tags")
-    tag = ForeignKeyField(Tag, backref="variables")
+    variable = ForeignKeyField(Variable, backref="tags", on_delete="CASCADE")
+    tag = ForeignKeyField(Tag, backref="variables", on_delete="CASCADE")
     date_created = DateTimeField(default=datetime.now)
 
     class Meta:
