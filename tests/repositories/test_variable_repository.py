@@ -93,39 +93,6 @@ class TestVariableRepository(unittest.TestCase):
         self.repo.create(name=" test", value="test_value")
         self.assertEqual("test", Variable.get(Variable.name == "test").name)
 
-    def test_create_with_tags(self):
-        tag = Tag.create(name="tag_one")
-        var = self.repo.create(name="test", value="test_value", tags=["tag_one"])
-        self.assertTrue(isinstance(var, Variable))
-        Variable.select()
-        VariableTag.get(VariableTag.variable == var, VariableTag.tag == tag)
-
-    def test_create_with_multiple_tags(self):
-        tag_one = Tag.create(name="tag_one")
-        tag_two = Tag.create(name="tag_two")
-        var = self.repo.create(
-            name="test", value="test_value", tags=["tag_one", "tag_two"]
-        )
-        self.assertTrue(isinstance(var, Variable))
-        Variable.select()
-        VariableTag.get(VariableTag.variable == var, VariableTag.tag == tag_one)
-        VariableTag.get(VariableTag.variable == var, VariableTag.tag == tag_two)
-
-    def create_with_duplicate_tags_does_not_raise_error(self):
-        tag_one = Tag.create(name="tag_one")
-        var = self.repo.create(
-            name="test", value="test_value", tags=["tag_one", "tag_one"]
-        )
-        self.assertTrue(isinstance(var, Variable))
-        Variable.select()
-        VariableTag.get(VariableTag.variable == var, VariableTag.tag == tag_one)
-
-    def test_create_with_tags_non_existent_tag_is_atomic_and_raises_error(self):
-        with self.assertRaises(UnknownTagError):
-            self.repo.create(name="test", value="test_value", tags=["invalid_tag"])
-        with self.assertRaises(DoesNotExist):
-            Variable.get(Variable.name == "test")
-
     def test_get_unknown_variable_raises_exception(self):
         with self.assertRaises(UnknownNameError):
             self.repo.get_by_name("invalid_name")

@@ -23,16 +23,13 @@ class VariableRepository(BaseRepository[Variable]):
     def __init__(self, validator: VariableValidator | None = None):
         self.validator = validator or VariableValidator()
 
-    def create(
-        self, name: str, value: str, tags: Sequence[str] | None = None
-    ) -> Variable:
+    def create(self, name: str, value: str) -> Variable:
         """
         Validates and creates a new Variable object based on provided input parameters.
 
         Args:
             name (str): Unique identifier for the variable to be created.
             value (str): The value that will be subbed for the name when executing.
-            tags (Sequence[str] | None): Optional sequence of tag names to associate with the variable.
 
         Returns:
             Variable: The created Variable object.
@@ -44,12 +41,8 @@ class VariableRepository(BaseRepository[Variable]):
         """
         name = name.strip() if name else None
         self.validator.validate_create(name=name, value=value)
-        tags_actual = self._get_tags_by_name(*tags or [])
         try:
-            with db.atomic():
-                var = Variable.create(name=name, value=value)
-                self._attach_tags(var, tags_actual)
-                return var
+            return Variable.create(name=name, value=value)
         except IntegrityError as exc:
             if name is not None and self._is_unique_name_violation(exc):
                 raise NameConflictError(name=name) from exc
@@ -156,10 +149,18 @@ class VariableRepository(BaseRepository[Variable]):
         if not tags:
             return TagAttachResult(added=[], existing=[])
         tags_actual = self._get_tags_by_name(*tags)
-        variable = self.get_by_name(name)
+        var = self.get_by_name(name)
         try:
             with db.atomic():
-                return self._attach_tags(variable, tags_actual)
+                added = []
+                existing = []
+                for tag in tags_actual:
+                    var_tag, created = VariableTag.get_or_create(variable=var, tag=tag)
+                    if created:
+                        added.append(tag.name)
+                    else:
+                        existing.append(tag.name)
+                return TagAttachResult(added=added, existing=existing)
         except UnknownTagError:
             raise
         except IntegrityError as exc:
@@ -308,30 +309,6 @@ class VariableRepository(BaseRepository[Variable]):
             return False
         var.delete_instance()
         return True
-
-    def _attach_tags(self, var: Variable, tags: Sequence[Tag]) -> TagAttachResult:
-        """
-        Attaches tags to the given variable. If a tag is already associated with the
-        variable, it is grouped under existing tags; otherwise, it is added to newly
-        attached tags.
-
-        Args:
-            var (Variable): The variable to which tags are to be attached.
-            tags (Sequence[Tag]): A sequence of tags to be attached to the variable.
-
-        Returns:
-            TagAttachResult: An object containing lists of newly added and
-            previously existing tags.
-        """
-        added = []
-        existing = []
-        for tag in tags:
-            var_tag, created = VariableTag.get_or_create(variable=var, tag=tag)
-            if created:
-                added.append(tag.name)
-            else:
-                existing.append(tag.name)
-        return TagAttachResult(added=added, existing=existing)
 
     def _is_unique_variable_tag_violation(self, exc: IntegrityError) -> bool:
         msg = str(exc)
