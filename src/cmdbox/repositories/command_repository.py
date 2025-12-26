@@ -94,7 +94,7 @@ class CommandRepository(BaseRepository[Command]):
         appropriate actions are taken.
 
         Args:
-            command: The command to update.
+            command (Command): The command to update.
             **fields: Arbitrary keyword arguments representing the fields to update.
                 Supported fields include 'alias', 'template', and 'description'.
 
