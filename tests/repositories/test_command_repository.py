@@ -8,9 +8,12 @@ from cmdbox.repositories.errors import (
     AliasConflictError,
     UnknownTagError,
     UnknownAliasError,
+    TagAttachError,
+    TagDetachError,
 )
 from cmdbox.models import Command, Tag, CommandTag
 from cmdbox.repositories.command_repository import CommandRepository
+from cmdbox.repositories.results import TagDetachResult
 
 
 class TestCommandRepository(unittest.TestCase):
@@ -62,6 +65,10 @@ class TestCommandRepository(unittest.TestCase):
         self.cmd_tag_five = CommandTag.create(
             command=self.cmd_three, tag=self.tag_three
         )
+
+    # =================================================================================
+    # SECTION: CREATE TESTS
+    # =================================================================================
 
     def test_create(self):
         command = self.repo.create(
@@ -148,6 +155,10 @@ class TestCommandRepository(unittest.TestCase):
         self.assertTrue(isinstance(command, Command))
         self.assertEqual("test", command.alias)
 
+    # =================================================================================
+    # SECTION: GET TESTS
+    # =================================================================================
+
     def test_get_command_by_alias(self):
         """Test retrieving a command by its alias."""
         command = Command.create(
@@ -192,6 +203,10 @@ class TestCommandRepository(unittest.TestCase):
     def test_get_command_allows_unicode_query(self):
         Command.create(alias="git-✨", template="echo test", description="Test command")
         self.repo.get_by_alias(alias="git-✨")
+
+    # =================================================================================
+    # SECTION: UPDATE TESTS
+    # =================================================================================
 
     def test_update_command_alias(self):
         """Test updating the alias of a command."""
@@ -284,6 +299,10 @@ class TestCommandRepository(unittest.TestCase):
         self.repo.update(cmd_alias="test", alias=" test2 ")
         self.assertEqual("test2", Command.get(Command.id == cmd.id).alias)
 
+    # =================================================================================
+    # SECTION: LIST TESTS
+    # =================================================================================
+
     def test_list_all_works(self):
         """Test listing all commands."""
         self._create_command_group()
@@ -355,6 +374,10 @@ class TestCommandRepository(unittest.TestCase):
         commands = self.repo.list_all(limit=0)
         self.assertEqual(0, len(commands))
 
+    # =================================================================================
+    # SECTION: LIST BY TAG TESTS
+    # =================================================================================
+
     def test_list_by_tag(self):
         self._create_command_group()
         self._tag_command_group()
@@ -391,6 +414,10 @@ class TestCommandRepository(unittest.TestCase):
         self._tag_command_group()
         cmds = self.repo.list_by_tag(["tag_one", "tag_three"], limit=2)
         self.assertEqual(2, len(cmds))
+
+    # =================================================================================
+    # SECTION: SEARCH TESTS
+    # =================================================================================
 
     def test_search_empty_term_returns_empty_list(self):
         self._create_command_group()
@@ -454,6 +481,10 @@ class TestCommandRepository(unittest.TestCase):
         self.assertEqual(self.cmd_one, commands[3])
         self.assertEqual(self.cmd_two, commands[4])
 
+    # =================================================================================
+    # SECTION: DELETE TESTS
+    # =================================================================================
+
     def testa_delete_functions_correctly(self):
         self._create_command_group()
         self.assertEqual(5, Command.select().count())
@@ -507,7 +538,7 @@ class TestCommandTagging(unittest.TestCase):
     def test_add_tag(self):
         cmd = Command.create(alias="test_cmd", template="echo test")
         tag = Tag.create(name="test_tag", description="test_description")
-        results = self.repo.add_tags(alias="test_cmd", tags=["test_tag"])
+        results = self.repo.add_tags(command=cmd, tags=[tag])
         cmd_tag = CommandTag.get(command=cmd, tag=tag)
         self.assertTrue(isinstance(cmd_tag, CommandTag))
         self.assertEqual("test_tag", results.added[0])
@@ -517,7 +548,7 @@ class TestCommandTagging(unittest.TestCase):
         cmd = Command.create(alias="test_cmd", template="echo test")
         tag1 = Tag.create(name="test_tag1", description="test_description1")
         tag2 = Tag.create(name="test_tag2", description="test_description2")
-        results = self.repo.add_tags(alias="test_cmd", tags=["test_tag1", "test_tag2"])
+        results = self.repo.add_tags(command=cmd, tags=[tag1, tag2])
         fetched_cmd_tag1 = CommandTag.get(command=cmd, tag=tag1)
         fetched_cmd_tag2 = CommandTag.get(command=cmd, tag=tag2)
         self.assertTrue(isinstance(fetched_cmd_tag1, CommandTag))
@@ -531,32 +562,32 @@ class TestCommandTagging(unittest.TestCase):
         tag1 = Tag.create(name="test_tag1", description="test_description1")
         cmd_tag1 = CommandTag.create(command=cmd, tag=tag1)
         tag2 = Tag.create(name="test_tag2", description="test_description2")
-        results = self.repo.add_tags(alias="test_cmd", tags=["test_tag1", "test_tag2"])
+        results = self.repo.add_tags(command=cmd, tags=[tag1, tag2])
         self.assertEqual(1, len(results.added))
         self.assertEqual(1, len(results.existing))
 
     def test_add_tag_with_no_tags_does_nothing(self):
         cmd = Command.create(alias="test_cmd", template="echo test")
-        results = self.repo.add_tags(alias="test_cmd", tags=[])
+        results = self.repo.add_tags(command=cmd, tags=[])
         self.assertEqual(0, len(results.added))
         self.assertEqual(0, len(results.existing))
 
     def test_add_tag_with_non_existent_tag_raises_exception(self):
-        Command.create(alias="test_cmd", template="echo test")
-        with self.assertRaises(UnknownTagError):
-            self.repo.add_tags(alias="test_cmd", tags=["invalid_tag"])
+        cmd = Command.create(alias="test_cmd", template="echo test")
+        with self.assertRaises(TagAttachError):
+            self.repo.add_tags(command=cmd, tags=[None])
 
     def test_add_tag_with_non_existent_command_alias_raises_exception(self):
-        Tag.create(name="test_tag", description="test_description")
-        with self.assertRaises(UnknownAliasError):
-            self.repo.add_tags(alias="invalid_alias", tags=["test_tag"])
+        tag = Tag.create(name="test_tag", description="test_description")
+        with self.assertRaises(TagAttachError):
+            self.repo.add_tags(command=None, tags=[tag])
 
     def test_double_tagging_does_not_raise_error(self):
         cmd = Command.create(alias="test_cmd", template="echo test")
         tag = Tag.create(name="test_tag")
         cmd_tag = CommandTag.create(command=cmd, tag=tag)
 
-        results = self.repo.add_tags(alias="test_cmd", tags=["test_tag"])
+        results = self.repo.add_tags(command=cmd, tags=[tag])
         self.assertTrue(isinstance(cmd_tag, CommandTag))
         self.assertEqual(0, len(results.added))
         self.assertEqual("test_tag", results.existing[0])
@@ -564,20 +595,22 @@ class TestCommandTagging(unittest.TestCase):
     def test_add_tag_is_atomic_and_no_tags_are_added_if_one_fails(self):
         cmd = Command.create(alias="test_cmd", template="echo test")
         tag = Tag.create(name="test_tag")
-        with self.assertRaises(UnknownTagError):
-            self.repo.add_tags(alias="test_cmd", tags=["test_tag", "invalid_tag"])
+        with self.assertRaises(TagAttachError):
+            self.repo.add_tags(command=cmd, tags=[tag, None])
         self.assertEqual(0, CommandTag.select().count())
 
     def test_remove_tag(self):
         self._create_cmd_tags()
-        CommandTag.get(command=self.cmd_one, tag=self.tag_one)
-        self.repo.remove_tags(alias="cmd_one", tags=["tag_one"])
+        cmd = CommandTag.get(command=self.cmd_one, tag=self.tag_one)
+        self.repo.remove_tags(command=cmd, tags=[self.tag_one])
         with self.assertRaises(DoesNotExist):
             CommandTag.get(command=self.cmd_one, tag=self.tag_one)
 
     def test_remove_multiple_tags(self):
         self._create_cmd_tags()
-        result = self.repo.remove_tags(alias="cmd_two", tags=["tag_one", "tag_two"])
+        result = self.repo.remove_tags(
+            command=self.cmd_two, tags=[self.tag_one, self.tag_two]
+        )
         self.assertEqual(2, len(result.removed))
         self.assertEqual(0, len(result.not_attached))
         with self.assertRaises(DoesNotExist):
@@ -586,7 +619,9 @@ class TestCommandTagging(unittest.TestCase):
 
     def test_remove_tag_with_mix_of_existing_and_non_existing_tagged_commands(self):
         self._create_cmd_tags()
-        result = self.repo.remove_tags(alias="cmd_one", tags=["tag_one", "tag_two"])
+        result = self.repo.remove_tags(
+            command=self.cmd_one, tags=[self.tag_one, self.tag_two]
+        )
         self.assertEqual(1, len(result.removed))
         self.assertEqual(1, len(result.not_attached))
         with self.assertRaises(DoesNotExist):
@@ -594,31 +629,32 @@ class TestCommandTagging(unittest.TestCase):
 
     def test_remove_tag_with_no_tags_does_nothing(self):
         self._create_cmd_tags()
-        result = self.repo.remove_tags(alias="cmd_one", tags=[])
+        result = self.repo.remove_tags(command=self.cmd_one, tags=[])
         self.assertEqual(0, len(result.removed))
         self.assertEqual(0, len(result.not_attached))
 
     def test_remove_tag_with_non_existent_tag_raises_exception(self):
         self._create_cmd_tags()
-        with self.assertRaises(UnknownTagError):
-            self.repo.remove_tags(alias="cmd_one", tags=["invalid_tag"])
+        with self.assertRaises(TagDetachError):
+            self.repo.remove_tags(command=self.cmd_one, tags=[None])
 
-    def test_remove_tag_with_non_existent_command_alias_raises_exception(self):
+    def test_remove_tag_with_non_existent_command_alias_does_not_raise_exception(self):
         self._create_cmd_tags()
-        with self.assertRaises(UnknownAliasError):
-            self.repo.remove_tags(alias="invalid_alias", tags=["tag_one"])
+        result = self.repo.remove_tags(command=None, tags=[self.tag_one])
+        self.assertEqual(0, len(result.removed))
+        self.assertEqual(1, len(result.not_attached))
 
     def test_removing_a_tag_twice_does_not_raise_error(self):
         self._create_cmd_tags()
-        r1 = self.repo.remove_tags(alias="cmd_two", tags=["tag_one"])
+        r1 = self.repo.remove_tags(command=self.cmd_two, tags=[self.tag_one])
         self.assertEqual(1, len(r1.removed))
         self.assertEqual(0, len(r1.not_attached))
-        r2 = self.repo.remove_tags(alias="cmd_two", tags=["tag_one"])
+        r2 = self.repo.remove_tags(command=self.cmd_two, tags=[self.tag_one])
         self.assertEqual(0, len(r2.removed))
         self.assertEqual(1, len(r2.not_attached))
 
     def test_remove_tag_is_atomic_and_no_tags_are_removed_if_one_fails(self):
         self._create_cmd_tags()
-        with self.assertRaises(UnknownTagError):
-            self.repo.remove_tags(alias="cmd_two", tags=["tag_one", "invalid_tag"])
+        with self.assertRaises(TagDetachError):
+            self.repo.remove_tags(command=self.cmd_two, tags=[self.tag_one, None])
         CommandTag.get(command=self.cmd_one, tag=self.tag_one)

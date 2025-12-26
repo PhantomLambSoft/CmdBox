@@ -135,7 +135,7 @@ class CommandRepository(BaseRepository[Command]):
                 raise AliasConflictError(alias=alias) from exc
             raise
 
-    def add_tags(self, alias: str, tags: Sequence[str]) -> TagAttachResult:
+    def add_tags(self, command: Command, tags: Sequence[Tag]) -> TagAttachResult:
         """
         Attach tags to a command identified by its alias.
 
@@ -146,9 +146,9 @@ class CommandRepository(BaseRepository[Command]):
         appropriate error is raised.
 
         Args:
-            alias (str): The alias identifier of the command to which the tags are to
+            command (Command): The command to which the tags are to
                 be attached.
-            tags (Sequence[str]): A collection of tag names to be attached to the
+            tags (Sequence[Tag]): A collection of tags to be attached to the
                 command.
 
         Returns:
@@ -161,13 +161,11 @@ class CommandRepository(BaseRepository[Command]):
         """
         if not tags:
             return TagAttachResult(added=[], existing=[])
-        tags_actual = self._get_tags_by_name(*tags)
-        command = self.get_by_alias(alias)
         try:
             with db.atomic():
                 added = []
                 existing = []
-                for tag in tags_actual:
+                for tag in tags:
                     cmd_tag, created = CommandTag.get_or_create(
                         command=command, tag=tag
                     )
@@ -181,7 +179,7 @@ class CommandRepository(BaseRepository[Command]):
         except IntegrityError as exc:
             raise TagAttachError("Could not attach tags to command.") from exc
 
-    def remove_tags(self, alias: str, tags: Sequence[str]) -> TagDetachResult:
+    def remove_tags(self, command: Command, tags: Sequence[Tag]) -> TagDetachResult:
         """
         Removes tags from a command identified by the provided alias. The method first validates
         the tags to ensure they exist in the database, then attempts to remove the associations
@@ -190,9 +188,8 @@ class CommandRepository(BaseRepository[Command]):
         the `removed` list. Any errors during detachment raise a `TagDetachError`.
 
         Args:
-            alias (str): The unique identifier or alias of the command from which the tags will
-                be detached.
-            tags (Sequence[str]): A list of tag names to be detached from the command.
+            command (Command): The command from which the tags will be detached.
+            tags (Sequence[Tag]): A list of tags to be detached from the command.
 
         Returns:
             TagDetachResult: Object that contains two lists:
@@ -205,13 +202,11 @@ class CommandRepository(BaseRepository[Command]):
         """
         if not tags:
             return TagDetachResult(removed=[], not_attached=[])
-        tags_actual = self._get_tags_by_name(*tags)
-        command = self.get_by_alias(alias)
         removed = []
         not_attached = []
         try:
             with db.atomic():
-                for tag in tags_actual:
+                for tag in tags:
                     deleted = (
                         CommandTag.delete()
                         .where(
@@ -225,6 +220,8 @@ class CommandRepository(BaseRepository[Command]):
                         not_attached.append(tag.name)
         except IntegrityError as exc:
             raise TagDetachError("Could not detach tags from command.") from exc
+        except AttributeError:
+            raise TagDetachError("Invalid tag provided.")
         return TagDetachResult(removed=removed, not_attached=not_attached)
 
     def list_all(
