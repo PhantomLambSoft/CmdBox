@@ -1,5 +1,6 @@
 import unittest
 
+from mypy.checkpattern import self_match_type_names
 from peewee import DoesNotExist
 
 from cmdbox.database import init_database, db
@@ -45,6 +46,20 @@ class TestVariableRepository(unittest.TestCase):
         )
         self.var_four = Variable.create(name="test4", value="test_value_b Bee Bee Bee")
         self.var_five = Variable.create(name="test5", value="test_value_a Bee Goldfish")
+
+    def _tag_variable_group(self):
+        self.tag_one = Tag.create(name="tag_one")
+        self.tag_two = Tag.create(name="tag_two")
+        self.tag_three = Tag.create(name="tag_three")
+        self.var_tag_one = VariableTag.create(variable=self.var_one, tag=self.tag_one)
+        self.var_tag_two = VariableTag.create(variable=self.var_two, tag=self.tag_one)
+        self.var_tag_three = VariableTag.create(variable=self.var_two, tag=self.tag_two)
+        self.var_tag_four = VariableTag.create(
+            variable=self.var_two, tag=self.tag_three
+        )
+        self.var_tag_five = VariableTag.create(
+            variable=self.var_three, tag=self.tag_three
+        )
 
     # =================================================================================
     # SECTION: CREATE TESTS
@@ -248,6 +263,48 @@ class TestVariableRepository(unittest.TestCase):
         self._create_variable_group()
         vars = self.repo.list_all(limit=None)
         self.assertEqual(5, len(vars))
+
+    # =================================================================================
+    # SECTION: LIST BY TAG TESTS
+    # =================================================================================
+
+    def test_list_by_tag(self):
+        self._create_variable_group()
+        self._tag_variable_group()
+        vars = self.repo.list_by_tag([self.tag_one])
+        self.assertEqual(2, len(vars))
+        self.assertTrue(self.var_one in vars)
+        self.assertTrue(self.var_two in vars)
+
+    def test_list_by_multiple_tags(self):
+        self._create_variable_group()
+        self._tag_variable_group()
+        vars = self.repo.list_by_tag([self.tag_one, self.tag_three])
+        self.assertEqual(3, len(vars))
+        self.assertTrue(self.var_one in vars)
+        self.assertTrue(self.var_two in vars)
+        self.assertTrue(self.var_three in vars)
+
+    def test_list_by_null_tag_returns_empty_list(self):
+        self._create_variable_group()
+        self._tag_variable_group()
+        vars = self.repo.list_by_tag([None])
+        self.assertEqual([], vars)
+
+    def test_list_by_tag_order_by_template_changes_order(self):
+        self._create_variable_group()
+        self._tag_variable_group()
+        vars = self.repo.list_by_tag([self.tag_one], order_by="value")
+        self.assertEqual(2, len(vars))
+        self.assertEqual(self.var_two, vars[0])
+        self.assertEqual(self.var_one, vars[1])
+
+    def test_list_by_tag_limits_apply(self):
+        self._create_variable_group()
+        self._tag_variable_group()
+        vars = self.repo.list_by_tag([self.tag_one], limit=1)
+        self.assertEqual(1, len(vars))
+        self.assertTrue(self.var_one in vars)
 
     # =================================================================================
     # SECTION: SEARCH TESTS

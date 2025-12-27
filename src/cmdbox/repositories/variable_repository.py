@@ -234,7 +234,7 @@ class VariableRepository(BaseRepository[Variable]):
 
     def list_by_tag(
         self,
-        tags: Sequence[str],
+        tags: Sequence[Tag],
         order_by: str | Sequence[str] = "name",
         limit: int = 25,
     ) -> list[Variable]:
@@ -247,7 +247,7 @@ class VariableRepository(BaseRepository[Variable]):
         `order_by` field and limited by the `limit` argument.
 
         Args:
-            tags (Sequence[str]): A list of tag names to filter variables by.
+            tags (Sequence[Tag]): A list of Tag objects to filter variables by.
             order_by (str | Sequence[str]): Criteria to order the resulting variable
                 list. Defaults to "name".
             limit (int): The maximum number of variables to return. Defaults to 25.
@@ -259,12 +259,11 @@ class VariableRepository(BaseRepository[Variable]):
         Raises:
             UnknownTagError: If one or more provided tags do not exist in the database.
         """
-        tags_actual = self._get_tags_by_name(*tags)
         ordering = self._resolve_ordering(order_by)
         return list(
             Variable.select()
             .join(VariableTag)
-            .where(VariableTag.tag << tags_actual)
+            .where(VariableTag.tag << tags)
             .order_by(*ordering)
             .distinct()
             .limit(limit)
