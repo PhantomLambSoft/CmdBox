@@ -410,7 +410,7 @@ class TestCommandRepository(unittest.TestCase):
         self.assertTrue(self.cmd_two in cmds)
         self.assertTrue(self.cmd_three in cmds)
 
-    def test_list_by_nonexistent_tag_raises_error(self):
+    def test_list_by_null_tag_returns_empty_list(self):
         self._create_command_group()
         cmds = self.repo.list_by_tag([None])
         self.assertEqual([], cmds)
