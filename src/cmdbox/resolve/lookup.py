@@ -1,6 +1,8 @@
 from typing import Protocol, Optional
 
 from .types import CommandRecord, VariableRecord
+from ..repositories.command_repository import CommandRepository
+from ..repositories.variable_repository import VariableRepository
 
 
 class ResolverLookup(Protocol):
@@ -29,6 +31,36 @@ class ResolverLookup(Protocol):
 
     def get_variable(self, name: str) -> Optional[VariableRecord]:
         pass
+
+
+class RepoLookup(ResolverLookup):
+    """
+    Provides lookup functionality for commands and variables stored in repositories.
+
+    This class serves as an adapter for resolving commands and variables from their
+    respective repositories. Command and variable records can be retrieved based on
+    aliases or names respectively. It is intended to abstract the underlying repository
+    interaction by providing an easy interface for lookups.
+
+    Attributes:
+        cmd_repo (CommandRepository): Repository for storing and retrieving command records.
+        var_repo (VariableRepository): Repository for managing and accessing variable records.
+    """
+    def __init__(self, cmd_repo: CommandRepository, var_repo: VariableRepository):
+        self._cmd_repo = cmd_repo
+        self._var_repo = var_repo
+
+    def get_command(self, alias: str) -> Optional[CommandRecord]:
+        cmd = self._cmd_repo.get_by_alias(alias)
+        if cmd is None:
+            return None
+        return CommandRecord(alias=cmd.alias, template=cmd.template)
+
+    def get_variable(self, name: str) -> Optional[VariableRecord]:
+        var = self._var_repo.get_by_name(name)
+        if var is None:
+            return None
+        return VariableRecord(name=var.name, value=var.value)
 
 
 class MemoizedLookup(ResolverLookup):
