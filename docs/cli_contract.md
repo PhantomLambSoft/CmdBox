@@ -105,10 +105,22 @@ Options:
 --force                 Overwrite existing command if alias already exists.
 ```
 
+Prompts:
+If required fields are not supplied, the user will be prompted to enter them.
+* Alias prompt should be simple one line entry.
+* Template prompt should be a multi-line entry.
+* Description prompt should be a single line entry.
+* Tags prompt should be a comma separated list of tags.
+
 Behavior:
 
 * Saves a new command.
-* If alias exists and --force is not specified: fail with AliasExists.
+* If alias exists: fail with AliasExists.
+* Allow users to enter a command by specifying a json or yaml template.
+ - Some flag will open the users preferred text editor with a template already in place for them to fill in with the
+desired command information.  The file will be parsed and the command saved in the database like all other commands, but
+the file will also be saved in an app specified directory in case the user wants to edit it later.
+ - This behavior will also be implemented for editing a command.
 
 Example:
 
