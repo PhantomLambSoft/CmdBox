@@ -16,6 +16,7 @@ dependencies = [
     "typer>=0.21.0",
     "rich>=14.0.0",
     "peewee>=3.18.3",
+    "prompt-toolkit>=3.0.52",
     "pyyaml>=6.0.0",
 ]
 
@@ -29,7 +30,7 @@ dev = [
 ]
 
 [project.scripts]
-cb = "cmdbox.cli:app"
+cb = "cmdbox.cli.app:app"
 
 [tool.setuptools.packages.find]
 where = ["src"]
