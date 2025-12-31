@@ -1,16 +1,29 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from cmdbox.services.command_services import CommandServices
-from cmdbox.models import Command, Tag
+from cmdbox.models import Command, Tag, ALL_MODELS
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
+from cmdbox.database import get_db, ensure_schema, db
 
 
 class TestCommandServices(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        get_db(testing=True)
+        ensure_schema()
+
+    @classmethod
+    def tearDownClass(cls):
+        db.drop_tables(ALL_MODELS)
+        db.close()
 
     def setUp(self):
         self.mock_repo = MagicMock()
         self.mock_tag_repo = MagicMock()
         self.services = CommandServices(self.mock_repo, self.mock_tag_repo)
+        get_db(testing=True)
+        ensure_schema()
 
     @patch("cmdbox.services.command_services.db")
     def test_create_command_without_tags(self, mock_db):
@@ -20,12 +33,13 @@ class TestCommandServices(unittest.TestCase):
         description = "A test command"
         expected_cmd = MagicMock(spec=Command)
         self.mock_repo.create.return_value = expected_cmd
+        self.mock_repo.get_by_alias.return_value = expected_cmd
 
         # Execute
         result = self.services.create_command(alias, template, description)
 
         # Assert
-        self.assertEqual(result, expected_cmd)
+        self.assertEqual(expected_cmd, result)
         self.mock_repo.create.assert_called_once_with(
             alias=alias, template=template, description=description
         )
@@ -43,12 +57,13 @@ class TestCommandServices(unittest.TestCase):
 
         self.mock_tag_repo.get_by_name.side_effect = tags
         self.mock_repo.create.return_value = expected_cmd
+        self.mock_repo.get_by_alias.return_value = expected_cmd
 
         # Execute
         result = self.services.create_command(alias, template, tags=tag_names)
 
         # Assert
-        self.assertEqual(result, expected_cmd)
+        self.assertEqual(expected_cmd, result)
         self.assertEqual(self.mock_tag_repo.get_by_name.call_count, 2)
         self.mock_repo.create.assert_called_once_with(
             alias=alias, template=template, description=None
@@ -222,12 +237,13 @@ class TestCommandServices(unittest.TestCase):
         template = "echo hello"
         expected_cmd = MagicMock(spec=Command)
         self.mock_repo.create.return_value = expected_cmd
+        self.mock_repo.get_by_alias.return_value = expected_cmd
 
         # Execute
         result = self.services.create_command(alias, template, tags=[])
 
         # Assert
-        self.assertEqual(result, expected_cmd)
+        self.assertEqual(expected_cmd, result)
         self.mock_repo.create.assert_called_once_with(
             alias=alias, template=template, description=None
         )

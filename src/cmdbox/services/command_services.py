@@ -1,6 +1,8 @@
 from typing import Sequence
 
-from cmdbox.models import Tag, Command
+from peewee import prefetch
+
+from cmdbox.models import Tag, Command, CommandTag
 from cmdbox.repositories.command_repository import CommandRepository
 from cmdbox.database import db
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
@@ -56,7 +58,10 @@ class CommandServices:
             )
             if tags:
                 self._repo.add_tags(cmd, tags)
-        return cmd
+
+        command = self._repo.get_by_alias(cmd.alias)
+
+        return command
 
     def update_command(self, alias: str, **fields) -> Command:
         """
