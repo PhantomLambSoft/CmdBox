@@ -2,34 +2,31 @@ import unittest
 
 from peewee import DoesNotExist
 
-from cmdbox.database import init_database, db
+from cmdbox.database import db, get_db
 from cmdbox.repositories.errors import (
     ValidationError,
     AliasConflictError,
-    UnknownTagError,
     UnknownAliasError,
     TagAttachError,
     TagDetachError,
     UpdateError,
 )
-from cmdbox.models import Command, Tag, CommandTag
+from cmdbox.models import Command, Tag, CommandTag, ALL_MODELS
 from cmdbox.repositories.command_repository import CommandRepository
-from cmdbox.repositories.results import TagDetachResult
+from cmdbox.database import ensure_schema
 
 
 class TestCommandRepository(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([Command, Tag, CommandTag])
-        db.create_tables([Command, Tag, CommandTag])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        db.drop_tables([Command, Tag, CommandTag])
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):
@@ -518,15 +515,13 @@ class TestCommandTagging(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([Command, Tag, CommandTag])
-        db.create_tables([Command, Tag, CommandTag])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        db.drop_tables([Command, Tag, CommandTag])
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):

@@ -2,14 +2,14 @@ import unittest
 
 from peewee import DoesNotExist
 
-from cmdbox.database import init_database, db
+from cmdbox.database import db, get_db, ensure_schema
 from cmdbox.repositories.errors import (
     ValidationError,
     NameConflictError,
     UnknownNameError,
     UpdateError,
 )
-from cmdbox.models import Tag
+from cmdbox.models import Tag, ALL_MODELS
 from cmdbox.repositories.tag_repository import TagRepository
 
 
@@ -17,15 +17,13 @@ class TestTagRepository(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([Tag])
-        db.create_tables([Tag])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        db.drop_tables([Tag])
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):

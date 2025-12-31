@@ -1,19 +1,17 @@
 import unittest
 
-from mypy.checkpattern import self_match_type_names
 from peewee import DoesNotExist
 
-from cmdbox.database import init_database, db
+from cmdbox.database import db, get_db, ensure_schema
 from cmdbox.repositories.errors import (
     ValidationError,
     NameConflictError,
-    UnknownTagError,
     UnknownNameError,
     UpdateError,
     TagAttachError,
     TagDetachError,
 )
-from cmdbox.models import Variable, Tag, VariableTag
+from cmdbox.models import Variable, Tag, VariableTag, ALL_MODELS
 from cmdbox.repositories.variable_repository import VariableRepository
 
 
@@ -21,15 +19,13 @@ class TestVariableRepository(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([Variable, Tag, VariableTag])
-        db.create_tables([Variable, Tag, VariableTag])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        db.drop_tables([Variable, Tag, VariableTag])
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):
@@ -383,15 +379,13 @@ class TestVariableTagging(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([Variable, Tag, VariableTag])
-        db.create_tables([Variable, Tag, VariableTag])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        db.drop_tables([Variable, Tag, VariableTag])
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):
