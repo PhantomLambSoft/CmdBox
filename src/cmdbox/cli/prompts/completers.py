@@ -88,15 +88,15 @@ class TagCompleter(Completer):
     comma-separated list of tags.
 
     Attributes:
-        _get_tags (Callable[[], Sequence[str]]): A function that retrieves the list of
-            available tags.
+        _get_tags (Callable[[str], Sequence[str]]): A function that retrieves the list of
+            available tags based on the search query provided.
         _config (TagCompleterConfig): Configuration object that determines completion
             behavior, including case sensitivity, scoring thresholds, and maximum results.
     """
 
     def __init__(
         self,
-        get_tags: Callable[[], Sequence[str]],
+        get_tags: Callable[[str], Sequence[str]],
         config: TagCompleterConfig | None = None,
     ):
         self._get_tags = get_tags
@@ -130,9 +130,9 @@ class TagCompleter(Completer):
             _normalize_tag(active) if self._config.case_insensitive else active.strip()
         )
         if self._config.case_insensitive:
-            tag_pool = [(t, _normalize_tag(t)) for t in self._get_tags()]
+            tag_pool = [(t, _normalize_tag(t)) for t in self._get_tags(active)]
         else:
-            tag_pool = [(t, t.strip()) for t in self._get_tags()]
+            tag_pool = [(t, t.strip()) for t in self._get_tags(active)]
 
         # Do not suggest tags already used in the list
         already_raw = prefix.split(",")
