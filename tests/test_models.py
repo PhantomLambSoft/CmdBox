@@ -1,23 +1,21 @@
 import unittest
 from datetime import datetime
 
-from cmdbox.database import db, init_database
-from cmdbox.models import Command, Variable, Tag, CommandTag, VariableTag
+from cmdbox.database import db, get_db, ensure_schema
+from cmdbox.models import Command, Variable, Tag, CommandTag, VariableTag, ALL_MODELS
 
 
 class TestCommandModel(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([Command])
-        db.create_tables([Command])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
-        db.drop_tables([Command])
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):
@@ -105,14 +103,13 @@ class TestVariableModule(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([Variable])
-        db.create_tables([Variable])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
         # Close database connection after all tests
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):
@@ -181,13 +178,12 @@ class TestTagModule(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([Tag])
-        db.create_tables([Tag])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):
@@ -229,13 +225,12 @@ class TestCommandTagModule(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([CommandTag, Command, Tag])
-        db.create_tables([CommandTag, Command, Tag])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):
@@ -268,13 +263,12 @@ class TestVariableTagModule(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        init_database(testing=True)
-        db.connect()
-        db.bind([VariableTag, Variable, Tag])
-        db.create_tables([VariableTag, Variable, Tag])
+        get_db(testing=True)
+        ensure_schema()
 
     @classmethod
     def tearDownClass(cls):
+        db.drop_tables(ALL_MODELS)
         db.close()
 
     def setUp(self):
