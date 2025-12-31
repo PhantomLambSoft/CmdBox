@@ -107,6 +107,7 @@ class TagServices:
         self,
         query: str,
         fields: str | Sequence[str] | None = ("name", "description"),
+        limit: int = 25,
     ) -> list[Tag]:
         """
         Searches for tags that match the given query across specified fields.
@@ -119,6 +120,7 @@ class TagServices:
             query (str): The search term used for matching against the repository.
             fields (str | Sequence[str] | None): The fields to perform the search within. Defaults
                 to ("name", "description"). If None, no specific fields are targeted.
+            limit (int, optional): The maximum number of tags to return. Default is 25.
 
         Returns:
             list[Tag]: A list of Tag objects that match the search query.

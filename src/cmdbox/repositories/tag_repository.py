@@ -65,7 +65,10 @@ class TagRepository(BaseRepository[Tag]):
         return list(Tag.select().order_by(*ordering).limit(limit))
 
     def search(
-        self, query: str, fields: str | Sequence[str] | None = ("name", "description")
+        self,
+        query: str,
+        fields: str | Sequence[str] | None = ("name", "description"),
+        limit: int = 25,
     ) -> list[Tag]:
         return self._search(query, "name", fields)
 

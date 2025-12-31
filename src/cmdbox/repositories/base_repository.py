@@ -16,6 +16,7 @@ class BaseRepository(Generic[M]):
         query: str,
         secondary_ordering: str,
         fields: str | Sequence[str] | None = None,
+        limit: int = 25,
     ) -> list[M]:
         """
         Searches for commands matching the given query across specified fields.
@@ -29,9 +30,11 @@ class BaseRepository(Generic[M]):
 
         Args:
             query (str): The search query to match in the specified fields.
+            secondary_ordering (str): The field to sort the results by, after relevance.
             fields (str | Sequence[str] | None): The fields to search within. By
                 default, searches within "name" and "description". Can be a single field
                 name as a string or a sequence of field names.
+            limit (int): The maximum number of results to return. Default is 25.
 
         Returns:
             list[Command]: A list of Command objects matching the search query, sorted
@@ -77,6 +80,7 @@ class BaseRepository(Generic[M]):
                 relevance.desc(),
                 getattr(self.model, secondary_ordering),
             )
+            .limit(limit)
         )
         return list(query_obj)
 
