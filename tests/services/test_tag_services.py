@@ -89,8 +89,8 @@ class TestTagServices(unittest.TestCase):
         self.mock_repo.search.return_value = expected_tags
 
         # Execute
-        result = self.services.search(query, fields)
+        result = self.services.search(query, fields, limit=10)
 
         # Assert
         self.assertEqual(result, expected_tags)
-        self.mock_repo.search.assert_called_once_with(query, fields)
+        self.mock_repo.search.assert_called_once_with(query, fields, 10)
