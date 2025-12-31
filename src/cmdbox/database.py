@@ -7,6 +7,7 @@ DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 db = SqliteDatabase(None)
+_db_initialized = False
 
 
 def init_database(testing: bool = False) -> None:
@@ -23,6 +24,9 @@ def init_database(testing: bool = False) -> None:
             (in-memory) database. If None, the value is derived from the
             `CMDBOX_ENV` environment variable. Defaults to None.
     """
+    global _db_initialized
+    if _db_initialized:
+        return
     if testing is None:
         env = os.environ.get("CMDBOX_ENV", "production")
         testing = env == "testing"
@@ -32,9 +36,18 @@ def init_database(testing: bool = False) -> None:
     else:
         db_path = str(DB_PATH)
     db.init(db_path)
+    _db_initialized = True
 
 
-def init_production_db(models: list[type]) -> None:
-    init_database(False)
-    db.connect(reuse_if_open=True)
-    db.create_tables(models)
+def get_db(testing: bool = False) -> SqliteDatabase:
+    init_database(testing)
+    if db.is_closed():
+        db.connect(reuse_if_open=True)
+    return db
+
+
+def ensure_schema() -> None:
+    from cmdbox.models import ALL_MODELS
+
+    _db = get_db()
+    _db.create_tables(ALL_MODELS, safe=True)

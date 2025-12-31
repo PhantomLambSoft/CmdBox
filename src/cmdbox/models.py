@@ -133,3 +133,6 @@ class VariableTag(BaseModel):
 
     class Meta:
         indexes = ((("variable", "tag"), True),)
+
+
+ALL_MODELS = [Command, Variable, Tag, CommandTag, VariableTag]
