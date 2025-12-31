@@ -30,7 +30,7 @@ dev = [
 ]
 
 [project.scripts]
-cb = "cmdbox.cli.app:app"
+cb = "cmdbox.cli.app:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
