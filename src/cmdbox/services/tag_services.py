@@ -125,4 +125,4 @@ class TagServices:
         Returns:
             list[Tag]: A list of Tag objects that match the search query.
         """
-        return self._repo.search(query, fields)
+        return self._repo.search(query, fields, limit)

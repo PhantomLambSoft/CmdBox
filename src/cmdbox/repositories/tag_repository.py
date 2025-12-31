@@ -70,7 +70,7 @@ class TagRepository(BaseRepository[Tag]):
         fields: str | Sequence[str] | None = ("name", "description"),
         limit: int = 25,
     ) -> list[Tag]:
-        return self._search(query, "name", fields)
+        return self._search(query, "name", fields, limit=limit)
 
     def delete(self, tag: Tag) -> bool:
         if not tag:
