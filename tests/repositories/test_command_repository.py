@@ -508,6 +508,11 @@ class TestCommandRepository(unittest.TestCase):
         self.assertEqual(self.cmd_one, commands[3])
         self.assertEqual(self.cmd_two, commands[4])
 
+    def test_search_limit_is_applied(self):
+        self._create_command_group()
+        commands = self.repo.search("echo", fields=["template", "description"], limit=3)
+        self.assertEqual(3, len(commands))
+
     # =================================================================================
     # SECTION: DELETE TESTS
     # =================================================================================

@@ -183,6 +183,7 @@ class CommandServices:
         self,
         query: str,
         fields: str | Sequence[str] | None = ("alias", "description"),
+        limit: int = 25,
     ) -> list[Command]:
         """
         Searches for commands that match the given query across specified fields.
@@ -195,11 +196,12 @@ class CommandServices:
             query (str): The search term used for matching against the repository.
             fields (str | Sequence[str] | None): The fields to perform the search within. Defaults
                 to ("alias", "description"). If None, no specific fields are targeted.
+            limit (int): The maximum number of results to return. Defaults to 25.
 
         Returns:
             list[Command]: A list of Command objects that match the search query.
         """
-        return self._repo.search(query, fields)
+        return self._repo.search(query, fields, limit)
 
     def _get_tags(self, tags: Sequence[str] | None) -> list[Tag]:
         """

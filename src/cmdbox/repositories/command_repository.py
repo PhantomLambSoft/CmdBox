@@ -298,7 +298,10 @@ class CommandRepository(BaseRepository[Command]):
         return list(commands.order_by(*ordering).limit(limit))
 
     def search(
-        self, query: str, fields: str | Sequence[str] | None = ("alias", "description")
+        self,
+        query: str,
+        fields: str | Sequence[str] | None = ("alias", "description"),
+        limit: int = 25,
     ) -> list[Command]:
         """
         Searches for commands matching the given query across specified fields.
@@ -313,6 +316,7 @@ class CommandRepository(BaseRepository[Command]):
             fields (str | Sequence[str] | None): The fields to search within. By
                 default, searches within "name" and "description". Can be a single field
                 name as a string or a sequence of field names.
+            limit (int): The maximum number of results to return. Defaults to 25.
 
         Returns:
             list[Command]: A list of Command objects matching the search query, sorted
@@ -321,7 +325,7 @@ class CommandRepository(BaseRepository[Command]):
         Raises:
             ValueError: If any provided field does not exist on the Command model.
         """
-        return self._search(query, "alias", fields)
+        return self._search(query, "alias", fields, limit)
 
     def delete(self, command: Command) -> bool:
         """
