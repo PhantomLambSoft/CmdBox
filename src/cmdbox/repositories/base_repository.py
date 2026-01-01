@@ -47,7 +47,7 @@ class BaseRepository(Generic[M]):
             return []
         if isinstance(fields, str):
             fields = self._get_sequence(fields)
-        if len(fields) == 0:
+        if fields is None or len(fields) == 0:
             return []
         or_clauses = []
         relevance_parts = []
