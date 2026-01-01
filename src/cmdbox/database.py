@@ -1,8 +1,9 @@
 import os
-from pathlib import Path
 from peewee import SqliteDatabase
 
-DB_PATH = Path.home() / ".cmdbox" / "cmdbox.db"
+from cmdbox.core.paths import get_app_data_dir
+
+DB_PATH = get_app_data_dir() / "cmdbox.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
