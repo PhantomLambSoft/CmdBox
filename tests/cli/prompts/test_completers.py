@@ -47,7 +47,7 @@ class TestHelperFunctions(unittest.TestCase):
 class TestTagCompleter(unittest.TestCase):
 
     def test_get_completions_basic(self):
-        get_tags = lambda: ["python", "rust", "cpp"]
+        get_tags = lambda x: ["python", "rust", "cpp"]
         completer = TagCompleter(get_tags)
 
         # Match 'py'
@@ -58,7 +58,7 @@ class TestTagCompleter(unittest.TestCase):
         self.assertEqual(completions[0].start_position, -2)
 
     def test_get_completions_csv(self):
-        get_tags = lambda: ["python", "rust", "cpp", "javascript"]
+        get_tags = lambda x: ["python", "rust", "cpp", "javascript"]
         completer = TagCompleter(get_tags)
 
         # Already has 'python', typing 'r'
@@ -71,7 +71,7 @@ class TestTagCompleter(unittest.TestCase):
         self.assertEqual(completions[0].start_position, -1)
 
     def test_get_completions_exclude_already_used(self):
-        get_tags = lambda: ["python", "rust"]
+        get_tags = lambda x: ["python", "rust"]
         completer = TagCompleter(get_tags)
 
         # Already has 'python', typing 'p' - should not suggest 'python' again
@@ -80,7 +80,7 @@ class TestTagCompleter(unittest.TestCase):
         self.assertEqual(len(completions), 0)
 
     def test_case_sensitivity(self):
-        get_tags = lambda: ["Python", "Rust"]
+        get_tags = lambda x: ["Python", "Rust"]
 
         # Case insensitive (default)
         completer_ci = TagCompleter(get_tags, TagCompleterConfig(case_insensitive=True))
@@ -103,7 +103,7 @@ class TestTagCompleter(unittest.TestCase):
         self.assertEqual(completions2[0].text, "Python")
 
     def test_max_results(self):
-        get_tags = lambda: [f"tag{i}" for i in range(20)]
+        get_tags = lambda x: [f"tag{i}" for i in range(20)]
         completer = TagCompleter(get_tags, TagCompleterConfig(max_results=5))
 
         doc = Document("t")
@@ -111,7 +111,7 @@ class TestTagCompleter(unittest.TestCase):
         self.assertEqual(len(completions), 5)
 
     def test_min_score(self):
-        get_tags = lambda: ["abc", "def"]
+        get_tags = lambda x: ["abc", "def"]
         # abc will score 100 for 'a', def will score 0 (or low)
         completer = TagCompleter(get_tags, TagCompleterConfig(min_score=50))
 
