@@ -24,7 +24,10 @@ class RunService:
     """
 
     def __init__(
-        self, repo: CommandRepository, resolver: Resolver, executor: Executor
+        self,
+        repo: CommandRepository,
+        resolver: Resolver,
+        executor: Executor,
     ) -> None:
         self._repo = repo
         self._resolver = resolver
