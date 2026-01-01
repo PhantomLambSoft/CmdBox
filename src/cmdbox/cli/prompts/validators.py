@@ -32,3 +32,15 @@ class NameValidator(Validator):
             raise ValidationError(message="Name cannot contain spaces")
         if "<" in text or ">" in text:
             raise ValidationError(message="Name cannot contain '<' or '>' characters")
+
+
+class TagNameValidator(Validator):
+
+    def validate(self, document: Document) -> None:
+        text = document.text.strip()
+        if " " in text:
+            raise ValidationError(message="Tag name cannot contain spaces")
+        if "<" in text or ">" in text:
+            raise ValidationError(
+                message="Tag name cannot contain '<' or '>' characters"
+            )
