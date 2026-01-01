@@ -10,6 +10,7 @@ from cmdbox.repositories.errors import (
     UpdateError,
     TagAttachError,
     TagDetachError,
+    UnknownVariableError,
 )
 from cmdbox.models import Variable, Tag, VariableTag, ALL_MODELS
 from cmdbox.repositories.variable_repository import VariableRepository
@@ -145,6 +146,16 @@ class TestVariableRepository(unittest.TestCase):
     def test_get_by_unicode_characters_is_allowed(self):
         Variable.create(name="git-✨", value="test_value")
         self.repo.get_by_name(name="git-✨")
+
+    def test_get_variable_by_id(self):
+        variable = Variable.create(name="test", value="test_value")
+        var = self.repo.get_by_id(variable.id)
+        self.assertEqual(variable, var)
+
+    def test_get_variable_by_invalid_id_raises_exception(self):
+        Variable.create(name="test", value="test_value")
+        with self.assertRaises(UnknownVariableError):
+            self.repo.get_by_id(123456789)
 
     # =================================================================================
     # SECTION: UPDATE TESTS

@@ -10,6 +10,7 @@ from cmdbox.repositories.errors import (
     TagAttachError,
     TagDetachError,
     UpdateError,
+    UnknownCommandError,
 )
 from cmdbox.models import Command, Tag, CommandTag, ALL_MODELS
 from cmdbox.repositories.command_repository import CommandRepository
@@ -201,6 +202,18 @@ class TestCommandRepository(unittest.TestCase):
     def test_get_command_allows_unicode_query(self):
         Command.create(alias="git-✨", template="echo test", description="Test command")
         self.repo.get_by_alias(alias="git-✨")
+
+    def test_get_command_by_id(self):
+        cmd = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
+        command = self.repo.get_by_id(cmd.id)
+        self.assertEqual(cmd, command)
+
+    def test_get_command_by_id_raises_error_for_nonexistent_id(self):
+        Command.create(alias="test", template="echo test", description="Test command")
+        with self.assertRaises(UnknownCommandError):
+            self.repo.get_by_id(cmd_id=999)
 
     # =================================================================================
     # SECTION: UPDATE TESTS

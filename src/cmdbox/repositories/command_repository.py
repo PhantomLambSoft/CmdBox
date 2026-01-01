@@ -12,6 +12,7 @@ from .errors import (
     TagAttachError,
     TagDetachError,
     UpdateError,
+    UnknownCommandError,
 )
 from .results import TagAttachResult, TagDetachResult
 from cmdbox.database import db
@@ -82,6 +83,24 @@ class CommandRepository(BaseRepository[Command]):
         cmd = Command.get_or_none(Command.alias == alias)
         if cmd is None:
             raise UnknownAliasError(alias=alias)
+        return cmd
+
+    def get_by_id(self, cmd_id: int) -> Command:
+        """
+        Retrieves a command by its ID.
+
+        Args:
+            cmd_id (int): The ID of the command to retrieve.
+
+        Returns:
+            Command: The Command instance with the specified ID.
+
+        Raises:
+            UnknownCommandError: If no Command is found with the provided ID.
+        """
+        cmd = Command.get_or_none(Command.id == cmd_id)
+        if cmd is None:
+            raise UnknownCommandError(cmd_id=cmd_id)
         return cmd
 
     def update(self, command: Command, **fields) -> Command:

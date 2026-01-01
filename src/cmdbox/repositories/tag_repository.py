@@ -3,7 +3,13 @@ from typing import Sequence
 from peewee import IntegrityError
 
 from .base_repository import BaseRepository
-from .errors import NameConflictError, UnknownNameError, ValidationError, UpdateError
+from .errors import (
+    NameConflictError,
+    UnknownNameError,
+    ValidationError,
+    UpdateError,
+    UnknownTagError,
+)
 from .validators import TagValidator
 from cmdbox.models import Tag
 
@@ -29,6 +35,12 @@ class TagRepository(BaseRepository[Tag]):
         tag = Tag.get_or_none(Tag.name == name)
         if tag is None:
             raise UnknownNameError(name=name)
+        return tag
+
+    def get_by_id(self, tag_id: int) -> Tag | None:
+        tag = Tag.get_or_none(Tag.id == tag_id)
+        if tag is None:
+            raise UnknownTagError(str(tag_id))
         return tag
 
     def update(self, tag: Tag, **fields) -> Tag | None:

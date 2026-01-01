@@ -8,6 +8,7 @@ from cmdbox.repositories.errors import (
     NameConflictError,
     UnknownNameError,
     UpdateError,
+    UnknownTagError,
 )
 from cmdbox.models import Tag, ALL_MODELS
 from cmdbox.repositories.tag_repository import TagRepository
@@ -138,6 +139,16 @@ class TestTagRepository(unittest.TestCase):
     def test_get_by_unicode_characters_is_allowed(self):
         Tag.create(name="git-✨", description="test_description")
         self.repo.get_by_name(name="git-✨")
+
+    def test_get_tag_by_id(self):
+        tag = Tag.create(name="test", description="test_description")
+        fetched_tag = self.repo.get_by_id(tag.id)
+        self.assertEqual(tag, fetched_tag)
+
+    def test_get_unknown_tag_by_id_raises_exception(self):
+        Tag.create(name="test", description="test_description")
+        with self.assertRaises(UnknownTagError):
+            self.repo.get_by_id(123456789)
 
     # =================================================================================
     # SECTION: UPDATE TESTS

@@ -11,6 +11,7 @@ from .errors import (
     TagAttachError,
     TagDetachError,
     UpdateError,
+    UnknownVariableError,
 )
 from .validators import VariableValidator
 from .results import TagAttachResult, TagDetachResult
@@ -70,6 +71,12 @@ class VariableRepository(BaseRepository[Variable]):
         var = Variable.get_or_none(Variable.name == name)
         if var is None:
             raise UnknownNameError(name=name)
+        return var
+
+    def get_by_id(self, var_id: int) -> Variable:
+        var = Variable.get_or_none(Variable.id == var_id)
+        if var is None:
+            raise UnknownVariableError(var_id=var_id)
         return var
 
     def update(self, variable: Variable, **fields) -> Variable:

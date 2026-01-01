@@ -1,6 +1,12 @@
 from cmdbox.exceptions import CmdboxError
 
 
+class UnknownCommandError(CmdboxError):
+
+    def __init__(self, cmd_id: int) -> None:
+        super().__init__(f"Command with ID '{cmd_id}' not found.")
+
+
 class UnknownAliasError(CmdboxError):
     """
     Exception raised when an unknown alias is encountered.
@@ -29,6 +35,12 @@ class AliasConflictError(CmdboxError):
 
     def __init__(self, alias: str) -> None:
         super().__init__(f"Alias '{alias}' already exists.")
+
+
+class UnknownVariableError(CmdboxError):
+
+    def __init__(self, var_id: int) -> None:
+        super().__init__(f"Variable with ID '{var_id}' not found.")
 
 
 class UnknownNameError(CmdboxError):
