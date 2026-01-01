@@ -33,7 +33,7 @@ class TestCommandServices(unittest.TestCase):
         description = "A test command"
         expected_cmd = MagicMock(spec=Command)
         self.mock_repo.create.return_value = expected_cmd
-        self.mock_repo.get_by_alias.return_value = expected_cmd
+        self.mock_repo.get_by_id.return_value = expected_cmd
 
         # Execute
         result = self.services.create_command(alias, template, description)
@@ -57,7 +57,7 @@ class TestCommandServices(unittest.TestCase):
 
         self.mock_tag_repo.get_by_name.side_effect = tags
         self.mock_repo.create.return_value = expected_cmd
-        self.mock_repo.get_by_alias.return_value = expected_cmd
+        self.mock_repo.get_by_id.return_value = expected_cmd
 
         # Execute
         result = self.services.create_command(alias, template, tags=tag_names)
@@ -195,11 +195,11 @@ class TestCommandServices(unittest.TestCase):
         self.mock_repo.search.return_value = expected_commands
 
         # Execute
-        result = self.services.search(query, fields)
+        result = self.services.search(query, fields, 20)
 
         # Assert
         self.assertEqual(result, expected_commands)
-        self.mock_repo.search.assert_called_once_with(query, fields)
+        self.mock_repo.search.assert_called_once_with(query, fields, 20)
 
     def test_get_tags_internal(self):
         # Setup
@@ -237,7 +237,7 @@ class TestCommandServices(unittest.TestCase):
         template = "echo hello"
         expected_cmd = MagicMock(spec=Command)
         self.mock_repo.create.return_value = expected_cmd
-        self.mock_repo.get_by_alias.return_value = expected_cmd
+        self.mock_repo.get_by_id.return_value = expected_cmd
 
         # Execute
         result = self.services.create_command(alias, template, tags=[])
