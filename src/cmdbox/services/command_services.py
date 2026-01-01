@@ -59,7 +59,7 @@ class CommandServices:
             if tags:
                 self._repo.add_tags(cmd, tags)
 
-        command = self._repo.get_by_alias(cmd.alias)
+        command = self._repo.get_by_id(cmd.id)
 
         return command
 
