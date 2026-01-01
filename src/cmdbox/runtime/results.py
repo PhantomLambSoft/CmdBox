@@ -12,7 +12,8 @@ class ExecutionResult:
     result of running an external command in a consistent and immutable format.
 
     Attributes:
-        command (str): The command that was executed.
+        command (str): The actual command that was executed. Extrapolated
+            from the Command.template.
         exit_code (int): The exit code returned by the command.
         stdout (str): The standard output produced by the command.
         stderr (str): The standard error output produced by the command.
