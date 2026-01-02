@@ -1,42 +1,90 @@
+from typing import Sequence
+
 from rich.console import Console
 
 from cmdbox.models import Command
 from cmdbox.resolve.types import ResolveResult
 
-console = Console()
 
+class ConsoleUI:
 
-def print_error(message: str) -> None:
-    console.print(f"Error: {message}", style="bold red")
-
-
-def print_success(message: str) -> None:
-    console.print(message, style="bold green")
-
-
-def print_command(command: Command) -> None:
-    console.print(f"[bold green]Alias: [/bold green]{command.alias}")
-    console.print(f"[bold purple3]Template: [/bold purple3]{command.template}")
-    if command.description:
-        console.print(
-            f"[bold cornflower_blue]Description: [/bold cornflower_blue]{command.description}"
+    def __init__(self, theme, *, force_color=None):
+        self._console = Console(
+            theme=theme.rich, force_terminal=force_color, highlight=False
         )
-    tags = command.tags
-    if tags:
-        for tag in tags:
-            console.print(f"[reverse blue]{tag}[/reverse blue]")
+        self._theme = theme
 
+    def print(self, message: str) -> None:
+        self._console.print(message)
 
-def print_command_list(commands: list[Command]) -> None:
-    console.print(f"[bold #325ba8]{len(commands)} commands found:\n[/bold #325ba8]")
-    for command in commands:
-        print_command(command)
-        console.print("")
+    def success(self, message: str) -> None:
+        self._console.print(message, style=self._theme.success)
 
+    def warning(self, message: str) -> None:
+        self._console.print(message, style=self._theme.warning)
 
-def print_run_preview(result: ResolveResult) -> None:
-    console.print(f"[bold green]Preview:[/bold green] {result.text}")
-    for step in result.trace:
-        console.print(step.kind)
-        console.print(step.key)
-        console.print(step.expanded_to)
+    def error(self, message: str) -> None:
+        self._console.print(message, style=self._theme.error)
+
+    def info(self, message: str) -> None:
+        self._console.print(message, style=self._theme.info)
+
+    def muted(self, message: str) -> None:
+        self._console.print(message, style=self._theme.muted)
+
+    def debug(self, message: str) -> None:
+        self._console.print(message, style=self._theme.debug)
+
+    def print_command(
+        self, command: Command, fields: Sequence[str] | None = None
+    ) -> None:
+        display_map = [
+            ("alias", "Alias", command.alias, self._theme.command_alias),
+            ("template", "Template", command.template, self._theme.command_template),
+            (
+                "description",
+                "Description",
+                command.description,
+                self._theme.command_description,
+            ),
+            (
+                "created",
+                "Created",
+                command.date_created,
+                self._theme.command_date_created,
+            ),
+            (
+                "updated",
+                "Updated",
+                command.last_updated,
+                self._theme.command_last_updated,
+            ),
+            ("used", "Used", command.used, self._theme.command_used),
+            (
+                "last_used",
+                "Last used",
+                command.last_used,
+                self._theme.command_last_used,
+            ),
+        ]
+
+        for field_key, label, value, style in display_map:
+            if not fields or field_key in fields:
+                self._console.print(f"{label}: {value}", style=style)
+
+    def print_command_list(
+        self, commands: list[Command], fields: Sequence[str] | None = None
+    ) -> None:
+        self.success(f"{len(commands)} commands found:\n")
+        for command in commands:
+            self.print_command(command, fields)
+            self.print("")
+
+    def print_run_preview(self, result: ResolveResult) -> None:
+        self._console.print(result.text, style=self._theme.command_template)
+        for step in result.trace:
+            self._console.print(step.kind, style=self._theme.run_preview_step_kind)
+            self._console.print(step.key, style=self._theme.run_preview_step_key)
+            self._console.print(
+                step.expanded_to, style=self._theme.run_preview_step_expanded_to
+            )
