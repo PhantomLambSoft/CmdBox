@@ -9,7 +9,7 @@ from cmdbox.cli.prompts.prompts import (
     prompt_for_value,
     prompt_for_tags,
 )
-from cmdbox.cli.prompts.validators import TagNameValidator
+from cmdbox.cli.prompts.validators import TagNameValidator, NameValidator
 from cmdbox.repositories.errors import UnknownNameError
 
 app = typer.Typer(no_args_is_help=True)
@@ -33,7 +33,8 @@ def add(
     ] = False,
 ):
     if interactive or name is None:
-        name = prompt_for_name()
+        validator = NameValidator()
+        name = prompt_for_name(validator)
     if interactive or value is None:
         value = prompt_for_value()
     if interactive or tags is None:
