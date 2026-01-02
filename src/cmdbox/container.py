@@ -2,6 +2,7 @@ from functools import lru_cache
 
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.cli.ui.theme_builder import build_theme
+from cmdbox.services.variable_services import VariableServices
 from cmdbox.settings.models import Settings
 from cmdbox.settings.repository import SettingsRepository
 from cmdbox.core.paths import get_app_data_dir
@@ -80,6 +81,14 @@ def get_command_services() -> CommandServices:
     cmd_repo = get_command_repo()
     tag_repo = get_tag_repo()
     return CommandServices(command_repository=cmd_repo, tag_repository=tag_repo)
+
+
+@lru_cache(maxsize=1)
+def get_variable_services() -> VariableServices:
+    get_db()
+    var_repo = get_variable_repo()
+    tag_repo = get_tag_repo()
+    return VariableServices(variable_repository=var_repo, tag_repository=tag_repo)
 
 
 @lru_cache(maxsize=1)
