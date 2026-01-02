@@ -2,7 +2,7 @@ from typing import Sequence
 
 from rich.console import Console
 
-from cmdbox.models import Command, Variable
+from cmdbox.models import Command, Variable, Tag
 from cmdbox.resolve.types import ResolveResult
 
 
@@ -109,4 +109,29 @@ class ConsoleUI:
         self.success(f"{len(variables)} variables found:\n")
         for var in variables:
             self.print_variable(var, output_fields=output_fields)
+            self.print("")
+
+    def print_tag(self, tag: Tag, output_fields: Sequence[str] | None = None) -> None:
+        display_map = [
+            ("name", "Name", tag.name, self._theme.tag_name),
+            (
+                "description",
+                "Description",
+                tag.description,
+                self._theme.tag_description,
+            ),
+            ("created", "Created", tag.date_created, self._theme.tag_date_created),
+            ("updated", "Updated", tag.last_updated, self._theme.tag_last_updated),
+        ]
+
+        for field_key, label, value, style in display_map:
+            if not output_fields or field_key in output_fields:
+                self._console.print(f"{label}: {value}", style=style)
+
+    def print_tag_list(
+        self, tags: list[Tag], output_fields: Sequence[str] | None = None
+    ) -> None:
+        self.success(f"{len(tags)} tags found:\n")
+        for tag in tags:
+            self.print_tag(tag, output_fields=output_fields)
             self.print("")
