@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional, List, Dict, Any
 
 import typer
 
@@ -112,10 +112,72 @@ def get(
         console.error(f"Command '{alias}' not found.")
 
 
+def _parse_set_pairs(pairs: Optional[List[str]]) -> Dict[str, str]:
+    out: Dict[str, str] = {}
+    if not pairs:
+        return out
+    for item in pairs:
+        if "=" not in item:
+            raise typer.BadParameter(f"Invalid --set value '{item}'. Use key=value.")
+        k, v = item.split("=", 1)
+        k = k.strip()
+        if not k:
+            raise typer.BadParameter(
+                f"Invalid --set value '{item}'. Key cannot be empty."
+            )
+        out[k] = v
+    return out
+
+
+def _merge_fields(base: Dict[str, Any], extra: Dict[str, Any]) -> Dict[str, Any]:
+    conflicts = set(base).intersection(extra)
+    if conflicts:
+        keys = ", ".join(sorted(conflicts))
+        raise typer.BadParameter(f"Field(s) specified multiple ways: {keys}")
+    merged = dict(base)
+    merged.update(extra)
+    return merged
+
+
 @app.command("update")
-def update():
+def update(
+    alias: Annotated[str, typer.Argument(help="The alias of the command to update.")],
+    template: Annotated[
+        str, typer.Option("--template", "-t", help="The new template.")
+    ] = None,
+    description: Annotated[
+        str, typer.Option("--description", "-d", help="The new description.")
+    ] = None,
+    new_alias: Annotated[
+        str, typer.Option("--alias", "-a", help="The new alias.")
+    ] = None,
+    set_: Annotated[
+        List[str],
+        typer.Option("--set", "-s", help="A list of key=value pairs to update."),
+    ] = None,
+):
+    fields: Dict[str, Any] = {}
+    if template is not None:
+        fields["template"] = template
+    if description is not None:
+        fields["description"] = description
+    if new_alias is not None:
+        fields["alias"] = new_alias
+
+    set_fields = _parse_set_pairs(set_)
+    fields = _merge_fields(fields, set_fields)
+    if not fields:
+        raise typer.BadParameter("No fields specified to update.")
+
+    cmd_service = container.get_command_services()
+
+    cmd = cmd_service.get_command(alias)
+
+    cmd_service.update_command(alias, **fields)
     console = container.get_console()
-    console.error("Not yet implemented.")
+    console.success("Command updated successfully.")
+    updated_cmd = cmd_service.get_command_by_id(cmd.id)
+    console.print_command(updated_cmd)
 
 
 @app.command("list")
