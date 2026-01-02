@@ -148,6 +148,24 @@ class CommandServices:
         cmd = self._repo.get_by_alias(alias)
         return cmd
 
+    def get_command_by_id(self, cmd_id: int) -> Command:
+        """
+        Retrieves a command by its unique identifier from the repository.
+
+        This method accesses the repository to fetch a command based on the provided
+        command ID. It assumes that the command ID corresponds to a valid identifier
+        within the repository.
+
+        Args:
+            cmd_id (int): The unique identifier of the command to be retrieved.
+
+        Returns:
+            The command object associated with the given command ID, or None if no
+            matching command is found.
+        """
+        cmd = self._repo.get_by_id(cmd_id)
+        return cmd
+
     def list_commands(
         self,
         order_by: str | Sequence[str] = "alias",

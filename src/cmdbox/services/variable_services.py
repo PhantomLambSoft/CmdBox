@@ -141,6 +141,10 @@ class VariableServices:
         var = self._repo.get_by_name(name)
         return var
 
+    def get_variable_by_id(self, var_id: int) -> Variable:
+        var = self._repo.get_by_id(var_id)
+        return var
+
     def list_variables(
         self,
         order_by: str | Sequence[str] = "name",

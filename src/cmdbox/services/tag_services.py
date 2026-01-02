@@ -82,6 +82,10 @@ class TagServices:
         """
         return self._repo.get_by_name(name)
 
+    def get_tag_by_id(self, tag_id: int) -> Tag:
+        tag = self._repo.get_by_id(tag_id)
+        return tag
+
     def list_tags(
         self,
         order_by: str | Sequence[str] = "name",
