@@ -3,7 +3,6 @@ from typing import Annotated
 import typer
 
 from cmdbox import container
-from cmdbox.cli.ui import console
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -24,6 +23,7 @@ def run(
         ),
     ] = False,
 ):
+    console = container.get_console()
     run_service = container.get_run_service()
     if preview:
         result = run_service.preview(alias)
@@ -31,4 +31,4 @@ def run(
     else:
         ex_result = run_service.run(alias)
         if ex_result.stderr:
-            console.print_error(ex_result.stderr)
+            console.error(ex_result.stderr)

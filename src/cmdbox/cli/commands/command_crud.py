@@ -15,12 +15,6 @@ from cmdbox.cli.prompts.validators import (
     TemplateValidator,
     TagNameValidator,
 )
-from cmdbox.cli.ui.console import (
-    print_success,
-    print_error,
-    print_command,
-    print_command_list,
-)
 from cmdbox.repositories.errors import UnknownAliasError
 
 app = typer.Typer(no_args_is_help=True)
@@ -96,8 +90,9 @@ def add(
         description=description,
         tags=tags,
     )
-    print_success("Command successfully created:")
-    print_command(cmd)
+    console = container.get_console()
+    console.success("Command successfully created:")
+    console.print_command(cmd)
 
 
 @app.command("get")
@@ -107,17 +102,19 @@ def get(
         typer.Argument(help="The alias of the command to retrieve."),
     ],
 ):
+    console = container.get_console()
     cmd_service = container.get_command_services()
     try:
         cmd = cmd_service.get_command(alias)
-        print_command(cmd)
+        console.print_command(cmd)
     except UnknownAliasError:
-        print_error(f"Command '{alias}' not found.")
+        console.error(f"Command '{alias}' not found.")
 
 
 @app.command("update")
 def update():
-    print_error("Not yet implemented.")
+    console = container.get_console()
+    console.error("Not yet implemented.")
 
 
 @app.command("list")
@@ -126,9 +123,10 @@ def list_cmds(
         int, typer.Option(help="The maximum number of results to return.")
     ] = 10,
 ):
+    console = container.get_console()
     cmd_service = container.get_command_services()
     cmds = cmd_service.list_commands(limit=limit)
-    print_command_list(cmds)
+    console.print_command_list(cmds)
 
 
 @app.command("search")
@@ -146,11 +144,12 @@ def search(
         ),
     ] = None,
 ):
+    console = container.get_console()
     cmd_service = container.get_command_services()
     if fields is None:
         fields = ["alias", "template", "description"]
     cmds = cmd_service.search(term, fields=fields, limit=limit)
-    print_command_list(cmds)
+    console.print_command_list(cmds)
 
 
 @app.command("delete")
@@ -160,8 +159,9 @@ def delete(
         typer.Argument(help="The alias of the command to delete."),
     ],
 ):
+    console = container.get_console()
     cmd_service = container.get_command_services()
     if cmd_service.delete_command(alias):
-        print_success(f"Command '{alias}' deleted successfully.")
+        console.success(f"Command '{alias}' deleted successfully.")
     else:
-        print_error(f"Command '{alias}' not found.")
+        console.error(f"Command '{alias}' not found.")
