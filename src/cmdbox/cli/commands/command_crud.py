@@ -130,11 +130,19 @@ def list_cmds(
         int,
         typer.Option("--limit", "-l", help="The maximum number of results to return."),
     ] = 10,
+    fields: Annotated[
+        list[str] | None,
+        typer.Option(
+            "--field",
+            "-f",
+            help="The field(s) to display in the results list. Defaults to all fields.",
+        ),
+    ] = None,
 ):
     console = container.get_console()
     cmd_service = container.get_command_services()
     cmds = cmd_service.list_commands(order_by=order, tags=tags, limit=limit)
-    console.print_command_list(cmds)
+    console.print_command_list(cmds, output_fields=fields)
 
 
 @app.command("search")
@@ -143,21 +151,22 @@ def search(
     limit: Annotated[
         int, typer.Option(help="The maximum number of results to return.")
     ] = 10,
+    search_fields: Annotated[
+        list[str], typer.Option("--in", "-i", help="The fields to search within.")
+    ] = None,
     fields: Annotated[
         list[str] | None,
         typer.Option(
             "--field",
             "-f",
-            help="The field(s) to search within. Defaults to all fields.",
+            help="The field(s) to display in the results list. Defaults to all fields.",
         ),
     ] = None,
 ):
     console = container.get_console()
     cmd_service = container.get_command_services()
-    if fields is None:
-        fields = ["alias", "template", "description"]
-    cmds = cmd_service.search(term, fields=fields, limit=limit)
-    console.print_command_list(cmds)
+    cmds = cmd_service.search(term, fields=search_fields, limit=limit)
+    console.print_command_list(cmds, output_fields=fields)
 
 
 @app.command("delete")
