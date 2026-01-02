@@ -2,7 +2,7 @@ from typing import Sequence
 
 from rich.console import Console
 
-from cmdbox.models import Command
+from cmdbox.models import Command, Variable
 from cmdbox.resolve.types import ResolveResult
 
 
@@ -36,7 +36,7 @@ class ConsoleUI:
         self._console.print(message, style=self._theme.debug)
 
     def print_command(
-        self, command: Command, fields: Sequence[str] | None = None
+        self, command: Command, output_fields: Sequence[str] | None = None
     ) -> None:
         display_map = [
             ("alias", "Alias", command.alias, self._theme.command_alias),
@@ -69,15 +69,15 @@ class ConsoleUI:
         ]
 
         for field_key, label, value, style in display_map:
-            if not fields or field_key in fields:
+            if not output_fields or field_key in output_fields:
                 self._console.print(f"{label}: {value}", style=style)
 
     def print_command_list(
-        self, commands: list[Command], fields: Sequence[str] | None = None
+        self, commands: list[Command], output_fields: Sequence[str] | None = None
     ) -> None:
         self.success(f"{len(commands)} commands found:\n")
         for command in commands:
-            self.print_command(command, fields)
+            self.print_command(command, output_fields=output_fields)
             self.print("")
 
     def print_run_preview(self, result: ResolveResult) -> None:
@@ -88,3 +88,25 @@ class ConsoleUI:
             self._console.print(
                 step.expanded_to, style=self._theme.run_preview_step_expanded_to
             )
+
+    def print_variable(
+        self, var: Variable, output_fields: Sequence[str] | None = None
+    ) -> None:
+        display_map = [
+            ("name", "Name", var.name, self._theme.variable_name),
+            ("value", "Value", var.value, self._theme.variable_value),
+            ("created", "Created", var.date_created, self._theme.variable_date_created),
+            ("updated", "Updated", var.last_updated, self._theme.variable_last_updated),
+        ]
+
+        for field_key, label, value, style in display_map:
+            if not output_fields or field_key in output_fields:
+                self._console.print(f"{label}: {value}", style=style)
+
+    def print_variable_list(
+        self, variables: list[Variable], output_fields: Sequence[str] | None = None
+    ) -> None:
+        self.success(f"{len(variables)} variables found:\n")
+        for var in variables:
+            self.print_variable(var, output_fields=output_fields)
+            self.print("")
