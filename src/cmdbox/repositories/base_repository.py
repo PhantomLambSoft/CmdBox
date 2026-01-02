@@ -182,26 +182,3 @@ class BaseRepository(Generic[M]):
         msg = str(exc)
         table = self.model._meta.table_name
         return "UNIQUE constraint failed" in msg and f"{table}.name" in msg
-
-    def _get_tags_by_name(self, *tags: str) -> list[Tag]:
-        """
-        Retrieves tags by their names and raises an error if any tag names do not exist.
-
-        Args:
-            *tags (str): Variable length argument list containing tag names to be retrieved.
-
-        Returns:
-            list[Tag]: A list of Tag objects matching the provided tag names.
-
-        Raises:
-            UnknownTagError: If one or more tag names provided in the arguments do not exist.
-        """
-        if not tags:
-            return []
-        queryset = Tag.select().where(Tag.name << tags)
-        tags_by_name = {t.name for t in queryset}
-        missing = [name for name in tags if name not in tags_by_name]
-        if missing:
-            missing_names = ", ".join(missing)
-            raise UnknownTagError(tag_name=missing_names)
-        return list(queryset)

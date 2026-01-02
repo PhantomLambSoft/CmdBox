@@ -360,11 +360,3 @@ class CommandRepository(BaseRepository[Command]):
         msg = str(exc)
         table = self.model._meta.table_name
         return "UNIQUE constraint failed" in msg and f"{table}.alias" in msg
-
-    def _is_unique_command_tag_violation(self, exc: IntegrityError) -> bool:
-        msg = str(exc)
-        return (
-            "UNIQUE constraint failed" in msg
-            and "commandtag.command_id" in msg
-            and "commandtag.tag_id" in msg
-        )
