@@ -195,11 +195,11 @@ class TestCommandServices(unittest.TestCase):
         self.mock_repo.search.return_value = expected_commands
 
         # Execute
-        result = self.services.search(query, fields, 20)
+        result = self.services.search(query, fields, limit=20)
 
         # Assert
-        self.assertEqual(result, expected_commands)
-        self.mock_repo.search.assert_called_once_with(query, fields, 20)
+        self.assertEqual(expected_commands, result)
+        self.mock_repo.search.assert_called_once_with(query, fields=fields, limit=20)
 
     def test_get_tags_internal(self):
         # Setup

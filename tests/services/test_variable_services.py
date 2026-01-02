@@ -174,11 +174,11 @@ class TestVariableServices(unittest.TestCase):
         self.mock_repo.search.return_value = expected_vars
 
         # Execute
-        result = self.services.search(query, fields)
+        result = self.services.search(query, fields=fields, limit=10)
 
         # Assert
-        self.assertEqual(result, expected_vars)
-        self.mock_repo.search.assert_called_once_with(query, fields)
+        self.assertEqual(expected_vars, result)
+        self.mock_repo.search.assert_called_once_with(query, fields=fields, limit=10)
 
     def test_get_tags_internal(self):
         # Setup
