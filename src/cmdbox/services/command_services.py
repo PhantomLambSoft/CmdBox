@@ -1,8 +1,6 @@
 from typing import Sequence
 
-from peewee import prefetch
-
-from cmdbox.models import Tag, Command, CommandTag
+from cmdbox.models import Tag, Command
 from cmdbox.repositories.command_repository import CommandRepository
 from cmdbox.database import db
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
@@ -182,7 +180,7 @@ class CommandServices:
     def search(
         self,
         query: str,
-        fields: str | Sequence[str] | None = ("alias", "description"),
+        fields: str | Sequence[str] | None = ("alias", "template", "description"),
         limit: int = 25,
     ) -> list[Command]:
         """
