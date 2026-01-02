@@ -23,6 +23,16 @@ def prompt_for_description() -> str:
     return description
 
 
+def prompt_for_name() -> str:
+    name = prompt("Enter name: ")
+    return name
+
+
+def prompt_for_value() -> str:
+    value = prompt("Enter variable value: ")
+    return value
+
+
 def prompt_for_tags(
     tag_completer: TagCompleter, validator: TagNameValidator
 ) -> list[str] | None:
