@@ -7,6 +7,7 @@ from cmdbox.version import __version__
 from cmdbox.database import ensure_schema, get_db
 from .commands.command_crud import app as command_crud_app
 from .commands.command_run import app as command_run_app
+from .commands.variable_crud import app as variable_crud_app
 
 
 app = typer.Typer(
@@ -16,6 +17,7 @@ app = typer.Typer(
 )
 
 app.add_typer(command_crud_app, name="cmd")
+app.add_typer(variable_crud_app, name="var")
 app.add_typer(command_run_app)
 
 
