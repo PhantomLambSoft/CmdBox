@@ -303,7 +303,6 @@ class VariableRepository(BaseRepository[Variable]):
         Raises:
             ValueError: If any provided field does not exist on the Variable model.
         """
-        print(f"Fields: {fields}")
         return self._search(
             query, secondary_ordering="name", fields=fields, limit=limit
         )
