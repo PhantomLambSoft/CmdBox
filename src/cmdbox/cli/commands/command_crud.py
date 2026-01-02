@@ -46,7 +46,8 @@ def add(
         ),
     ] = None,
     interactive: Annotated[
-        bool, typer.Option("--interactive", "-i", help="Interactive mode.")
+        bool,
+        typer.Option("--interactive", "-i", is_flag=True, help="Interactive mode."),
     ] = False,
 ):
     """
