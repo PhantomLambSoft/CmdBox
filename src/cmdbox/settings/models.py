@@ -58,12 +58,21 @@ class UiTagColors:
 
 
 @dataclass(frozen=True)
+class RunPreviewColors:
+    command: str = DefaultColors.green
+    step_kind: str = DefaultColors.teal
+    step_key: str = DefaultColors.pink
+    step_expanded_to: str = DefaultColors.purple
+
+
+@dataclass(frozen=True)
 class UiSettings:
     use_color: bool = True
     colors: UiColors = UiColors()
     command_colors: UiCommandColors = UiCommandColors()
     variable_colors: UiVariableColors = UiVariableColors()
     tag_colors: UiTagColors = UiTagColors()
+    run_preview_colors: RunPreviewColors = RunPreviewColors()
 
 
 @dataclass(frozen=True)

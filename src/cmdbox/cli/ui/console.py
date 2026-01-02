@@ -81,7 +81,7 @@ class ConsoleUI:
             self.print("")
 
     def print_run_preview(self, result: ResolveResult) -> None:
-        self._console.print(result.text, style=self._theme.command_template)
+        self._console.print(result.text, style=self._theme.run_preview_command)
         for step in result.trace:
             self._console.print(step.kind, style=self._theme.run_preview_step_kind)
             self._console.print(step.key, style=self._theme.run_preview_step_key)

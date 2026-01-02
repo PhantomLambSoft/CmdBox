@@ -7,6 +7,7 @@ def build_theme(settings) -> Theme:
     cmd = settings.ui.command_colors
     var = settings.ui.variable_colors
     tag = settings.ui.tag_colors
+    run_preview = settings.ui.run_preview_colors
 
     style_map = {
         "success": colors.success,
@@ -30,6 +31,10 @@ def build_theme(settings) -> Theme:
         "tag.description": tag.description,
         "tag.date_created": tag.date_created,
         "tag.last_updated": tag.last_updated,
+        "run_preview.command": run_preview.command,
+        "run_preview.step_kind": run_preview.step_kind,
+        "run_preview.step_key": run_preview.step_key,
+        "run_preview.step_expanded_to": run_preview.step_expanded_to,
     }
 
     return Theme(
@@ -55,4 +60,8 @@ def build_theme(settings) -> Theme:
         tag_description="tag.description",
         tag_date_created="tag.date_created",
         tag_last_updated="tag.last_updated",
+        run_preview_command="run_preview.command",
+        run_preview_step_kind="run_preview.step_kind",
+        run_preview_step_key="run_preview.step_key",
+        run_preview_step_expanded_to="run_preview.step_expanded_to",
     )

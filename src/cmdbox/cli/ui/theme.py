@@ -30,3 +30,8 @@ class Theme:
     tag_description: str
     tag_date_created: str
     tag_last_updated: str
+
+    run_preview_command: str
+    run_preview_step_kind: str
+    run_preview_step_key: str
+    run_preview_step_expanded_to: str
