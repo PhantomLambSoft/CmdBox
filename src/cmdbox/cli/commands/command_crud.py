@@ -178,7 +178,9 @@ def delete(
 ):
     console = container.get_console()
     cmd_service = container.get_command_services()
+    cmd = cmd_service.get_command(alias)
     if cmd_service.delete_command(alias):
-        console.success(f"Command '{alias}' deleted successfully.")
+        console.success("Command deleted successfully.")
+        console.print_command(cmd)
     else:
         console.error(f"Command '{alias}' not found.")
