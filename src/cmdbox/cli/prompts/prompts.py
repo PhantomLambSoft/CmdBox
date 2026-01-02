@@ -5,6 +5,7 @@ from cmdbox.cli.prompts.validators import (
     AliasValidator,
     TemplateValidator,
     TagNameValidator,
+    NameValidator,
 )
 
 
@@ -23,8 +24,8 @@ def prompt_for_description() -> str:
     return description
 
 
-def prompt_for_name() -> str:
-    name = prompt("Enter name: ")
+def prompt_for_name(validator: NameValidator | TagNameValidator) -> str:
+    name = prompt("Enter name: ", validator=validator)
     return name
 
 
