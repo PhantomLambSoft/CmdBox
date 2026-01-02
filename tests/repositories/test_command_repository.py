@@ -306,6 +306,13 @@ class TestCommandRepository(unittest.TestCase):
         with self.assertRaises(UpdateError):
             self.repo.update(command=cmd)
 
+    def test_update_with_invalid_field_throws_exception(self):
+        cmd = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
+        with self.assertRaises(ValidationError):
+            self.repo.update(command=cmd, invalid_field="nonexistent_field")
+
     def test_update_with_white_space_in_middle_of_alias_is_not_allowed(self):
         """Aliases with whitespace should be throw validation error."""
         cmd = Command.create(
@@ -557,6 +564,10 @@ class TestCommandTagging(unittest.TestCase):
         self.cmd_tag_two = CommandTag.create(command=self.cmd_two, tag=self.tag_one)
         self.cmd_tag_three = CommandTag.create(command=self.cmd_two, tag=self.tag_two)
 
+    # =================================================================================
+    # SECTION: ADD TESTS
+    # =================================================================================
+
     def test_add_tag(self):
         cmd = Command.create(alias="test_cmd", template="echo test")
         tag = Tag.create(name="test_tag", description="test_description")
@@ -620,6 +631,10 @@ class TestCommandTagging(unittest.TestCase):
         with self.assertRaises(TagAttachError):
             self.repo.add_tags(command=cmd, tags=[tag, None])
         self.assertEqual(0, CommandTag.select().count())
+
+    # =================================================================================
+    # SECTION: REMOVE TESTS
+    # =================================================================================
 
     def test_remove_tag(self):
         self._create_cmd_tags()
