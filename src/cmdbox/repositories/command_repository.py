@@ -298,7 +298,7 @@ class CommandRepository(BaseRepository[Command]):
     def search(
         self,
         query: str,
-        fields: str | Sequence[str] | None = ("alias", "description"),
+        fields: str | Sequence[str] | None = ("alias", "template", "description"),
         limit: int = 25,
     ) -> list[Command]:
         """

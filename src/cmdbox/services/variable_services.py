@@ -173,7 +173,8 @@ class VariableServices:
     def search(
         self,
         query: str,
-        fields: str | Sequence[str] | None = ("name", "value"),
+        fields: str | Sequence[str] | None = None,
+        limit: int = 25,
     ) -> list[Variable]:
         """
         Searches for variables that match the given query across specified fields.
@@ -186,11 +187,14 @@ class VariableServices:
             query (str): The search term used for matching against the repository.
             fields (str | Sequence[str] | None): The fields to perform the search within. Defaults
                 to ("name", "value"). If None, no specific fields are targeted.
+            limit (int): The maximum number of results to return. Defaults to 25.
 
         Returns:
             list[Variable]: A list of Variable objects that match the search query.
         """
-        return self._repo.search(query, fields)
+        if not fields:
+            fields = ("name", "value")
+        return self._repo.search(query, fields=fields, limit=limit)
 
     def _get_tags(self, tags: Sequence[str] | None) -> list[Tag]:
         """

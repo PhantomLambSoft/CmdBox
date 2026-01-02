@@ -277,7 +277,10 @@ class VariableRepository(BaseRepository[Variable]):
         )
 
     def search(
-        self, query: str, fields: str | Sequence[str] | None = "name"
+        self,
+        query: str,
+        fields: str | Sequence[str] | None = ("name", "value"),
+        limit: int = 25,
     ) -> list[Variable]:
         """
         Searches for variables matching the given query across specified fields.
@@ -291,6 +294,7 @@ class VariableRepository(BaseRepository[Variable]):
             fields (str | Sequence[str] | None): The fields to search within. By
                 default, searches within "name". Can be a single field name as a string
                 or a sequence of field names.
+            limit (int): The maximum number of results to return. Defaults to 25.
 
         Returns:
             list[Variable]: A list of Variable objects matching the search query, sorted
@@ -299,7 +303,10 @@ class VariableRepository(BaseRepository[Variable]):
         Raises:
             ValueError: If any provided field does not exist on the Variable model.
         """
-        return self._search(query, "name", fields)
+        print(f"Fields: {fields}")
+        return self._search(
+            query, secondary_ordering="name", fields=fields, limit=limit
+        )
 
     def delete(self, variable: Variable) -> bool:
         """
