@@ -1,5 +1,10 @@
 from functools import lru_cache
 
+from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.cli.ui.theme_builder import build_theme
+from cmdbox.settings.models import Settings
+from cmdbox.settings.repository import SettingsRepository
+from cmdbox.core.paths import get_app_data_dir
 from cmdbox.database import get_db
 from cmdbox.repositories.command_repository import CommandRepository
 from cmdbox.repositories.tag_repository import TagRepository
@@ -10,6 +15,29 @@ from cmdbox.runtime.executor import Executor
 from cmdbox.services.command_services import CommandServices
 from cmdbox.services.run_service import RunService
 from cmdbox.services.tag_services import TagServices
+from cmdbox.settings.service import SettingsService
+
+
+settings = None
+
+
+def get_settings_service() -> SettingsService:
+    global settings
+    if not settings:
+        config_path = get_app_data_dir() / "config.toml"
+        repo = SettingsRepository(config_path)
+        settings = SettingsService(repo)
+    return settings
+
+
+def get_settings() -> Settings:
+    return get_settings_service().get()
+
+
+def get_console() -> ConsoleUI:
+    _settings = get_settings()
+    theme = build_theme(_settings)
+    return ConsoleUI(theme)
 
 
 @lru_cache(maxsize=1)
