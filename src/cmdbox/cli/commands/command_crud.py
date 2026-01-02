@@ -120,13 +120,20 @@ def update():
 
 @app.command("list")
 def list_cmds(
+    order: Annotated[
+        str, typer.Option("--order", "-o", help="The field to order the results by.")
+    ] = "alias",
+    tags: Annotated[
+        list[str], typer.Option("--tag", "-t", help="The tag to filter by.")
+    ] = None,
     limit: Annotated[
-        int, typer.Option(help="The maximum number of results to return.")
+        int,
+        typer.Option("--limit", "-l", help="The maximum number of results to return."),
     ] = 10,
 ):
     console = container.get_console()
     cmd_service = container.get_command_services()
-    cmds = cmd_service.list_commands(limit=limit)
+    cmds = cmd_service.list_commands(order_by=order, tags=tags, limit=limit)
     console.print_command_list(cmds)
 
 
