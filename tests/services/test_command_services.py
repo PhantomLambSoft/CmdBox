@@ -157,6 +157,16 @@ class TestCommandServices(unittest.TestCase):
         self.assertEqual(result, expected_cmd)
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
 
+    def test_get_command_by_id(self):
+        id_ = 123
+        expected_cmd = MagicMock(spec=Command)
+        self.mock_repo.get_by_id.return_value = expected_cmd
+
+        result = self.services.get_command_by_id(id_)
+
+        self.assertEqual(expected_cmd, result)
+        self.mock_repo.get_by_id.assert_called_once_with(id_)
+
     def test_list_commands_no_tags(self):
         # Setup
         expected_commands = [MagicMock(spec=Command), MagicMock(spec=Command)]

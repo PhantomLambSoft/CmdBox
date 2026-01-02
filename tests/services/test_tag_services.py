@@ -69,6 +69,16 @@ class TestTagServices(unittest.TestCase):
         self.assertEqual(result, expected_tag)
         self.mock_repo.get_by_name.assert_called_once_with(name)
 
+    def test_get_tag_by_id(self):
+        id_ = 123
+        expected_tag = MagicMock(spec=Tag)
+        self.mock_repo.get_by_id.return_value = expected_tag
+
+        result = self.services.get_tag_by_id(id_)
+
+        self.assertEqual(expected_tag, result)
+        self.mock_repo.get_by_id.assert_called_once_with(id_)
+
     def test_list_tags(self):
         # Setup
         expected_tags = [MagicMock(spec=Tag), MagicMock(spec=Tag)]

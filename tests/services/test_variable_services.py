@@ -136,6 +136,16 @@ class TestVariableServices(unittest.TestCase):
         self.assertEqual(result, expected_var)
         self.mock_repo.get_by_name.assert_called_once_with(name)
 
+    def test_get_variable_by_id(self):
+        id_ = 123
+        expected_var = MagicMock(spec=Variable)
+        self.mock_repo.get_by_id.return_value = expected_var
+
+        result = self.services.get_variable_by_id(id_)
+
+        self.assertEqual(expected_var, result)
+        self.mock_repo.get_by_id.assert_called_once_with(id_)
+
     def test_list_variables_no_tags(self):
         # Setup
         expected_vars = [MagicMock(spec=Variable), MagicMock(spec=Variable)]
