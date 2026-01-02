@@ -195,8 +195,6 @@ class CommandRepository(BaseRepository[Command]):
                     else:
                         existing.append(tag.name)
                 return TagAttachResult(added=added, existing=existing)
-        except UnknownTagError:
-            raise
         except IntegrityError as exc:
             raise TagAttachError("Could not attach tags to command.") from exc
 
