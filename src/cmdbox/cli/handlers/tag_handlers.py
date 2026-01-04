@@ -8,7 +8,6 @@ from cmdbox.cli.common.update_fields import (
     parse_set_pairs,
     filter_allowed,
 )
-from cmdbox.cli.handlers.common_handlers import get_tags_interactive
 from cmdbox.cli.prompts.prompts import (
     prompt_for_name,
     prompt_for_description,
@@ -27,7 +26,7 @@ def run_add_tag(
     args: AddTagArgs,
     get_tag_services: Callable[[], Any],
     get_console: Callable[[], Any],
-):
+) -> None:
     name = args.name
     description = args.description
 
@@ -49,7 +48,7 @@ def run_get_tag(
     name: str,
     get_tag_services: Callable[[], Any],
     get_console: Callable[[], Any],
-):
+) -> None:
     console = get_console()
     tag_service = get_tag_services()
     tag = tag_service.get_tag(name)
@@ -64,7 +63,7 @@ def run_update_tag(
     set_pairs: Sequence[str],
     get_tag_services: Callable[[], Any],
     get_console: Callable[[], Any],
-):
+) -> None:
     allowed = {"name", "description"}
     fields: Dict[str, Any] = {}
     if description is not None:
