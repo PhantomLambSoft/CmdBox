@@ -90,11 +90,11 @@ def run_list_tags(
     limit: int,
     order_by: str,
     fields: list[str],
-    get_var_services: Callable[[], Any],
+    get_tag_services: Callable[[], Any],
     get_console: Callable[[], Any],
 ) -> None:
     console = get_console()
-    tag_service = get_var_services()
+    tag_service = get_tag_services()
     tags = tag_service.list_tags(limit=limit, order_by=order_by)
     console.print_tags(tags, output_fields=fields)
 
