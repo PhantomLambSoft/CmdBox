@@ -26,7 +26,7 @@ class TestTagHandlers(unittest.TestCase):
         args = AddTagArgs(name=None, description=None, interactive=True)
         mock_prompt_name.return_value = "tag1"
         mock_prompt_desc.return_value = "desc1"
-        self.mock_tag_services.add_tag.return_value = MagicMock()
+        self.mock_tag_services.create_tag.return_value = MagicMock()
 
         run_add_tag(
             args=args,
@@ -34,14 +34,14 @@ class TestTagHandlers(unittest.TestCase):
             get_console=self.get_console,
         )
 
-        self.mock_tag_services.add_tag.assert_called_with(
+        self.mock_tag_services.create_tag.assert_called_with(
             name="tag1", description="desc1"
         )
         self.mock_console.success.assert_called()
 
     def test_run_add_tag_non_interactive(self):
         args = AddTagArgs(name="tag1", description="desc1", interactive=False)
-        self.mock_tag_services.add_tag.return_value = MagicMock()
+        self.mock_tag_services.create_tag.return_value = MagicMock()
 
         run_add_tag(
             args=args,
@@ -49,7 +49,7 @@ class TestTagHandlers(unittest.TestCase):
             get_console=self.get_console,
         )
 
-        self.mock_tag_services.add_tag.assert_called_with(
+        self.mock_tag_services.create_tag.assert_called_with(
             name="tag1", description="desc1"
         )
 
