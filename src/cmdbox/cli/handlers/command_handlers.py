@@ -156,7 +156,7 @@ def run_delete_command(
 
 def run_attach_tag(
     *,
-    alias: str,
+    alias: str | None = None,
     tag_names: list[str] | None = None,
     get_cmd_services: Callable[[], Any],
     get_tag_services: Callable[[], Any],
