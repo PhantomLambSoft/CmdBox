@@ -75,7 +75,9 @@ class ConsoleUI:
     def print_command_list(
         self, commands: list[Command], output_fields: Sequence[str] | None = None
     ) -> None:
-        self.success(f"{len(commands)} commands found:\n")
+        self.success(
+            f"{self._get_entity_count_label(len(commands), 'command')} found:\n"
+        )
         for command in commands:
             self.print_command(command, output_fields=output_fields)
             self.print("")
@@ -106,7 +108,9 @@ class ConsoleUI:
     def print_variable_list(
         self, variables: list[Variable], output_fields: Sequence[str] | None = None
     ) -> None:
-        self.success(f"{len(variables)} variables found:\n")
+        self.success(
+            f"{self._get_entity_count_label(len(variables), 'variable')} found:\n"
+        )
         for var in variables:
             self.print_variable(var, output_fields=output_fields)
             self.print("")
@@ -131,7 +135,11 @@ class ConsoleUI:
     def print_tag_list(
         self, tags: list[Tag], output_fields: Sequence[str] | None = None
     ) -> None:
-        self.success(f"{len(tags)} tags found:\n")
+        self.success(f"{self._get_entity_count_label(len(tags), 'tag')} found:\n")
         for tag in tags:
             self.print_tag(tag, output_fields=output_fields)
             self.print("")
+
+    @staticmethod
+    def _get_entity_count_label(count: int, entity_name: str) -> str:
+        return f"{count} {entity_name}{'s' if count != 1 else ''}"
