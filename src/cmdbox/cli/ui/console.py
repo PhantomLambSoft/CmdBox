@@ -3,7 +3,7 @@ from typing import Sequence
 from rich.console import Console
 
 from cmdbox.models import Command, Variable, Tag
-from cmdbox.repositories.results import TagAttachResult
+from cmdbox.repositories.results import TagAttachResult, TagDetachResult
 from cmdbox.resolve.types import ResolveResult
 
 
@@ -147,11 +147,25 @@ class ConsoleUI:
                 f"Added {self._get_entity_count_label(len(result.added), 'tag')}:"
             )
             self.print(", ".join(result.added))
+
         if len(result.existing) > 0:
             self.print(
                 f"{self._get_entity_count_label(len(result.existing), 'tag')} already attached:"
             )
             self.print(", ".join(result.existing))
+
+    def print_tag_detach_result(self, result: TagDetachResult) -> None:
+        if len(result.removed) > 0:
+            self.success(
+                f"Removed {self._get_entity_count_label(len(result.removed), 'tag')}:"
+            )
+            self.print(", ".join(result.removed))
+
+        if len(result.not_attached) > 0:
+            self.print(
+                f"{self._get_entity_count_label(len(result.not_attached), 'tag')} not attached:"
+            )
+            self.print(", ".join(result.not_attached))
 
     @staticmethod
     def _get_entity_count_label(count: int, entity_name: str) -> str:
