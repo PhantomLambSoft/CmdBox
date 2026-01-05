@@ -147,7 +147,7 @@ def delete(
 
 @app.command("tag")
 @cli_guard
-def add_tag(
+def add_tags(
     name: Annotated[str, typer.Argument(help="The name of the command to tag.")],
     tags: Annotated[
         list[str], typer.Argument(help="The tags to add to the command.")

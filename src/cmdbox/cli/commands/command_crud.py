@@ -194,7 +194,7 @@ def delete(
 
 @app.command("tag")
 @cli_guard
-def add_tag(
+def add_tags(
     alias: Annotated[
         str, typer.Argument(help="The alias of the command to tag.")
     ] = None,
