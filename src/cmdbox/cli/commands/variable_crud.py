@@ -143,3 +143,20 @@ def delete(
         get_var_services=container.get_variable_services,
         get_console=container.get_console,
     )
+
+
+@app.command("tag")
+@cli_guard
+def add_tag(
+    name: Annotated[str, typer.Argument(help="The name of the command to tag.")],
+    tags: Annotated[
+        list[str], typer.Argument(help="The tags to add to the command.")
+    ] = None,
+) -> None:
+    variable_handlers.run_attach_tag(
+        name=name,
+        tag_names=tags,
+        get_var_services=container.get_variable_services,
+        get_tag_services=container.get_tag_services,
+        get_console=container.get_console,
+    )
