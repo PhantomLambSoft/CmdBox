@@ -105,7 +105,7 @@ class TestTagHandlers(unittest.TestCase):
             get_console=self.get_console,
         )
         self.mock_tag_services.list_tags.assert_called_with(limit=10, order_by="name")
-        self.mock_console.print_tags.assert_called_with(
+        self.mock_console.print_tag_list.assert_called_with(
             ["t1", "t2"], output_fields=["f1"]
         )
 
@@ -122,7 +122,9 @@ class TestTagHandlers(unittest.TestCase):
         self.mock_tag_services.search_tags.assert_called_with(
             "term", limit=5, fields=["sf1"]
         )
-        self.mock_console.print_tags.assert_called_with(["t1"], output_fields=["f1"])
+        self.mock_console.print_tag_list.assert_called_with(
+            ["t1"], output_fields=["f1"]
+        )
 
     def test_run_delete_tag_success(self):
         mock_tag = MagicMock()

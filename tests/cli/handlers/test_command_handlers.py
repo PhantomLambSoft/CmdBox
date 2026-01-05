@@ -128,7 +128,7 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.list_commands.assert_called_with(
             limit=10, order_by="name", tags=["t1"]
         )
-        self.mock_console.print_commands.assert_called_with(
+        self.mock_console.print_command_list.assert_called_with(
             ["c1", "c2"], output_fields=["f1"]
         )
 
@@ -145,7 +145,7 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.search_commands.assert_called_with(
             "term", limit=5, fields=["sf1"]
         )
-        self.mock_console.print_commands.assert_called_with(
+        self.mock_console.print_command_list.assert_called_with(
             ["c1"], output_fields=["f1"]
         )
 

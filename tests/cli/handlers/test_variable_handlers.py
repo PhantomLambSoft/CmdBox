@@ -118,7 +118,7 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_var_services.list_variables.assert_called_with(
             limit=10, order_by="name", tags=["t1"]
         )
-        self.mock_console.print_variables.assert_called_with(
+        self.mock_console.print_variable_list.assert_called_with(
             ["v1", "v2"], output_fields=["f1"]
         )
 
@@ -135,7 +135,7 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_var_services.search_variables.assert_called_with(
             "term", limit=5, fields=["sf1"]
         )
-        self.mock_console.print_variables.assert_called_with(
+        self.mock_console.print_variable_list.assert_called_with(
             ["v1"], output_fields=["f1"]
         )
 
