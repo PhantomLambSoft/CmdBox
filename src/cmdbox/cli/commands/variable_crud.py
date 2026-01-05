@@ -160,3 +160,20 @@ def add_tags(
         get_tag_services=container.get_tag_services,
         get_console=container.get_console,
     )
+
+
+@app.command("untag")
+@cli_guard
+def remove_tags(
+    name: Annotated[str, typer.Argument(help="The name of the command to untag.")],
+    tags: Annotated[
+        list[str], typer.Argument(help="The tags to remove from the command.")
+    ] = None,
+) -> None:
+    variable_handlers.run_detach_tags(
+        name=name,
+        tag_names=tags,
+        get_var_services=container.get_variable_services,
+        get_tag_services=container.get_tag_services,
+        get_console=container.get_console,
+    )
