@@ -1,26 +1,19 @@
-from typing import Annotated, Optional, List, Dict, Any
+from typing import Annotated
 
 import typer
 
 from cmdbox import container
-from cmdbox.cli.prompts.completers import TagCompleter
-from cmdbox.cli.prompts.prompts import (
-    prompt_for_alias,
-    prompt_for_template,
-    prompt_for_description,
-    prompt_for_tags,
-)
-from cmdbox.cli.prompts.validators import (
-    AliasValidator,
-    TemplateValidator,
-    TagNameValidator,
-)
-from cmdbox.repositories.errors import UnknownAliasError
+from cmdbox.cli.common.errors import make_cli_guard
+from cmdbox.cli.handlers import command_handlers
+
 
 app = typer.Typer(no_args_is_help=True)
 
+cli_guard = make_cli_guard(container.get_console)
+
 
 @app.command("add")
+@cli_guard
 def add(
     alias: Annotated[
         str,
@@ -49,7 +42,7 @@ def add(
         bool,
         typer.Option("--interactive", "-i", is_flag=True, help="Interactive mode."),
     ] = False,
-):
+) -> None:
     """
     Adds a new command with an alias, a template, description, and associated tags. The
     command can be created in interactive mode if desired or if required arguments are
@@ -64,82 +57,38 @@ def add(
         interactive (bool): Specifies whether to enable interactive mode for entering command
             details.
     """
-    if interactive or alias is None:
-        alias_validator = AliasValidator()
-        alias = prompt_for_alias(alias_validator)
-    if interactive or template is None:
-        template_validator = TemplateValidator()
-        template = prompt_for_template(template_validator)
-    if interactive or description is None:
-        description = prompt_for_description()
-    if interactive or tags is None:
-        tag_services = container.get_tag_services()
-
-        def get_tags(query: str) -> list[str]:
-            found_tags = tag_services.search(query, fields="name")
-            return [tag.name for tag in found_tags]
-
-        tag_completer = TagCompleter(get_tags)
-        tag_validator = TagNameValidator()
-        tags = prompt_for_tags(tag_completer, tag_validator)
-    if not tags:
-        tags = None
-    cmd_service = container.get_command_services()
-    cmd = cmd_service.create_command(
+    add_cmd_args = command_handlers.AddCommandArgs(
         alias=alias,
         template=template,
         description=description,
         tags=tags,
+        interactive=interactive,
     )
-    console = container.get_console()
-    console.success("Command successfully created:")
-    console.print_command(cmd)
+    command_handlers.run_add_command(
+        args=add_cmd_args,
+        get_cmd_services=container.get_command_services,
+        get_tag_services=container.get_tag_services,
+        get_console=container.get_console,
+    )
 
 
 @app.command("get")
+@cli_guard
 def get(
     alias: Annotated[
         str,
         typer.Argument(help="The alias of the command to retrieve."),
     ],
-):
-    console = container.get_console()
-    cmd_service = container.get_command_services()
-    try:
-        cmd = cmd_service.get_command(alias)
-        console.print_command(cmd)
-    except UnknownAliasError:
-        console.error(f"Command '{alias}' not found.")
-
-
-def _parse_set_pairs(pairs: Optional[List[str]]) -> Dict[str, str]:
-    out: Dict[str, str] = {}
-    if not pairs:
-        return out
-    for item in pairs:
-        if "=" not in item:
-            raise typer.BadParameter(f"Invalid --set value '{item}'. Use key=value.")
-        k, v = item.split("=", 1)
-        k = k.strip()
-        if not k:
-            raise typer.BadParameter(
-                f"Invalid --set value '{item}'. Key cannot be empty."
-            )
-        out[k] = v
-    return out
-
-
-def _merge_fields(base: Dict[str, Any], extra: Dict[str, Any]) -> Dict[str, Any]:
-    conflicts = set(base).intersection(extra)
-    if conflicts:
-        keys = ", ".join(sorted(conflicts))
-        raise typer.BadParameter(f"Field(s) specified multiple ways: {keys}")
-    merged = dict(base)
-    merged.update(extra)
-    return merged
+) -> None:
+    command_handlers.run_get_command(
+        alias=alias,
+        get_cmd_services=container.get_command_services,
+        get_console=container.get_console,
+    )
 
 
 @app.command("update")
+@cli_guard
 def update(
     alias: Annotated[str, typer.Argument(help="The alias of the command to update.")],
     template: Annotated[
@@ -152,35 +101,23 @@ def update(
         str, typer.Option("--alias", "-a", help="The new alias.")
     ] = None,
     set_: Annotated[
-        List[str],
+        list[str],
         typer.Option("--set", "-s", help="A list of key=value pairs to update."),
     ] = None,
-):
-    fields: Dict[str, Any] = {}
-    if template is not None:
-        fields["template"] = template
-    if description is not None:
-        fields["description"] = description
-    if new_alias is not None:
-        fields["alias"] = new_alias
-
-    set_fields = _parse_set_pairs(set_)
-    fields = _merge_fields(fields, set_fields)
-    if not fields:
-        raise typer.BadParameter("No fields specified to update.")
-
-    cmd_service = container.get_command_services()
-
-    cmd = cmd_service.get_command(alias)
-
-    cmd_service.update_command(alias, **fields)
-    console = container.get_console()
-    console.success("Command updated successfully.")
-    updated_cmd = cmd_service.get_command_by_id(cmd.id)
-    console.print_command(updated_cmd)
+) -> None:
+    command_handlers.run_update_command(
+        alias=alias,
+        template=template,
+        description=description,
+        new_alias=new_alias,
+        set_pairs=set_,
+        get_cmd_services=container.get_command_services,
+        get_console=container.get_console,
+    )
 
 
 @app.command("list")
+@cli_guard
 def list_cmds(
     order: Annotated[
         str, typer.Option("--order", "-o", help="The field to order the results by.")
@@ -200,14 +137,19 @@ def list_cmds(
             help="The field(s) to display in the results list. Defaults to all fields.",
         ),
     ] = None,
-):
-    console = container.get_console()
-    cmd_service = container.get_command_services()
-    cmds = cmd_service.list_commands(order_by=order, tags=tags, limit=limit)
-    console.print_command_list(cmds, output_fields=fields)
+) -> None:
+    command_handlers.run_list_command(
+        limit=limit,
+        order=order,
+        tags=tags,
+        fields=fields,
+        get_cmd_services=container.get_command_services,
+        get_console=container.get_console,
+    )
 
 
 @app.command("search")
+@cli_guard
 def search(
     term: Annotated[str, typer.Argument(help="The search term to use.")],
     limit: Annotated[
@@ -224,25 +166,27 @@ def search(
             help="The field(s) to display in the results list. Defaults to all fields.",
         ),
     ] = None,
-):
-    console = container.get_console()
-    cmd_service = container.get_command_services()
-    cmds = cmd_service.search(term, fields=search_fields, limit=limit)
-    console.print_command_list(cmds, output_fields=fields)
+) -> None:
+    command_handlers.run_search_command(
+        term=term,
+        limit=limit,
+        search_fields=search_fields,
+        fields=fields,
+        get_cmd_services=container.get_command_services,
+        get_console=container.get_console,
+    )
 
 
 @app.command("delete")
+@cli_guard
 def delete(
     alias: Annotated[
         str,
         typer.Argument(help="The alias of the command to delete."),
     ],
-):
-    console = container.get_console()
-    cmd_service = container.get_command_services()
-    cmd = cmd_service.get_command(alias)
-    if cmd_service.delete_command(alias):
-        console.success("Command deleted successfully.")
-        console.print_command(cmd)
-    else:
-        console.error(f"Command '{alias}' not found.")
+) -> None:
+    command_handlers.run_delete_command(
+        alias=alias,
+        get_cmd_services=container.get_command_services,
+        get_console=container.get_console,
+    )
