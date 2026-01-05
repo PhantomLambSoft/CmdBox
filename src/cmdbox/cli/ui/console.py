@@ -3,6 +3,7 @@ from typing import Sequence
 from rich.console import Console
 
 from cmdbox.models import Command, Variable, Tag
+from cmdbox.repositories.results import TagAttachResult
 from cmdbox.resolve.types import ResolveResult
 
 
@@ -139,6 +140,18 @@ class ConsoleUI:
         for tag in tags:
             self.print_tag(tag, output_fields=output_fields)
             self.print("")
+
+    def print_tag_attach_result(self, result: TagAttachResult) -> None:
+        if len(result.added) > 0:
+            self.success(
+                f"Added {self._get_entity_count_label(len(result.added), 'tag')}:"
+            )
+            self.print(", ".join(result.added))
+        if len(result.existing) > 0:
+            self.print(
+                f"{self._get_entity_count_label(len(result.existing), 'tag')} already attached:"
+            )
+            self.print(", ".join(result.existing))
 
     @staticmethod
     def _get_entity_count_label(count: int, entity_name: str) -> str:
