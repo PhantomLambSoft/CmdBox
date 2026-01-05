@@ -105,7 +105,7 @@ def run_list_variables(
     console = get_console()
     var_service = get_var_services()
     vars_ = var_service.list_variables(limit=limit, order_by=order_by, tags=tags)
-    console.print_variables(vars_, output_fields=fields)
+    console.print_variable_list(vars_, output_fields=fields)
 
 
 def run_search_variables(
@@ -120,7 +120,7 @@ def run_search_variables(
     console = get_console()
     var_service = get_var_services()
     vars_ = var_service.search_variables(term, limit=limit, fields=search_fields)
-    console.print_variables(vars_, output_fields=fields)
+    console.print_variable_list(vars_, output_fields=fields)
 
 
 def run_delete_variable(

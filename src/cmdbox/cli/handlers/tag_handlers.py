@@ -96,7 +96,7 @@ def run_list_tags(
     console = get_console()
     tag_service = get_tag_services()
     tags = tag_service.list_tags(limit=limit, order_by=order_by)
-    console.print_tags(tags, output_fields=fields)
+    console.print_tag_list(tags, output_fields=fields)
 
 
 def run_search_tags(
@@ -111,7 +111,7 @@ def run_search_tags(
     console = get_console()
     tag_service = get_tag_services()
     tags = tag_service.search_tags(term, limit=limit, fields=search_fields)
-    console.print_tags(tags, output_fields=fields)
+    console.print_tag_list(tags, output_fields=fields)
 
 
 def run_delete_tag(

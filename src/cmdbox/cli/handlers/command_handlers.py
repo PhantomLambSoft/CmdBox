@@ -120,7 +120,7 @@ def run_list_command(
     console = get_console()
     cmd_service = get_cmd_services()
     cmds = cmd_service.list_commands(limit=limit, order_by=order, tags=tags)
-    console.print_commands(cmds, output_fields=fields)
+    console.print_command_list(cmds, output_fields=fields)
 
 
 def run_search_command(
@@ -135,7 +135,7 @@ def run_search_command(
     console = get_console()
     cmd_service = get_cmd_services()
     cmds = cmd_service.search_commands(term, limit=limit, fields=search_fields)
-    console.print_commands(cmds, output_fields=fields)
+    console.print_command_list(cmds, output_fields=fields)
 
 
 def run_delete_command(
