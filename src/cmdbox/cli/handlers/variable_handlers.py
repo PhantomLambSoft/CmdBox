@@ -14,6 +14,9 @@ from cmdbox.cli.prompts.prompts import (
     prompt_for_value,
 )
 from cmdbox.cli.prompts.validators import NameValidator
+from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.services.variable_services import VariableServices
+from cmdbox.services.tag_services import TagServices
 
 
 @dataclass(frozen=True)
@@ -27,9 +30,9 @@ class AddVariableArgs:
 def run_add_variable(
     *,
     args: AddVariableArgs,
-    get_var_services: Callable[[], Any],
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_var_services: Callable[[], VariableServices],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     name = args.name
     value = args.value
@@ -56,8 +59,8 @@ def run_add_variable(
 def run_get_variable(
     *,
     name: str,
-    get_var_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_var_services: Callable[[], VariableServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     var_service = get_var_services()
@@ -71,8 +74,8 @@ def run_update_variable(
     value: Optional[str],
     new_name: Optional[str],
     set_pairs: Optional[Sequence[str]],
-    get_var_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_var_services: Callable[[], VariableServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     allowed = {"name", "value"}
     fields: Dict[str, Any] = {}
@@ -100,8 +103,8 @@ def run_list_variables(
     order_by: str,
     tags: list[str],
     fields: list[str],
-    get_var_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_var_services: Callable[[], VariableServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     var_service = get_var_services()
@@ -115,8 +118,8 @@ def run_search_variables(
     limit: int,
     search_fields: list[str],
     fields: list[str],
-    get_var_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_var_services: Callable[[], VariableServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     var_service = get_var_services()
@@ -127,8 +130,8 @@ def run_search_variables(
 def run_delete_variable(
     *,
     name: str,
-    get_var_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_var_services: Callable[[], VariableServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     var_service = get_var_services()
@@ -144,9 +147,9 @@ def run_attach_tags(
     *,
     name: str | None = None,
     tag_names: list[str] | None = None,
-    get_var_services: Callable[[], Any],
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_var_services: Callable[[], VariableServices],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     if not name:
         name = prompt_for_name(NameValidator())
@@ -162,9 +165,9 @@ def run_detach_tags(
     *,
     name: str | None = None,
     tag_names: list[str] | None = None,
-    get_var_services: Callable[[], Any],
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_var_services: Callable[[], VariableServices],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     if not name:
         name = prompt_for_name(NameValidator())

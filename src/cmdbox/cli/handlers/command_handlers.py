@@ -15,6 +15,9 @@ from cmdbox.cli.prompts.prompts import (
     prompt_for_description,
 )
 from cmdbox.cli.prompts.validators import AliasValidator, TemplateValidator
+from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.services.command_services import CommandServices
+from cmdbox.services.tag_services import TagServices
 
 
 @dataclass(frozen=True)
@@ -29,9 +32,9 @@ class AddCommandArgs:
 def run_add_command(
     *,
     args: AddCommandArgs,
-    get_cmd_services: Callable[[], Any],
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_cmd_services: Callable[[], CommandServices],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     alias = args.alias
     template = args.template
@@ -67,8 +70,8 @@ def run_add_command(
 def run_get_command(
     *,
     alias: str,
-    get_cmd_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_cmd_services: Callable[[], CommandServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
@@ -83,8 +86,8 @@ def run_update_command(
     description: Optional[str],
     new_alias: Optional[str],
     set_pairs: Optional[Sequence[str]],
-    get_cmd_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_cmd_services: Callable[[], CommandServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     allowed = {"alias", "template", "description"}
     fields: Dict[str, Any] = {}
@@ -114,8 +117,8 @@ def run_list_command(
     order: str,
     tags: list[str],
     fields: list[str],
-    get_cmd_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_cmd_services: Callable[[], CommandServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
@@ -129,8 +132,8 @@ def run_search_command(
     limit: int,
     search_fields: list[str],
     fields: list[str],
-    get_cmd_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_cmd_services: Callable[[], CommandServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
@@ -141,8 +144,8 @@ def run_search_command(
 def run_delete_command(
     *,
     alias: str,
-    get_cmd_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_cmd_services: Callable[[], CommandServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
@@ -158,9 +161,9 @@ def run_attach_tags(
     *,
     alias: str | None = None,
     tag_names: list[str] | None = None,
-    get_cmd_services: Callable[[], Any],
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_cmd_services: Callable[[], CommandServices],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     if alias is None:
         alias = prompt_for_alias(AliasValidator())
@@ -176,9 +179,9 @@ def run_detach_tags(
     *,
     alias: str | None = None,
     tag_names: list[str] | None = None,
-    get_cmd_services: Callable[[], Any],
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_cmd_services: Callable[[], CommandServices],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     if alias is None:
         alias = prompt_for_alias(AliasValidator())

@@ -12,6 +12,8 @@ from cmdbox.cli.prompts.prompts import (
     prompt_for_name,
     prompt_for_description,
 )
+from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.services.tag_services import TagServices
 
 
 @dataclass(frozen=True)
@@ -24,8 +26,8 @@ class AddTagArgs:
 def run_add_tag(
     *,
     args: AddTagArgs,
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     name = args.name
     description = args.description
@@ -37,7 +39,7 @@ def run_add_tag(
         description = prompt_for_description()
 
     tag_service = get_tag_services()
-    tag = tag_service.add_tag(name=name, description=description)
+    tag = tag_service.create_tag(name=name, description=description)
     console = get_console()
     console.success("Tag successfully created:")
     console.print_tag(tag)
@@ -46,8 +48,8 @@ def run_add_tag(
 def run_get_tag(
     *,
     name: str,
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
@@ -61,8 +63,8 @@ def run_update_tag(
     description: Optional[str],
     new_name: Optional[str],
     set_pairs: Sequence[str],
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     allowed = {"name", "description"}
     fields: Dict[str, Any] = {}
@@ -90,8 +92,8 @@ def run_list_tags(
     limit: int,
     order_by: str,
     fields: list[str],
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
@@ -105,8 +107,8 @@ def run_search_tags(
     limit: int,
     search_fields: list[str],
     fields: list[str],
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
@@ -117,8 +119,8 @@ def run_search_tags(
 def run_delete_tag(
     *,
     name: str,
-    get_tag_services: Callable[[], Any],
-    get_console: Callable[[], Any],
+    get_tag_services: Callable[[], TagServices],
+    get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
