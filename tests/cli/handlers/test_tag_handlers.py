@@ -101,7 +101,7 @@ class TestTagHandlers(unittest.TestCase):
             limit=10,
             order_by="name",
             fields=["f1"],
-            get_var_services=self.get_tag_services,  # Note: tag_handlers.py uses get_var_services parameter name in run_list_tags but it's likely a typo in original code. I'll follow the code.
+            get_tag_services=self.get_tag_services,  # Note: tag_handlers.py uses get_var_services parameter name in run_list_tags but it's likely a typo in original code. I'll follow the code.
             get_console=self.get_console,
         )
         self.mock_tag_services.list_tags.assert_called_with(limit=10, order_by="name")
