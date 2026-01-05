@@ -154,7 +154,7 @@ def run_delete_command(
         console.error(f"Failed to delete command '{alias}'.")
 
 
-def run_attach_tag(
+def run_attach_tags(
     *,
     alias: str | None = None,
     tag_names: list[str] | None = None,

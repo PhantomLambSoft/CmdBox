@@ -140,7 +140,7 @@ def run_delete_variable(
         console.error(f"Failed to delete variable '{name}'.")
 
 
-def run_attach_tag(
+def run_attach_tags(
     *,
     name: str | None = None,
     tag_names: list[str] | None = None,

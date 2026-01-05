@@ -153,7 +153,7 @@ def add_tag(
         list[str], typer.Argument(help="The tags to add to the command.")
     ] = None,
 ) -> None:
-    variable_handlers.run_attach_tag(
+    variable_handlers.run_attach_tags(
         name=name,
         tag_names=tags,
         get_var_services=container.get_variable_services,
