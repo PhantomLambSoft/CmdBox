@@ -190,3 +190,22 @@ def delete(
         get_cmd_services=container.get_command_services,
         get_console=container.get_console,
     )
+
+
+@app.command("tag")
+@cli_guard
+def add_tag(
+    alias: Annotated[
+        str, typer.Argument(help="The alias of the command to tag.")
+    ] = None,
+    tags: Annotated[
+        list[str], typer.Argument(help="The tags to add to the command.")
+    ] = None,
+) -> None:
+    command_handlers.run_attach_tag(
+        alias=alias,
+        tag_names=tags,
+        get_cmd_services=container.get_command_services,
+        get_tag_services=container.get_tag_services,
+        get_console=container.get_console,
+    )
