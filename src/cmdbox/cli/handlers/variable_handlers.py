@@ -156,3 +156,21 @@ def run_attach_tags(
     result = var_service.add_tags(name=name, tags=tag_names)
     console = get_console()
     console.print_tag_attach_result(result)
+
+
+def run_detach_tags(
+    *,
+    name: str | None = None,
+    tag_names: list[str] | None = None,
+    get_var_services: Callable[[], Any],
+    get_tag_services: Callable[[], Any],
+    get_console: Callable[[], Any],
+) -> None:
+    if not name:
+        name = prompt_for_name(NameValidator())
+    if not tag_names:
+        tag_names = get_tags_interactive(get_tag_services())
+    var_service = get_var_services()
+    result = var_service.remove_tags(name=name, tags=tag_names)
+    console = get_console()
+    console.print_tag_detach_result(result)

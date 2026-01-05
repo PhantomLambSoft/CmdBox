@@ -170,3 +170,21 @@ def run_attach_tags(
     result = cmd_service.add_tags(alias=alias, tags=tag_names)
     console = get_console()
     console.print_tag_attach_result(result)
+
+
+def run_detach_tags(
+    *,
+    alias: str | None = None,
+    tag_names: list[str] | None = None,
+    get_cmd_services: Callable[[], Any],
+    get_tag_services: Callable[[], Any],
+    get_console: Callable[[], Any],
+) -> None:
+    if alias is None:
+        alias = prompt_for_alias(AliasValidator())
+    if tag_names is None:
+        tag_names = get_tags_interactive(get_tag_services())
+    cmd_service = get_cmd_services()
+    result = cmd_service.remove_tags(alias=alias, tags=tag_names)
+    console = get_console()
+    console.print_tag_detach_result(result)
