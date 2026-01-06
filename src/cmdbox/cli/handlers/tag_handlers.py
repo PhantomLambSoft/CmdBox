@@ -12,6 +12,7 @@ from cmdbox.cli.prompts.prompts import (
     prompt_for_name,
     prompt_for_description,
 )
+from cmdbox.cli.prompts.validators import TagNameValidator
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.services.tag_services import TagServices
 
@@ -33,7 +34,7 @@ def run_add_tag(
     description = args.description
 
     if args.interactive or name is None:
-        name = prompt_for_name()
+        name = prompt_for_name(TagNameValidator())
 
     if args.interactive or description is None:
         description = prompt_for_description()
