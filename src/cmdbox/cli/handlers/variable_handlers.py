@@ -39,9 +39,11 @@ def run_add_variable(
     tags = args.tags
 
     if args.interactive or name is None:
-        name = prompt_for_name()
+        name = prompt_for_name(NameValidator())
+
     if args.interactive or value is None:
         value = prompt_for_value()
+
     if args.interactive or tags is None:
         tags = get_tags_interactive(get_tag_services())
     if not tags:
