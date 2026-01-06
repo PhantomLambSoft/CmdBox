@@ -44,8 +44,6 @@ def run_add_variable(
         value = prompt_for_value()
     if args.interactive or tags is None:
         tags = get_tags_interactive(get_tag_services())
-    if args.interactive or not tags:
-        tags = get_tags_interactive(get_tag_services())
     if not tags:
         tags = None
 
