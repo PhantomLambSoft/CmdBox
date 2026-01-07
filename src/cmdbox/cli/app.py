@@ -41,6 +41,7 @@ def common(
         bool,
         typer.Option(
             "--test",
+            "-t",
             callback=is_test_callback,
             is_flag=True,
             is_eager=True,
