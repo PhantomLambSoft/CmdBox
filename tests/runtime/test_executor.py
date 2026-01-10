@@ -34,7 +34,7 @@ class TestExecutor(unittest.TestCase):
         self.assertEqual(result.stdout, "hello\n")
         self.assertEqual(result.stderr, "")
 
-        mock_build.assert_called_once_with(command)
+        mock_build.assert_called_once_with(command, preferred_shell=None)
         mock_run.assert_called_once()
         args, kwargs = mock_run.call_args
         self.assertEqual(args[0], popen_args)
