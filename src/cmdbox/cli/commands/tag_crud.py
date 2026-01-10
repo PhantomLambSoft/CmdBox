@@ -4,6 +4,7 @@ import typer
 
 from cmdbox import container
 from cmdbox.cli.common.errors import make_cli_guard
+from cmdbox.cli.completions.fields import tag_editable_field_options, tag_field_options
 from cmdbox.cli.handlers import tag_handlers
 
 
@@ -65,7 +66,12 @@ def update(
     ] = None,
     set_: Annotated[
         list[str],
-        typer.Option("--set", "-s", help="A list of key=value pairs to update."),
+        typer.Option(
+            "--set",
+            "-s",
+            help="A list of key=value pairs to update.",
+            autocompletion=tag_editable_field_options,
+        ),
     ] = None,
 ):
     tag_handlers.run_update_tag(
@@ -91,7 +97,10 @@ def list_tags(
     fields: Annotated[
         list[str] | None,
         typer.Option(
-            "--field", "-f", help="The fields to display in the results list."
+            "--field",
+            "-f",
+            help="The fields to display in the results list.",
+            autocompletion=tag_field_options,
         ),
     ] = None,
 ) -> None:
@@ -112,7 +121,13 @@ def search(
         int, typer.Option(help="The maximum number of results to return.")
     ] = 10,
     search_fields: Annotated[
-        list[str], typer.Option("--in", "-i", help="The fields to search within.")
+        list[str],
+        typer.Option(
+            "--in",
+            "-i",
+            help="The fields to search within.",
+            autocompletion=tag_field_options,
+        ),
     ] = None,
     fields: Annotated[
         list[str] | None,
@@ -120,6 +135,7 @@ def search(
             "--field",
             "-f",
             help="The field(s) to display in the results list. Defaults to all fields.",
+            autocompletion=tag_field_options,
         ),
     ] = None,
 ) -> None:

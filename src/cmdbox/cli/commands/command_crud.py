@@ -4,6 +4,10 @@ import typer
 
 from cmdbox import container
 from cmdbox.cli.common.errors import make_cli_guard
+from cmdbox.cli.completions.fields import (
+    command_field_options,
+    command_editable_field_options,
+)
 from cmdbox.cli.handlers import command_handlers
 
 
@@ -102,7 +106,12 @@ def update(
     ] = None,
     set_: Annotated[
         list[str],
-        typer.Option("--set", "-s", help="A list of key=value pairs to update."),
+        typer.Option(
+            "--set",
+            "-s",
+            help="A list of key=value pairs to update.",
+            autocompletion=command_editable_field_options,
+        ),
     ] = None,
 ) -> None:
     command_handlers.run_update_command(
@@ -135,6 +144,7 @@ def list_cmds(
             "--field",
             "-f",
             help="The field(s) to display in the results list. Defaults to all fields.",
+            autocompletion=command_field_options,
         ),
     ] = None,
 ) -> None:
@@ -156,7 +166,13 @@ def search(
         int, typer.Option(help="The maximum number of results to return.")
     ] = 10,
     search_fields: Annotated[
-        list[str], typer.Option("--in", "-i", help="The fields to search within.")
+        list[str],
+        typer.Option(
+            "--in",
+            "-i",
+            help="The fields to search within.",
+            autocompletion=command_field_options,
+        ),
     ] = None,
     fields: Annotated[
         list[str] | None,
@@ -164,6 +180,7 @@ def search(
             "--field",
             "-f",
             help="The field(s) to display in the results list. Defaults to all fields.",
+            autocompletion=command_field_options,
         ),
     ] = None,
 ) -> None:
