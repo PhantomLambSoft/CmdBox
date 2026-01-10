@@ -18,7 +18,7 @@ def build_shell_command(command: str) -> list[str]:
     Returns:
         list[str]: A list of strings representing the shell command and its arguments.
     """
-    if sys.platform == "win":
+    if sys.platform.startswith("win"):
         # Prefer PowerShell if available, otherwise cmd.exe
         comspec = os.environ.get("COMSPEC", "cmd.exe")
 
