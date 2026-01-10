@@ -33,7 +33,7 @@ def run(
         ),
     ] = None,
     env: Annotated[
-        list[str] | str,
+        list[str],
         typer.Option(
             "--env", "-e", help="The environment variables to set for the command."
         ),
@@ -80,7 +80,7 @@ def preview(
         ),
     ] = None,
     env: Annotated[
-        list[str] | str,
+        list[str],
         typer.Option(
             "--env", "-e", help="The environment variables to set for the command."
         ),
