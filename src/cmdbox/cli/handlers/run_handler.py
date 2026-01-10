@@ -109,12 +109,20 @@ def parse_env(env: list[str] | str | None) -> dict[str, str] | None:
     if isinstance(env, str):
         env = env.split(",")
 
-    for pair in env:
+    def split_pair(pair: str) -> tuple[str, str]:
         if "=" not in pair:
             raise typer.BadParameter(
                 "Invalid environment variable format. Each env must be in the format of key=value."
             )
-        key, value = pair.split("=")
-        ret[key] = value
+        k, v = pair.split("=", maxsplit=1)
+        return k, v
+
+    for pair in env:
+        if "," in pair:
+            for k, v in map(split_pair, pair.split(",")):
+                ret[k] = v
+        else:
+            k, v = split_pair(pair)
+            ret[k] = v
 
     return ret
