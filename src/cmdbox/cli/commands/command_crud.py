@@ -137,6 +137,9 @@ def update(
     )
 
 
+app.command("edit", hidden=True)(update)
+
+
 @app.command("list")
 @cli_guard
 def list_cmds(
@@ -182,6 +185,9 @@ def list_cmds(
     )
 
 
+app.command("ls", hidden=True)(list_cmds)
+
+
 @app.command("search")
 @cli_guard
 def search(
@@ -218,6 +224,9 @@ def search(
     )
 
 
+app.command("find", hidden=True)(search)
+
+
 @app.command("delete")
 @cli_guard
 def delete(
@@ -234,6 +243,11 @@ def delete(
         get_cmd_services=container.get_command_services,
         get_console=container.get_console,
     )
+
+
+app.command("del", hidden=True)(delete)
+app.command("rm", hidden=True)(delete)
+app.command("remove", hidden=True)(delete)
 
 
 @app.command("tag")
