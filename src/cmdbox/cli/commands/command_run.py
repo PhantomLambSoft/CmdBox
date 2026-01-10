@@ -3,6 +3,7 @@ from typing import Annotated
 import typer
 
 from cmdbox import container
+from cmdbox.cli.completions.commands import complete_command_aliases
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -11,7 +12,10 @@ app = typer.Typer(no_args_is_help=True)
 def run(
     alias: Annotated[
         str,
-        typer.Argument(help="The alias of the command to run."),
+        typer.Argument(
+            help="The alias of the command to run.",
+            autocompletion=complete_command_aliases,
+        ),
     ],
     preview: Annotated[
         bool,
