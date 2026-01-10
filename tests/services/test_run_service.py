@@ -46,7 +46,7 @@ class TestRunService(unittest.TestCase):
         self.assertEqual(result, execution_result)
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
         self.mock_resolver.resolve.assert_called_once_with(template)
-        self.mock_executor.run.assert_called_once_with(resolved_text)
+        self.mock_executor.run.assert_called_once_with(resolved_text, ctx=None)
 
     def test_preview_success(self):
         # Setup
