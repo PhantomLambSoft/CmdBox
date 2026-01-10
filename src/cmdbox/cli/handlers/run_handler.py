@@ -1,0 +1,120 @@
+from typing import Callable
+from dataclasses import dataclass
+
+import typer
+
+from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.runtime.executor import RunContext
+from cmdbox.services.run_service import RunService
+
+
+@dataclass(frozen=True)
+class RawRunContext:
+    """
+    This dataclass is effectively the same as the actual RunContext
+    except that it takes a different 'pre-parsed' version of the
+    env argument.  This class takes the argument in a format that
+    can be supplied by the user, which must then be parsed into a
+    format that can be used by the RunContext.
+    """
+
+    cwd: str | None = None
+    env: list[str] | str | None = None
+    capture: bool = False
+    shell: str | None = None
+
+
+def run_run_command(
+    *,
+    alias: str,
+    run_ctx: RawRunContext | None = None,
+    get_run_service: Callable[[], RunService],
+    get_console: Callable[[], ConsoleUI],
+):
+    console = get_console()
+    run_service = get_run_service()
+    run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
+    ex_result = run_service.run(alias, ctx=run_ctx)
+    if ex_result.stderr:
+        console.error(ex_result.stderr)
+
+
+def run_preview_command(
+    *,
+    alias: str,
+    run_ctx: RawRunContext | None = None,
+    get_run_service: Callable[[], RunService],
+    get_console: Callable[[], ConsoleUI],
+):
+    console = get_console()
+    run_service = get_run_service()
+    run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
+    ex_result = run_service.preview(alias)
+    console.print_run_preview(ex_result)
+
+
+def get_run_ctx(raw_run_ctx: RawRunContext | None) -> RunContext:
+    """
+    Creates and returns a `RunContext` object based on the provided `raw_run_ctx`.
+
+    If the `raw_run_ctx` is not provided (i.e., is None), a default `RunContext` is
+    created and returned. If `raw_run_ctx` is provided, its properties are used to
+    initialize the `RunContext`, and its environment is parsed before being passed
+    to the new context.
+
+    Args:
+        raw_run_ctx: An instance of `RawRunContext` or None. If provided, it must
+            contain context information such as current working directory, shell
+            configuration, and environment variables.
+
+    Returns:
+        RunContext: A `RunContext` object constructed using the provided
+        `raw_run_ctx` or with default values if no `raw_run_ctx` is provided.
+    """
+    if raw_run_ctx is None:
+        return RunContext()
+
+    env = parse_env(raw_run_ctx.env)
+    return RunContext(
+        cwd=raw_run_ctx.cwd,
+        env=env,
+        capture=raw_run_ctx.capture,
+        shell=raw_run_ctx.shell,
+    )
+
+
+def parse_env(env: list[str] | str | None) -> dict[str, str] | None:
+    """
+    Parses a list, string, or None value into a dictionary where each key-value pair
+    represents an environment variable, with the key and value extracted from the
+    input format. If the input is None, returns None.
+
+    Args:
+        env (list[str] | str | None): A list of strings, a comma-separated string,
+            or None, where each string is in the format "key=value".
+
+    Returns:
+        dict[str, str] | None: A dictionary containing the parsed environment
+            variables as key-value pairs, or None if the input is None.
+
+    Raises:
+        typer.BadParameter: If an entry in the input does not follow the
+            "key=value" format.
+    """
+    if env is None:
+        return None
+
+    ret = {}
+
+    if isinstance(env, str):
+        env = env.split(",")
+
+    for pair in env:
+        if "=" not in pair:
+            raise typer.BadParameter(
+                "Invalid environment variable format. Each env must be in the format of key=value."
+            )
+        key, value = pair.split("=")
+        ret[key] = value
+
+    return ret
