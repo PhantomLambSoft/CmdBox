@@ -5,6 +5,8 @@ import typer
 from cmdbox import container
 from cmdbox.cli.common.errors import make_cli_guard
 from cmdbox.cli.completions.fields import variable_field_options
+from cmdbox.cli.completions.variables import complete_variable_names
+from cmdbox.cli.completions.tags import complete_tag_names
 from cmdbox.cli.handlers import variable_handlers
 
 
@@ -24,6 +26,7 @@ def add(
             "--tags",
             "-t",
             help="A list of tags to associate with the variable, separated by commas.",
+            autocompletion=complete_tag_names,
         ),
     ] = None,
     interactive: Annotated[
@@ -45,7 +48,13 @@ def add(
 @app.command("get")
 @cli_guard
 def get(
-    name: Annotated[str, typer.Argument(help="The name of the variable to retrieve.")],
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the variable to retrieve.",
+            autocompletion=complete_variable_names,
+        ),
+    ],
 ) -> None:
     variable_handlers.run_get_variable(
         name=name,
@@ -57,7 +66,13 @@ def get(
 @app.command("update")
 @cli_guard
 def update(
-    name: Annotated[str, typer.Argument(help="The name of the variable to update.")],
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the variable to update.",
+            autocompletion=complete_variable_names,
+        ),
+    ],
     value: Annotated[str, typer.Option("--value", "-v", help="The new value.")] = None,
     new_name: Annotated[str, typer.Option("--name", "-n", help="The new name.")] = None,
     set_: Annotated[
@@ -84,10 +99,22 @@ def update(
 @cli_guard
 def list_vars(
     order: Annotated[
-        str, typer.Option("--order", "-o", help="The field to order the results by.")
+        str,
+        typer.Option(
+            "--order",
+            "-o",
+            help="The field to order the results by.",
+            autocompletion=variable_field_options,
+        ),
     ] = "name",
     tags: Annotated[
-        list[str], typer.Option("--tag", "-t", help="The tags to filter by.")
+        list[str],
+        typer.Option(
+            "--tag",
+            "-t",
+            help="The tags to filter by.",
+            autocompletion=complete_tag_names,
+        ),
     ] = None,
     limit: Annotated[
         int,
@@ -152,7 +179,13 @@ def search(
 @app.command("delete")
 @cli_guard
 def delete(
-    name: Annotated[str, typer.Argument(help="The name of the variable to delete.")],
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the variable to delete.",
+            autocompletion=complete_variable_names,
+        ),
+    ],
 ) -> None:
     variable_handlers.run_delete_variable(
         name=name,
@@ -164,9 +197,18 @@ def delete(
 @app.command("tag")
 @cli_guard
 def add_tags(
-    name: Annotated[str, typer.Argument(help="The name of the command to tag.")],
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the command to tag.",
+            autocompletion=complete_variable_names,
+        ),
+    ],
     tags: Annotated[
-        list[str], typer.Argument(help="The tags to add to the command.")
+        list[str],
+        typer.Argument(
+            help="The tags to add to the command.", autocompletion=complete_tag_names
+        ),
     ] = None,
 ) -> None:
     variable_handlers.run_attach_tags(
@@ -181,9 +223,19 @@ def add_tags(
 @app.command("untag")
 @cli_guard
 def remove_tags(
-    name: Annotated[str, typer.Argument(help="The name of the command to untag.")],
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the command to untag.",
+            autocompletion=complete_variable_names,
+        ),
+    ],
     tags: Annotated[
-        list[str], typer.Argument(help="The tags to remove from the command.")
+        list[str],
+        typer.Argument(
+            help="The tags to remove from the command.",
+            autocompletion=complete_tag_names,
+        ),
     ] = None,
 ) -> None:
     variable_handlers.run_detach_tags(

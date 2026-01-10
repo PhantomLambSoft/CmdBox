@@ -4,10 +4,12 @@ import typer
 
 from cmdbox import container
 from cmdbox.cli.common.errors import make_cli_guard
+from cmdbox.cli.completions.commands import complete_command_aliases
 from cmdbox.cli.completions.fields import (
     command_field_options,
     command_editable_field_options,
 )
+from cmdbox.cli.completions.tags import complete_tag_names
 from cmdbox.cli.handlers import command_handlers
 
 
@@ -40,6 +42,7 @@ def add(
             "--tags",
             "-t",
             help="A list of tags to associate with the command, separated by commas.",
+            autocompletion=complete_tag_names,
         ),
     ] = None,
     interactive: Annotated[
@@ -81,7 +84,10 @@ def add(
 def get(
     alias: Annotated[
         str,
-        typer.Argument(help="The alias of the command to retrieve."),
+        typer.Argument(
+            help="The alias of the command to retrieve.",
+            autocompletion=complete_command_aliases,
+        ),
     ],
 ) -> None:
     command_handlers.run_get_command(
@@ -94,7 +100,13 @@ def get(
 @app.command("update")
 @cli_guard
 def update(
-    alias: Annotated[str, typer.Argument(help="The alias of the command to update.")],
+    alias: Annotated[
+        str,
+        typer.Argument(
+            help="The alias of the command to update.",
+            autocompletion=complete_command_aliases,
+        ),
+    ],
     template: Annotated[
         str, typer.Option("--template", "-t", help="The new template.")
     ] = None,
@@ -129,10 +141,22 @@ def update(
 @cli_guard
 def list_cmds(
     order: Annotated[
-        str, typer.Option("--order", "-o", help="The field to order the results by.")
+        str,
+        typer.Option(
+            "--order",
+            "-o",
+            help="The field to order the results by.",
+            autocompletion=command_field_options,
+        ),
     ] = "alias",
     tags: Annotated[
-        list[str], typer.Option("--tag", "-t", help="The tag to filter by.")
+        list[str],
+        typer.Option(
+            "--tag",
+            "-t",
+            help="The tag to filter by.",
+            autocompletion=complete_tag_names,
+        ),
     ] = None,
     limit: Annotated[
         int,
@@ -199,7 +223,10 @@ def search(
 def delete(
     alias: Annotated[
         str,
-        typer.Argument(help="The alias of the command to delete."),
+        typer.Argument(
+            help="The alias of the command to delete.",
+            autocompletion=complete_command_aliases,
+        ),
     ],
 ) -> None:
     command_handlers.run_delete_command(
@@ -213,10 +240,17 @@ def delete(
 @cli_guard
 def add_tags(
     alias: Annotated[
-        str, typer.Argument(help="The alias of the command to tag.")
+        str,
+        typer.Argument(
+            help="The alias of the command to tag.",
+            autocompletion=complete_command_aliases,
+        ),
     ] = None,
     tags: Annotated[
-        list[str], typer.Argument(help="The tags to add to the command.")
+        list[str],
+        typer.Argument(
+            help="The tags to add to the command.", autocompletion=complete_tag_names
+        ),
     ] = None,
 ) -> None:
     command_handlers.run_attach_tags(
@@ -232,10 +266,18 @@ def add_tags(
 @cli_guard
 def remove_tags(
     alias: Annotated[
-        str, typer.Argument(help="The alias of the command to untag.")
+        str,
+        typer.Argument(
+            help="The alias of the command to untag.",
+            autocompletion=complete_command_aliases,
+        ),
     ] = None,
     tags: Annotated[
-        list[str], typer.Argument(help="The tags to remove from the command.")
+        list[str],
+        typer.Argument(
+            help="The tags to remove from the command.",
+            autocompletion=complete_tag_names,
+        ),
     ] = None,
 ) -> None:
     command_handlers.run_detach_tags(

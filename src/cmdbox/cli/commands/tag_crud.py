@@ -5,6 +5,7 @@ import typer
 from cmdbox import container
 from cmdbox.cli.common.errors import make_cli_guard
 from cmdbox.cli.completions.fields import tag_editable_field_options, tag_field_options
+from cmdbox.cli.completions.tags import complete_tag_names
 from cmdbox.cli.handlers import tag_handlers
 
 
@@ -16,7 +17,10 @@ cli_guard = make_cli_guard(container.get_console)
 @app.command("add")
 @cli_guard
 def add(
-    name: Annotated[str, typer.Argument(help="The name of the tag.")] = None,
+    name: Annotated[
+        str,
+        typer.Argument(help="The name of the tag.", autocompletion=complete_tag_names),
+    ] = None,
     description: Annotated[
         str, typer.Argument(help="A description of the tag.")
     ] = None,
@@ -43,7 +47,12 @@ def add(
 @app.command("get")
 @cli_guard
 def get(
-    name: Annotated[str, typer.Argument(help="The name of the tag to retrieve.")],
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the tag to retrieve.", autocompletion=complete_tag_names
+        ),
+    ],
 ) -> None:
     tag_handlers.run_get_tag(
         name=name,
@@ -55,7 +64,12 @@ def get(
 @app.command("update")
 @cli_guard
 def update(
-    name: Annotated[str, typer.Argument(help="The name of the tag to update.")],
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the tag to update.", autocompletion=complete_tag_names
+        ),
+    ],
     description: Annotated[
         str,
         typer.Option("--description", "-d", help="The new description of the tag."),
@@ -88,7 +102,13 @@ def update(
 @cli_guard
 def list_tags(
     order: Annotated[
-        str, typer.Option("--order", "-o", help="The field to order the results by.")
+        str,
+        typer.Option(
+            "--order",
+            "-o",
+            help="The field to order the results by.",
+            autocompletion=tag_field_options,
+        ),
     ] = "name",
     limit: Annotated[
         int,
@@ -116,7 +136,12 @@ def list_tags(
 @app.command("search")
 @cli_guard
 def search(
-    term: Annotated[str, typer.Argument(help="The search term to use.")],
+    term: Annotated[
+        str,
+        typer.Argument(
+            help="The search term to use.", autocompletion=complete_tag_names
+        ),
+    ],
     limit: Annotated[
         int, typer.Option(help="The maximum number of results to return.")
     ] = 10,
@@ -152,7 +177,12 @@ def search(
 @app.command("delete")
 @cli_guard
 def delete(
-    name: Annotated[str, typer.Argument(help="The name of the tag to delete.")],
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the tag to delete.", autocompletion=complete_tag_names
+        ),
+    ],
 ) -> None:
     tag_handlers.run_delete_tag(
         name=name,
