@@ -1,7 +1,7 @@
 from cmdbox.repositories.command_repository import CommandRepository
 from cmdbox.resolve.resolver import Resolver
 from cmdbox.resolve.types import ResolveResult
-from cmdbox.runtime.executor import Executor
+from cmdbox.runtime.executor import Executor, RunContext
 from cmdbox.runtime.results import ExecutionResult
 
 
@@ -33,7 +33,7 @@ class RunService:
         self._resolver = resolver
         self._executor = executor
 
-    def run(self, command_alias: str) -> ExecutionResult:
+    def run(self, command_alias: str, ctx: RunContext | None = None) -> ExecutionResult:
         """
         Executes a command based on the given alias.
 
@@ -42,13 +42,14 @@ class RunService:
 
         Args:
             command_alias (str): The alias for the command to be executed.
+            ctx (RunContext | None): The context for running the command.
 
         Returns:
             ExecutionResult: The result of executing the command.
         """
         cmd = self._repo.get_by_alias(command_alias)
         resolved_cmd = self._resolver.resolve(cmd.template)
-        return self._executor.run(resolved_cmd.text)
+        return self._executor.run(resolved_cmd.text, ctx=ctx)
 
     def preview(self, command_alias: str) -> ResolveResult:
         """
