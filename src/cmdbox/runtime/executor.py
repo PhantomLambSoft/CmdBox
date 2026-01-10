@@ -25,11 +25,14 @@ class RunContext:
             parent process.
         capture (bool): Whether the process's output streams should be captured.
             If False, the output streams will inherit those of the parent process.
+        shell (str | None): The shell to use for executing the command. If None,
+            the system default shell will be used.
     """
 
     cwd: str | None = None
     env: Mapping[str, str] | None = None
     capture: bool = False
+    shell: str | None = None
 
 
 class Executor:
@@ -54,7 +57,7 @@ class Executor:
             ExecutionResult: An object containing the executed command, the exit code,
                 and the captured standard output and error streams.
         """
-        popen_args = build_shell_command(command)
+        popen_args = build_shell_command(command, preferred_shell=ctx.shell)
 
         env = os.environ.copy()
         if ctx.env:
