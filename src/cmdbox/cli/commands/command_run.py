@@ -3,12 +3,14 @@ from typing import Annotated
 import typer
 
 from cmdbox import container
+from cmdbox.cli.commands.command_crud import cli_guard
 from cmdbox.cli.completions.commands import complete_command_aliases
 
 app = typer.Typer(no_args_is_help=True)
 
 
 @app.command()
+@cli_guard
 def run(
     alias: Annotated[
         str,
