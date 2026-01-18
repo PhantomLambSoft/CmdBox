@@ -15,8 +15,8 @@ class ConsoleUI:
         )
         self._theme = theme
 
-    def print(self, message: str) -> None:
-        self._console.print(message)
+    def print(self, *message: str, **kwargs) -> None:
+        self._console.print(*message, **kwargs)
 
     def success(self, message: str) -> None:
         self._console.print(message, style=self._theme.success)
