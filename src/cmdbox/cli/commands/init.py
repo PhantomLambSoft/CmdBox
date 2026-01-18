@@ -37,7 +37,7 @@ def init(
     )
 
 
-@app.command(name="shell")
+@app.command(name="shell", hidden=True)
 @cli_guard
 def detect_shell():
     """Detects and prints the current shell being used."""
