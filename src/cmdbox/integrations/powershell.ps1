@@ -1,6 +1,6 @@
-function cb
+function cbe
 {
-    $out = & cmdbox @args --emit
+    $out = & cb @args --emit
     $code = $LASTEXITCODE
     if ($code -ne 0)
     {

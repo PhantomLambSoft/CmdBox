@@ -1,6 +1,6 @@
-cb() {
+cbe() {
   local out status
-  out="$(command cmdbox "$@" --emit)"
+  out="$(command cb "$@" --emit)"
   status=$?
   if [ $status -ne 0 ]; then
     return $status

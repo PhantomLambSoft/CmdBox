@@ -1,5 +1,5 @@
-function cb
-    set -l out (command cmdbox $argv --emit)
+function cbe
+    set -l out (cb cmdbox $argv --emit)
     set -l status $status
     if test $status -ne 0
         return $status

@@ -3,7 +3,7 @@ setlocal EnableExtensions EnableDelayedExpansion
 
 set "_tmp=%TEMP%\cmdbox_emit_%RANDOM%%RANDOM%.cmd"
 
-cmdbox %* --emit > "%_tmp%"
+cb %* --emit > "%_tmp%"
 if errorlevel 1 (
   del "%_tmp%" >nul 2>&1
   exit /b %errorlevel%
