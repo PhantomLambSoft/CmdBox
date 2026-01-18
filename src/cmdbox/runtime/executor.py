@@ -1,7 +1,10 @@
 import os
 import subprocess
+import sys
 from dataclasses import dataclass
 from typing import Mapping
+
+import typer
 
 from cmdbox.runtime.results import ExecutionResult
 from cmdbox.runtime.shell import build_shell_command
@@ -27,12 +30,17 @@ class RunContext:
             If False, the output streams will inherit those of the parent process.
         shell (str | None): The shell to use for executing the command. If None,
             the system default shell will be used.
+        emit (bool): Whether to emit the command template.  If True, the command
+            template is emitted to the current terminal window to be evaluated
+            in the current session.  If False, the command is executed in a
+            different session using a subprocess.  Defaults to False.
     """
 
     cwd: str | None = None
     env: Mapping[str, str] | None = None
     capture: bool = False
     shell: str | None = None
+    emit: bool = False
 
 
 class Executor:
@@ -57,6 +65,9 @@ class Executor:
             ExecutionResult: An object containing the executed command, the exit code,
                 and the captured standard output and error streams.
         """
+        if ctx.emit:
+            self.emit_command(command)
+            return None  # Just a safeguard, this should not return if emit is True
         popen_args = build_shell_command(command, preferred_shell=ctx.shell)
 
         env = os.environ.copy()
@@ -76,3 +87,23 @@ class Executor:
             stdout=completed.stdout or "",
             stderr=completed.stderr or "",
         )
+
+    @staticmethod
+    def emit_command(command: str) -> None:
+        """
+        Emits a formatted command to standard output and terminates the process
+        with a success exit code.
+
+        This method takes a string command as input, appends a newline character,
+        and writes it to the standard output. It ensures the command is formatted
+        with a single trailing newline before being emitted. Once executed, the
+        method forcefully exits the process with an exit code of 0.
+
+        Args:
+            command (str): The input command that needs to be written to standard
+                output. It should be a valid string representation of the command
+                to execute.
+        """
+        cmd = command.strip("\n") + "\n"
+        sys.stdout.write(cmd)
+        raise typer.Exit(code=0)

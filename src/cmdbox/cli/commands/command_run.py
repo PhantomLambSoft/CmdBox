@@ -34,15 +34,11 @@ def run(
     ] = None,
     env: Annotated[
         list[str],
-        typer.Option(
-            "--env", "-e", help="The environment variables to set for the command."
-        ),
+        typer.Option("--env", help="The environment variables to set for the command."),
     ] = None,
     capture: Annotated[
         bool,
-        typer.Option(
-            "--capture", "-c", is_flag=True, help="Capture the command output."
-        ),
+        typer.Option("--capture", "-c", help="Capture the command output."),
     ] = False,
     shell: Annotated[
         str,
@@ -50,11 +46,22 @@ def run(
             "--shell", "-s", help="The shell to use for the command execution."
         ),
     ] = None,
+    emit: Annotated[
+        bool,
+        typer.Option(
+            "--emit",
+            "-e",
+            is_flag=True,
+            help="Print the command output to stdout instead of running it in a separate process. "
+            "You must then press enter to run the command in your current terminal window.",
+            hidden=True,
+        ),
+    ] = False,
 ):
     if preview_cmd:
         preview(alias=alias, cwd=cwd, env=env, capture=capture, shell=shell)
         return
-    ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell)
+    ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell, emit=emit)
     run_run_command(
         alias=alias,
         run_ctx=ctx,

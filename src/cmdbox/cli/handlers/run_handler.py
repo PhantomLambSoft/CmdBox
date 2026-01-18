@@ -22,6 +22,7 @@ class RawRunContext:
     env: list[str] | str | None = None
     capture: bool = False
     shell: str | None = None
+    emit: bool = False
 
 
 def run_run_command(
@@ -35,7 +36,7 @@ def run_run_command(
     run_service = get_run_service()
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
     ex_result = run_service.run(alias, ctx=run_ctx)
-    if ex_result.stderr:
+    if not run_ctx.emit and ex_result.stderr:
         console.error(ex_result.stderr)
 
 
@@ -80,6 +81,7 @@ def get_run_ctx(raw_run_ctx: RawRunContext | None) -> RunContext:
         env=env,
         capture=raw_run_ctx.capture,
         shell=raw_run_ctx.shell,
+        emit=raw_run_ctx.emit,
     )
 
 
