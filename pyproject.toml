@@ -38,7 +38,7 @@ where = ["src"]
 include = ["cmdbox*"]
 
 [tool.setuptools.package-data]
-cmdbox = ["*.yaml", "*.json", "*.txt"]
+cmdbox = ["*.yaml", "*.json", "*.txt", "integrations/*"]
 
 [tool.black]
 line-length = 88
