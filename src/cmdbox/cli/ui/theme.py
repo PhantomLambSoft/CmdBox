@@ -30,6 +30,9 @@ CMDBOX_THEME = Theme(
         "entity.id": "magenta",
         "entity.count": "bold",
         "entity.time": "dim",
+        # Tags
+        "tag.pill": "bold white on dark_green",
+        "tag.pill_muted": "white on grey23",
         # Execution and previews
         "run.command": "cyan",
         "run.output": "",

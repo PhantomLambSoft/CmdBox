@@ -33,6 +33,9 @@ def build_theme(settings: Settings) -> RichTheme:
         "entity.id": c.entity_id,
         "entity.count": c.entity_count,
         "entity.time": c.entity_time,
+        # Tags
+        "tag.pill": c.tag_pill,
+        "tag.pill_muted": c.tag_pill_muted,
         # Execution and previews
         "run.command": c.run_command,
         "run.output": c.run_output,

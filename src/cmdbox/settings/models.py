@@ -35,6 +35,10 @@ class UIStyle:
     entity_count: str = "bold"
     entity_time: str = "dim"
 
+    # Tags
+    tag_pill: str = "bold white on dark_green"
+    tag_pill_muted: str = "white on grey23"
+
     # Execution and previews
     run_command: str = "cyan"
     run_output: str = ""
