@@ -1,37 +1,40 @@
-from dataclasses import dataclass
-from rich.theme import Theme as RichTheme
+from rich.theme import Theme
 
 
-@dataclass(frozen=True)
-class Theme:
-    rich: RichTheme
-
-    success: str
-    error: str
-    warning: str
-    info: str
-    debug: str
-    muted: str
-
-    command_alias: str
-    command_template: str
-    command_description: str
-    command_date_created: str
-    command_last_updated: str
-    command_used: str
-    command_last_used: str
-
-    variable_name: str
-    variable_value: str
-    variable_date_created: str
-    variable_last_updated: str
-
-    tag_name: str
-    tag_description: str
-    tag_date_created: str
-    tag_last_updated: str
-
-    run_preview_command: str
-    run_preview_step_kind: str
-    run_preview_step_key: str
-    run_preview_step_expanded_to: str
+CMDBOX_THEME = Theme(
+    {
+        # Core text
+        "ui.title": "bold",
+        "ui.subtitle": "dim",
+        "ui.muted": "dim",
+        "ui.dim": "dim",
+        "ui.border": "dim",
+        "ui.panel_title": "bold",
+        # Tables
+        "ui.table_header": "bold",
+        "ui.caption": "dim",
+        # Key/value panels
+        "ui.kv.key": "dim",
+        "ui.kv.value": "",
+        # Status
+        "status.success": "bold green",
+        "status.info": "bold cyan",
+        "status.warning": "bold yellow",
+        "status.error": "bold red",
+        # Code semantics (not a font switch, just a consistent code look)
+        "code": "cyan",
+        "code.inline": "cyan",
+        "code.block": "cyan",
+        # Common entity accents (optional, keep minimal)
+        "entity.name": "bold",
+        "entity.id": "magenta",
+        "entity.count": "bold",
+        "entity.time": "dim",
+        # Execution and previews
+        "run.command": "cyan",
+        "run.output": "",
+        "run.trace.kind": "dim",
+        "run.trace.key": "magenta",
+        "run.trace.value": "cyan",
+    }
+)

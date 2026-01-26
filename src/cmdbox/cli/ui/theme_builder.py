@@ -1,67 +1,44 @@
-from cmdbox.cli.ui.theme import Theme
 from rich.theme import Theme as RichTheme
 
+from cmdbox.settings.models import Settings
 
-def build_theme(settings) -> Theme:
-    colors = settings.ui.colors
-    cmd = settings.ui.command_colors
-    var = settings.ui.variable_colors
-    tag = settings.ui.tag_colors
-    run_preview = settings.ui.run_preview_colors
+
+def build_theme(settings: Settings) -> RichTheme:
+    c = settings.ui.colors
 
     style_map = {
-        "success": colors.success,
-        "error": colors.error,
-        "warning": colors.warning,
-        "info": colors.info,
-        "debug": colors.debug,
-        "muted": colors.muted,
-        "command.alias": cmd.alias,
-        "command.template": cmd.template,
-        "command.description": cmd.description,
-        "command.date_created": cmd.date_created,
-        "command.last_updated": cmd.last_updated,
-        "command.used": cmd.used,
-        "command.last_used": cmd.last_used,
-        "variable.name": var.name,
-        "variable.value": var.value,
-        "variable.date_created": var.date_created,
-        "variable.last_updated": var.last_updated,
-        "tag.name": tag.name,
-        "tag.description": tag.description,
-        "tag.date_created": tag.date_created,
-        "tag.last_updated": tag.last_updated,
-        "run_preview.command": run_preview.command,
-        "run_preview.step_kind": run_preview.step_kind,
-        "run_preview.step_key": run_preview.step_key,
-        "run_preview.step_expanded_to": run_preview.step_expanded_to,
+        "ui.title": c.title,
+        "ui.subtitle": c.subtitle,
+        "ui.muted": c.muted,
+        "ui.dim": c.muted,
+        "ui.border": c.border,
+        "ui.panel_title": c.panel_title,
+        # Tables
+        "ui.table_header": c.table_header,
+        "ui.caption": c.caption,
+        # Key/value panels
+        "ui.kv.key": c.kv_key,
+        "ui.kv.value": c.kv_value,
+        # Status
+        "status.success": c.success,
+        "status.info": c.info,
+        "status.warning": c.warning,
+        "status.error": c.error,
+        # Code semantics (not a font switch, just a consistent code look)
+        "code": c.code,
+        "code.inline": c.code_inline,
+        "code.block": c.code_block,
+        # Common entity accents (optional, keep minimal)
+        "entity.name": c.entity_name,
+        "entity.id": c.entity_id,
+        "entity.count": c.entity_count,
+        "entity.time": c.entity_time,
+        # Execution and previews
+        "run.command": c.run_command,
+        "run.output": c.run_output,
+        "run.trace.kind": c.trace_kind,
+        "run.trace.key": c.trace_key,
+        "run.trace.value": c.trace_value,
     }
 
-    return Theme(
-        rich=RichTheme(style_map),
-        success="success",
-        error="error",
-        warning="warning",
-        info="info",
-        debug="debug",
-        muted="muted",
-        command_alias="command.alias",
-        command_template="command.template",
-        command_description="command.description",
-        command_date_created="command.date_created",
-        command_last_updated="command.last_updated",
-        command_used="command.used",
-        command_last_used="command.last_used",
-        variable_name="variable.name",
-        variable_value="variable.value",
-        variable_date_created="variable.date_created",
-        variable_last_updated="variable.last_updated",
-        tag_name="tag.name",
-        tag_description="tag.description",
-        tag_date_created="tag.date_created",
-        tag_last_updated="tag.last_updated",
-        run_preview_command="run_preview.command",
-        run_preview_step_kind="run_preview.step_kind",
-        run_preview_step_key="run_preview.step_key",
-        run_preview_step_expanded_to="run_preview.step_expanded_to",
-    )
+    return RichTheme(style_map)
