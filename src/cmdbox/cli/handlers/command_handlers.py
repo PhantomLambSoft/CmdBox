@@ -16,6 +16,15 @@ from cmdbox.cli.prompts.prompts import (
 )
 from cmdbox.cli.prompts.validators import AliasValidator, TemplateValidator
 from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.cli.ui.presenters.command import (
+    render_command,
+    render_command_list,
+    render_command_created,
+    render_command_updated,
+    render_command_deleted,
+    render_tag_attach_result,
+    render_tag_detach_result,
+)
 from cmdbox.services.command_services import CommandServices
 from cmdbox.services.tag_services import TagServices
 
@@ -63,8 +72,7 @@ def run_add_command(
         tags=tags,
     )
     console = get_console()
-    console.success("Command successfully created:")
-    console.print_command(cmd)
+    console.print(render_command_created(cmd))
 
 
 def run_get_command(
@@ -76,7 +84,8 @@ def run_get_command(
     console = get_console()
     cmd_service = get_cmd_services()
     cmd = cmd_service.get_command(alias)
-    console.print_command(cmd)
+    rendered_cmd = render_command(cmd)
+    console.print(rendered_cmd)
 
 
 def run_update_command(
@@ -106,9 +115,8 @@ def run_update_command(
     cmd = cmd_service.get_command(alias)
     cmd_service.update_command(alias, **fields)
     console = get_console()
-    console.success("Command updated successfully.")
     updated_cmd = cmd_service.get_command_by_id(cmd.id)
-    console.print_command(updated_cmd)
+    console.print(render_command_updated(updated_cmd))
 
 
 def run_list_command(
@@ -123,7 +131,8 @@ def run_list_command(
     console = get_console()
     cmd_service = get_cmd_services()
     cmds = cmd_service.list_commands(limit=limit, order_by=order, tags=tags)
-    console.print_command_list(cmds, output_fields=fields)
+    rendered_cmd_list = render_command_list(cmds, title="Commands", fields=fields)
+    console.print(rendered_cmd_list)
 
 
 def run_search_command(
@@ -137,8 +146,9 @@ def run_search_command(
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
-    cmds = cmd_service.search_commands(term, limit=limit, fields=search_fields)
-    console.print_command_list(cmds, output_fields=fields)
+    cmds = cmd_service.search(term, limit=limit, fields=search_fields)
+    rendered_cmd_list = render_command_list(cmds, title="Search Results", fields=fields)
+    console.print(rendered_cmd_list)
 
 
 def run_delete_command(
@@ -151,8 +161,7 @@ def run_delete_command(
     cmd_service = get_cmd_services()
     cmd = cmd_service.get_command(alias)
     if cmd_service.delete_command(alias):
-        console.success("Command deleted successfully.")
-        console.print_command(cmd)
+        console.print(render_command_deleted(cmd))
     else:
         console.error(f"Failed to delete command '{alias}'.")
 
@@ -172,7 +181,7 @@ def run_attach_tags(
     cmd_service = get_cmd_services()
     result = cmd_service.add_tags(alias=alias, tags=tag_names)
     console = get_console()
-    console.print_tag_attach_result(result)
+    console.print(render_tag_attach_result(result))
 
 
 def run_detach_tags(
@@ -190,4 +199,4 @@ def run_detach_tags(
     cmd_service = get_cmd_services()
     result = cmd_service.remove_tags(alias=alias, tags=tag_names)
     console = get_console()
-    console.print_tag_detach_result(result)
+    console.print(render_tag_detach_result(result))
