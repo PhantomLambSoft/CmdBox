@@ -1,31 +1,25 @@
-from typing import Sequence
-
 from rich.console import Console
-
-from cmdbox.models import Command, Variable, Tag
-from cmdbox.repositories.results import TagAttachResult, TagDetachResult
-from cmdbox.resolve.types import ResolveResult
 
 
 class ConsoleUI:
 
     def __init__(self, theme, *, force_color=None):
         self._console = Console(
-            theme=theme.rich, force_terminal=force_color, highlight=False
+            theme=theme, force_terminal=force_color, highlight=False
         )
         self._theme = theme
 
-    def print(self, *message: str, **kwargs) -> None:
-        self._console.print(*message, **kwargs)
+    def print(self, thing) -> None:
+        self._console.print(thing)
 
     def success(self, message: str) -> None:
-        self._console.print(message, style=self._theme.success)
+        self._console.print(message, style="status.success")
 
     def warning(self, message: str) -> None:
         self._console.print(message, style=self._theme.warning)
 
     def error(self, message: str) -> None:
-        self._console.print(message, style=self._theme.error)
+        self._console.print(message, style="status.error")
 
     def info(self, message: str) -> None:
         self._console.print(message, style=self._theme.info)
@@ -35,138 +29,3 @@ class ConsoleUI:
 
     def debug(self, message: str) -> None:
         self._console.print(message, style=self._theme.debug)
-
-    def print_command(
-        self, command: Command, output_fields: Sequence[str] | None = None
-    ) -> None:
-        display_map = [
-            ("alias", "Alias", command.alias, self._theme.command_alias),
-            ("template", "Template", command.template, self._theme.command_template),
-            (
-                "description",
-                "Description",
-                command.description,
-                self._theme.command_description,
-            ),
-            (
-                "created",
-                "Created",
-                command.date_created,
-                self._theme.command_date_created,
-            ),
-            (
-                "updated",
-                "Updated",
-                command.last_updated,
-                self._theme.command_last_updated,
-            ),
-            ("used", "Used", command.used, self._theme.command_used),
-            (
-                "last_used",
-                "Last used",
-                command.last_used,
-                self._theme.command_last_used,
-            ),
-        ]
-
-        for field_key, label, value, style in display_map:
-            if not output_fields or field_key in output_fields:
-                self._console.print(f"{label}: {value}", style=style)
-
-    def print_command_list(
-        self, commands: list[Command], output_fields: Sequence[str] | None = None
-    ) -> None:
-        self.success(
-            f"{self._get_entity_count_label(len(commands), 'command')} found:\n"
-        )
-        for command in commands:
-            self.print_command(command, output_fields=output_fields)
-            self.print("")
-
-    def print_run_preview(self, result: ResolveResult) -> None:
-        self._console.print(result.text, style=self._theme.run_preview_command)
-        for step in result.trace:
-            self._console.print(step.kind, style=self._theme.run_preview_step_kind)
-            self._console.print(step.key, style=self._theme.run_preview_step_key)
-            self._console.print(
-                step.expanded_to, style=self._theme.run_preview_step_expanded_to
-            )
-
-    def print_variable(
-        self, var: Variable, output_fields: Sequence[str] | None = None
-    ) -> None:
-        display_map = [
-            ("name", "Name", var.name, self._theme.variable_name),
-            ("value", "Value", var.value, self._theme.variable_value),
-            ("created", "Created", var.date_created, self._theme.variable_date_created),
-            ("updated", "Updated", var.last_updated, self._theme.variable_last_updated),
-        ]
-
-        for field_key, label, value, style in display_map:
-            if not output_fields or field_key in output_fields:
-                self._console.print(f"{label}: {value}", style=style)
-
-    def print_variable_list(
-        self, variables: list[Variable], output_fields: Sequence[str] | None = None
-    ) -> None:
-        self.success(
-            f"{self._get_entity_count_label(len(variables), 'variable')} found:\n"
-        )
-        for var in variables:
-            self.print_variable(var, output_fields=output_fields)
-            self.print("")
-
-    def print_tag(self, tag: Tag, output_fields: Sequence[str] | None = None) -> None:
-        display_map = [
-            ("name", "Name", tag.name, self._theme.tag_name),
-            (
-                "description",
-                "Description",
-                tag.description,
-                self._theme.tag_description,
-            ),
-            ("created", "Created", tag.date_created, self._theme.tag_date_created),
-            ("updated", "Updated", tag.last_updated, self._theme.tag_last_updated),
-        ]
-
-        for field_key, label, value, style in display_map:
-            if not output_fields or field_key in output_fields:
-                self._console.print(f"{label}: {value}", style=style)
-
-    def print_tag_list(
-        self, tags: list[Tag], output_fields: Sequence[str] | None = None
-    ) -> None:
-        self.success(f"{self._get_entity_count_label(len(tags), 'tag')} found:\n")
-        for tag in tags:
-            self.print_tag(tag, output_fields=output_fields)
-            self.print("")
-
-    def print_tag_attach_result(self, result: TagAttachResult) -> None:
-        if len(result.added) > 0:
-            self.success(
-                f"Added {self._get_entity_count_label(len(result.added), 'tag')}:"
-            )
-            self.print(", ".join(result.added))
-
-        if len(result.existing) > 0:
-            self.print(
-                f"{self._get_entity_count_label(len(result.existing), 'tag')} already attached:"
-            )
-            self.print(", ".join(result.existing))
-
-    def print_tag_detach_result(self, result: TagDetachResult) -> None:
-        if len(result.removed) > 0:
-            self.success(
-                f"Removed {self._get_entity_count_label(len(result.removed), 'tag')}:"
-            )
-            self.print(", ".join(result.removed))
-
-        if len(result.not_attached) > 0:
-            self.print(
-                f"{self._get_entity_count_label(len(result.not_attached), 'tag')} not attached:"
-            )
-            self.print(", ".join(result.not_attached))
-
-    @staticmethod
-    def _get_entity_count_label(count: int, entity_name: str) -> str:
-        return f"{count} {entity_name}{'s' if count != 1 else ''}"
