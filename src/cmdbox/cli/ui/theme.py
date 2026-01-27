@@ -35,7 +35,8 @@ CMDBOX_THEME = Theme(
         "tag.pill_muted": "white on grey23",
         # Execution and previews
         "run.command": "cyan",
-        "run.output": "",
+        "run.stdout": "",
+        "run.stderr": "bold red",
         "run.trace.kind": "dim",
         "run.trace.key": "magenta",
         "run.trace.value": "cyan",

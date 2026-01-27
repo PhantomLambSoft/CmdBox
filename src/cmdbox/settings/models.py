@@ -41,7 +41,8 @@ class UIStyle:
 
     # Execution and previews
     run_command: str = "cyan"
-    run_output: str = ""
+    run_stdout: str = ""
+    run_stderr: str = "bold red"
     trace_kind: str = "dim"
     trace_key: str = "magenta"
     trace_value: str = "cyan"

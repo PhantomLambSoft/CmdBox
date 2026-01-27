@@ -38,7 +38,8 @@ def build_theme(settings: Settings) -> RichTheme:
         "tag.pill_muted": c.tag_pill_muted,
         # Execution and previews
         "run.command": c.run_command,
-        "run.output": c.run_output,
+        "run.stdout": c.run_stdout,
+        "run.stderr": c.run_stderr,
         "run.trace.kind": c.trace_kind,
         "run.trace.key": c.trace_key,
         "run.trace.value": c.trace_value,
