@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import typer
 
 from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.cli.ui.presenters.result_presenter import render_execution_result
 from cmdbox.runtime.executor import RunContext
 from cmdbox.services.run_service import RunService
 
@@ -36,8 +37,8 @@ def run_run_command(
     run_service = get_run_service()
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
     ex_result = run_service.run(alias, ctx=run_ctx)
-    if not run_ctx.emit and ex_result.stderr:
-        console.error(ex_result.stderr)
+    if not run_ctx.emit:
+        console.print(render_execution_result(ex_result))
 
 
 def run_preview_command(
