@@ -16,16 +16,16 @@ class ConsoleUI:
         self._console.print(message, style="status.success")
 
     def warning(self, message: str) -> None:
-        self._console.print(message, style=self._theme.warning)
+        self._console.print(message, style="status.warning")
 
     def error(self, message: str) -> None:
         self._console.print(message, style="status.error")
 
     def info(self, message: str) -> None:
-        self._console.print(message, style=self._theme.info)
+        self._console.print(message, style="status.info")
 
     def muted(self, message: str) -> None:
-        self._console.print(message, style=self._theme.muted)
+        self._console.print(message, style="status.muted")
 
     def debug(self, message: str) -> None:
-        self._console.print(message, style=self._theme.debug)
+        self._console.print(message, style="status.debug")
