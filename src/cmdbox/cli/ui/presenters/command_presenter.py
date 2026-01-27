@@ -75,11 +75,11 @@ def render_command(command: Command):
         rows.append((header, extractor(command)))
     cmd_display = kv_table(rows)
 
-    tag_links = command.tags
-    if len(tag_links) > 0:
-        tags = [link.tag.name for link in tag_links]
+    tags = [link.tag.name for link in command.tags]
+    if len(tags) > 0:
         tag_display = tag_block(tags=tags)
         return stack(cmd_display, tag_display)
+
     return cmd_display
 
 
