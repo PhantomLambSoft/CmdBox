@@ -16,7 +16,7 @@ from cmdbox.cli.prompts.prompts import (
 )
 from cmdbox.cli.prompts.validators import AliasValidator, TemplateValidator
 from cmdbox.cli.ui.console import ConsoleUI
-from cmdbox.cli.ui.presenters.command import (
+from cmdbox.cli.ui.presenters.command_presenter import (
     render_command,
     render_command_list,
     render_command_created,
