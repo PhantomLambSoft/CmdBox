@@ -24,6 +24,7 @@ def build_theme(settings: Settings) -> RichTheme:
         "status.info": c.info,
         "status.warning": c.warning,
         "status.error": c.error,
+        "status.debug": c.debug,
         # Code semantics (not a font switch, just a consistent code look)
         "code": c.code,
         "code.inline": c.code_inline,

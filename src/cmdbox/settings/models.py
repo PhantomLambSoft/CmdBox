@@ -23,6 +23,7 @@ class UIStyle:
     info: str = "cyan"
     warning: str = "yellow"
     error: str = "red"
+    debug: str = "dim blue"
 
     # Code
     code: str = "cyan"
