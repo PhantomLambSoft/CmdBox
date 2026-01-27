@@ -48,6 +48,11 @@ COMMAND_COLUMNS: dict[str, tuple[str, dict, Callable[[Command], object]]] = {
         {"style": "entity.time"},
         lambda c: c.last_updated,
     ),
+    "tags": (
+        "Tags",
+        {"overflow": "fold"},
+        lambda c: tag_block([x.tag.name for x in c.tags]),
+    ),
 }
 
 DEFAULT_FIELDS = ["alias", "template", "description"]
