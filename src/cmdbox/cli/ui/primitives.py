@@ -61,6 +61,10 @@ def to_text(value: Any, *, style: str | None = None) -> Text:
     """
     if value is None:
         t = Text("null")
+    if isinstance(value, Text):
+        if style:
+            value.stylize(style)
+        return value
     elif isinstance(value, datetime):
         t = Text(value.isoformat(sep=" ", timespec="seconds"))
     elif isinstance(value, date):
