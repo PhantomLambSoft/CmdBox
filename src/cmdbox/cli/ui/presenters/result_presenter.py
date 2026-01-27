@@ -7,8 +7,11 @@ from cmdbox.cli.ui.primitives import (
     stack,
     spacer,
     code_block,
+    table_panel,
+    col,
 )
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
+from cmdbox.resolve.types import ResolveResult
 from cmdbox.runtime.results import ExecutionResult
 
 
@@ -55,6 +58,36 @@ def render_execution_result(result: ExecutionResult, *, title: str = "Run"):
         ]
 
     return stack(*parts)
+
+
+def render_preview_result(
+    result: ResolveResult, *, title: str = "Preview", show_trace: bool = True
+):
+    parts = [
+        code_block(result.text, title="Resolved command", border_style="run.command"),
+    ]
+
+    if show_trace and result.trace:
+        parts += [spacer(0), _render_trace_steps(result)]
+
+    return section(
+        title=title,
+        body=stack(*parts),
+        border_style="ui.border",
+    )
+
+
+def _render_trace_steps(result: ResolveResult):
+    columns = [
+        col("Kind", style="run.trace.kind", no_wrap=True),
+        col("Key", style="run.trace.key", overflow="fold"),
+        col("Expanded to", style="run.trace.value", overflow="fold"),
+    ]
+
+    rows = [(step.kind.name, step.key, step.expanded_to) for step in result.trace]
+
+    table = table_panel(title="Trace", columns=columns, rows=rows)
+    return table
 
 
 def render_tag_attach_result(result: TagAttachResult):
