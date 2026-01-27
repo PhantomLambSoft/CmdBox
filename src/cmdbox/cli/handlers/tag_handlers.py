@@ -12,6 +12,13 @@ from cmdbox.cli.prompts.prompts import (
     prompt_for_name,
     prompt_for_description,
 )
+from cmdbox.cli.ui.presenters.tag_presenter import (
+    render_tag_created,
+    render_tag,
+    render_tag_list,
+    render_tag_updated,
+    render_tag_deleted,
+)
 from cmdbox.cli.prompts.validators import TagNameValidator
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.services.tag_services import TagServices
@@ -42,8 +49,7 @@ def run_add_tag(
     tag_service = get_tag_services()
     tag = tag_service.create_tag(name=name, description=description)
     console = get_console()
-    console.success("Tag successfully created:")
-    console.print_tag(tag)
+    console.print(render_tag_created(tag))
 
 
 def run_get_tag(
@@ -55,7 +61,7 @@ def run_get_tag(
     console = get_console()
     tag_service = get_tag_services()
     tag = tag_service.get_tag(name)
-    console.print_tag(tag)
+    console.print(render_tag(tag))
 
 
 def run_update_tag(
@@ -85,7 +91,7 @@ def run_update_tag(
     console = get_console()
     console.success("Tag updated successfully.")
     updated_tag = tag_service.get_tag_by_id(tag.id)
-    console.print_tag(updated_tag)
+    console.print(render_tag_updated(updated_tag))
 
 
 def run_list_tags(
@@ -99,7 +105,7 @@ def run_list_tags(
     console = get_console()
     tag_service = get_tag_services()
     tags = tag_service.list_tags(limit=limit, order_by=order_by)
-    console.print_tag_list(tags, output_fields=fields)
+    console.print(render_tag_list(tags, title="Tags", fields=fields))
 
 
 def run_search_tags(
@@ -114,7 +120,7 @@ def run_search_tags(
     console = get_console()
     tag_service = get_tag_services()
     tags = tag_service.search_tags(term, limit=limit, fields=search_fields)
-    console.print_tag_list(tags, output_fields=fields)
+    console.print(render_tag_list(tags, title="Search Results", fields=fields))
 
 
 def run_delete_tag(
@@ -127,7 +133,6 @@ def run_delete_tag(
     tag_service = get_tag_services()
     tag = tag_service.get_tag(name)
     if tag_service.delete_tag(name):
-        console.success(f"Tag '{name}' deleted successfully.")
-        console.print_tag(tag)
+        console.print(render_tag_deleted(tag))
     else:
         console.error(f"Failed to delete tag '{name}'.")

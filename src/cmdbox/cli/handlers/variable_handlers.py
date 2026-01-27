@@ -15,6 +15,17 @@ from cmdbox.cli.prompts.prompts import (
 )
 from cmdbox.cli.prompts.validators import NameValidator
 from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.cli.ui.presenters.variable_presenter import (
+    render_variable_created,
+    render_variable,
+    render_variable_list,
+    render_variable_updated,
+    render_variable_deleted,
+)
+from cmdbox.cli.ui.presenters.result_presenter import (
+    render_tag_attach_result,
+    render_tag_detach_result,
+)
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.services.tag_services import TagServices
 
@@ -52,8 +63,7 @@ def run_add_variable(
     var_service = get_var_services()
     var = var_service.create_variable(name=name, value=value, tags=tags)
     console = get_console()
-    console.success("Variable successfully created:")
-    console.print_variable(var)
+    console.print(render_variable_created(var))
 
 
 def run_get_variable(
@@ -65,7 +75,8 @@ def run_get_variable(
     console = get_console()
     var_service = get_var_services()
     var = var_service.get_variable(name)
-    console.print_variable(var)
+    rendered_var = render_variable(var)
+    console.print(rendered_var)
 
 
 def run_update_variable(
@@ -94,7 +105,7 @@ def run_update_variable(
     console = get_console()
     console.success("Variable updated successfully.")
     updated_var = var_service.get_variable_by_id(var.id)
-    console.print_variable(updated_var)
+    console.print(render_variable_updated(updated_var))
 
 
 def run_list_variables(
@@ -109,7 +120,7 @@ def run_list_variables(
     console = get_console()
     var_service = get_var_services()
     vars_ = var_service.list_variables(limit=limit, order_by=order_by, tags=tags)
-    console.print_variable_list(vars_, output_fields=fields)
+    console.print(render_variable_list(vars_, title="Variables", fields=fields))
 
 
 def run_search_variables(
@@ -124,7 +135,7 @@ def run_search_variables(
     console = get_console()
     var_service = get_var_services()
     vars_ = var_service.search_variables(term, limit=limit, fields=search_fields)
-    console.print_variable_list(vars_, output_fields=fields)
+    console.print(render_variable_list(vars_, title="Search Results", fields=fields))
 
 
 def run_delete_variable(
@@ -137,8 +148,7 @@ def run_delete_variable(
     var_service = get_var_services()
     var = var_service.get_variable(name)
     if var_service.delete_variable(name):
-        console.success(f"Variable '{name}' deleted successfully.")
-        console.print_variable(var)
+        console.print(render_variable_deleted(var))
     else:
         console.error(f"Failed to delete variable '{name}'.")
 
@@ -158,7 +168,7 @@ def run_attach_tags(
     var_service = get_var_services()
     result = var_service.add_tags(name=name, tags=tag_names)
     console = get_console()
-    console.print_tag_attach_result(result)
+    console.print(render_tag_attach_result(result))
 
 
 def run_detach_tags(
@@ -176,4 +186,4 @@ def run_detach_tags(
     var_service = get_var_services()
     result = var_service.remove_tags(name=name, tags=tag_names)
     console = get_console()
-    console.print_tag_detach_result(result)
+    console.print(render_tag_detach_result(result))

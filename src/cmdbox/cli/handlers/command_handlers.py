@@ -22,6 +22,8 @@ from cmdbox.cli.ui.presenters.command_presenter import (
     render_command_created,
     render_command_updated,
     render_command_deleted,
+)
+from cmdbox.cli.ui.presenters.result_presenter import (
     render_tag_attach_result,
     render_tag_detach_result,
 )
