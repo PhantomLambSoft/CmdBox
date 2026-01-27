@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any, Mapping, Sequence
 
+from rich import box
 from rich.align import Align
 from rich.console import Group, RenderableType
 from rich.padding import Padding
@@ -278,6 +279,7 @@ def table_panel(
         header_style=styles.table_header,
         pad_edge=False,
         collapse_padding=True,
+        box=box.MINIMAL,
     )
 
     for name, kwargs in columns:
