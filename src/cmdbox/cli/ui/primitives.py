@@ -345,7 +345,7 @@ def code_block(
         body,
         title=panel_title,
         border_style=border_style,
-        padding=(0, 1),
+        padding=(1, 1),
     )
 
 
