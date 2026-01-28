@@ -10,7 +10,7 @@ END_MARK = "# <<< cmdbox shell integration <<<"
 
 def load_integration_text(filename: str) -> str:
     """
-    Loads a text file from the 'cmdbox.integrations' resource directory, reads its contents, and
+    Loads a text file from the 'cmdbox.init.integrations' resource directory, reads its contents, and
     returns the text stripped of trailing whitespace with a newline character appended.
 
     Args:
@@ -21,7 +21,7 @@ def load_integration_text(filename: str) -> str:
              and a newline character appended at the end.
     """
     return (
-        resources.files("cmdbox.integrations")
+        resources.files("cmdbox.init.integrations")
         .joinpath(filename)
         .read_text(encoding="utf-8")
         .rstrip()
