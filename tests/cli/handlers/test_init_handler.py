@@ -5,7 +5,7 @@ import typer
 import os
 
 from cmdbox.cli.handlers import init_handler
-from cmdbox.cli.handlers.init_handler import ShellSpec
+from cmdbox.init.specs import ShellSpec
 
 
 class TestInitHandler(unittest.TestCase):
