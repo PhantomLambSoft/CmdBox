@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 import typer
 from cmdbox.cli.handlers.run_handler import (
     RawRunContext,
@@ -64,13 +64,15 @@ class TestRunHandler(unittest.TestCase):
         self.assertTrue(ctx.capture)
         self.assertEqual(ctx.shell, "bash")
 
-    def test_run_run_command(self):
+    @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
+    def test_run_run_command(self, mock_render):
         mock_run_service = MagicMock()
         mock_console = MagicMock()
         mock_ex_result = ExecutionResult(
             command="echo hello", exit_code=0, stdout="hello", stderr=""
         )
         mock_run_service.run.return_value = mock_ex_result
+        mock_render.return_value = "rendered_result"
 
         run_run_command(
             alias="test-alias",
@@ -80,15 +82,18 @@ class TestRunHandler(unittest.TestCase):
         )
 
         mock_run_service.run.assert_called_once_with("test-alias", ctx=RunContext())
-        mock_console.error.assert_not_called()
+        mock_render.assert_called_once_with(mock_ex_result)
+        mock_console.print.assert_called_once_with("rendered_result")
 
-    def test_run_run_command_with_error(self):
+    @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
+    def test_run_run_command_with_error(self, mock_render):
         mock_run_service = MagicMock()
         mock_console = MagicMock()
         mock_ex_result = ExecutionResult(
             command="echo hello", exit_code=1, stdout="", stderr="error occurred"
         )
         mock_run_service.run.return_value = mock_ex_result
+        mock_render.return_value = "rendered_error"
 
         run_run_command(
             alias="test-alias",
@@ -97,7 +102,8 @@ class TestRunHandler(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
-        mock_console.error.assert_called_once_with("error occurred")
+        mock_render.assert_called_once_with(mock_ex_result)
+        mock_console.print.assert_called_once_with("rendered_error")
 
     def test_run_run_command_with_ctx(self):
         mock_run_service = MagicMock()
@@ -119,11 +125,13 @@ class TestRunHandler(unittest.TestCase):
             "test-alias", ctx=RunContext(cwd="/tmp")
         )
 
-    def test_run_preview_command(self):
+    @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
+    def test_run_preview_command(self, mock_render):
         mock_run_service = MagicMock()
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
         mock_run_service.preview.return_value = mock_resolve_result
+        mock_render.return_value = "rendered_preview"
 
         run_preview_command(
             alias="test-alias",
@@ -133,9 +141,11 @@ class TestRunHandler(unittest.TestCase):
         )
 
         mock_run_service.preview.assert_called_once_with("test-alias")
-        mock_console.print_run_preview.assert_called_once_with(mock_resolve_result)
+        mock_render.assert_called_once_with(mock_resolve_result)
+        mock_console.print.assert_called_once_with("rendered_preview")
 
-    def test_run_preview_command_with_ctx(self):
+    @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
+    def test_run_preview_command_with_ctx(self, mock_render):
         # Even if run_ctx is passed to run_preview_command, it's currently only used
         # to initialize run_ctx variable, but run_service.preview only takes alias.
         # Let's verify this behavior.
@@ -144,6 +154,7 @@ class TestRunHandler(unittest.TestCase):
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
         mock_run_service.preview.return_value = mock_resolve_result
         raw_ctx = RawRunContext(cwd="/tmp")
+        mock_render.return_value = "rendered_preview"
 
         run_preview_command(
             alias="test-alias",
@@ -153,4 +164,5 @@ class TestRunHandler(unittest.TestCase):
         )
 
         mock_run_service.preview.assert_called_once_with("test-alias")
-        mock_console.print_run_preview.assert_called_once_with(mock_resolve_result)
+        mock_render.assert_called_once_with(mock_resolve_result)
+        mock_console.print.assert_called_once_with("rendered_preview")

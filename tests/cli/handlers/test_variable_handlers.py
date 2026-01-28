@@ -22,17 +22,20 @@ class TestVariableHandlers(unittest.TestCase):
         self.get_tag_services = lambda: self.mock_tag_services
         self.get_console = lambda: self.mock_console
 
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_created")
     @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_name")
     @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_value")
     @patch("cmdbox.cli.handlers.variable_handlers.get_tags_interactive")
     def test_run_add_variable_interactive(
-        self, mock_get_tags, mock_prompt_value, mock_prompt_name
+        self, mock_get_tags, mock_prompt_value, mock_prompt_name, mock_render
     ):
         args = AddVariableArgs(name=None, value=None, tags=None, interactive=True)
         mock_prompt_name.return_value = "var1"
         mock_prompt_value.return_value = "val1"
         mock_get_tags.return_value = ["tag1"]
-        self.mock_var_services.create_variable.return_value = MagicMock()
+        mock_var = MagicMock()
+        self.mock_var_services.create_variable.return_value = mock_var
+        mock_render.return_value = "rendered_created"
 
         run_add_variable(
             args=args,
@@ -44,13 +47,17 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_var_services.create_variable.assert_called_with(
             name="var1", value="val1", tags=["tag1"]
         )
-        self.mock_console.success.assert_called()
+        mock_render.assert_called_once_with(mock_var)
+        self.mock_console.print.assert_called_with("rendered_created")
 
-    def test_run_add_variable_non_interactive(self):
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_created")
+    def test_run_add_variable_non_interactive(self, mock_render):
         args = AddVariableArgs(
             name="var1", value="val1", tags=["tag1"], interactive=False
         )
-        self.mock_var_services.create_variable.return_value = MagicMock()
+        mock_var = MagicMock()
+        self.mock_var_services.create_variable.return_value = mock_var
+        mock_render.return_value = "rendered_created"
 
         run_add_variable(
             args=args,
@@ -62,22 +69,31 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_var_services.create_variable.assert_called_with(
             name="var1", value="val1", tags=["tag1"]
         )
+        mock_render.assert_called_once_with(mock_var)
+        self.mock_console.print.assert_called_with("rendered_created")
 
-    def test_run_get_variable(self):
-        self.mock_var_services.get_variable.return_value = "fake_var"
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable")
+    def test_run_get_variable(self, mock_render):
+        mock_var = MagicMock()
+        self.mock_var_services.get_variable.return_value = mock_var
+        mock_render.return_value = "rendered_var"
         run_get_variable(
             name="var1",
             get_var_services=self.get_var_services,
             get_console=self.get_console,
         )
         self.mock_var_services.get_variable.assert_called_with("var1")
-        self.mock_console.print_variable.assert_called_with("fake_var")
+        mock_render.assert_called_once_with(mock_var)
+        self.mock_console.print.assert_called_with("rendered_var")
 
-    def test_run_update_variable(self):
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_updated")
+    def test_run_update_variable(self, mock_render):
         mock_var = MagicMock()
         mock_var.id = 1
         self.mock_var_services.get_variable.return_value = mock_var
-        self.mock_var_services.get_variable_by_id.return_value = "updated_var"
+        mock_updated_var = MagicMock()
+        self.mock_var_services.get_variable_by_id.return_value = mock_updated_var
+        mock_render.return_value = "rendered_updated"
 
         run_update_variable(
             name="var1",
@@ -91,8 +107,9 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_var_services.update_variable.assert_called_with(
             "var1", value="new_val", name="new_name"
         )
-        self.mock_console.success.assert_called()
-        self.mock_console.print_variable.assert_called_with("updated_var")
+        self.mock_console.success.assert_called_with("Variable updated successfully.")
+        mock_render.assert_called_once_with(mock_updated_var)
+        self.mock_console.print.assert_called_with("rendered_updated")
 
     def test_run_update_variable_no_fields(self):
         with self.assertRaises(typer.BadParameter):
@@ -105,8 +122,11 @@ class TestVariableHandlers(unittest.TestCase):
                 get_console=self.get_console,
             )
 
-    def test_run_list_variables(self):
-        self.mock_var_services.list_variables.return_value = ["v1", "v2"]
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
+    def test_run_list_variables(self, mock_render):
+        vars_ = ["v1", "v2"]
+        self.mock_var_services.list_variables.return_value = vars_
+        mock_render.return_value = "rendered_list"
         run_list_variables(
             limit=10,
             order_by="name",
@@ -118,12 +138,14 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_var_services.list_variables.assert_called_with(
             limit=10, order_by="name", tags=["t1"]
         )
-        self.mock_console.print_variable_list.assert_called_with(
-            ["v1", "v2"], output_fields=["f1"]
-        )
+        mock_render.assert_called_once_with(vars_, title="Variables", fields=["f1"])
+        self.mock_console.print.assert_called_with("rendered_list")
 
-    def test_run_search_variables(self):
-        self.mock_var_services.search_variables.return_value = ["v1"]
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
+    def test_run_search_variables(self, mock_render):
+        vars_ = ["v1"]
+        self.mock_var_services.search_variables.return_value = vars_
+        mock_render.return_value = "rendered_search"
         run_search_variables(
             term="term",
             limit=5,
@@ -135,14 +157,17 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_var_services.search_variables.assert_called_with(
             "term", limit=5, fields=["sf1"]
         )
-        self.mock_console.print_variable_list.assert_called_with(
-            ["v1"], output_fields=["f1"]
+        mock_render.assert_called_once_with(
+            vars_, title="Search Results", fields=["f1"]
         )
+        self.mock_console.print.assert_called_with("rendered_search")
 
-    def test_run_delete_variable_success(self):
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_deleted")
+    def test_run_delete_variable_success(self, mock_render):
         mock_var = MagicMock()
         self.mock_var_services.get_variable.return_value = mock_var
         self.mock_var_services.delete_variable.return_value = True
+        mock_render.return_value = "rendered_deleted"
 
         run_delete_variable(
             name="var1",
@@ -151,8 +176,8 @@ class TestVariableHandlers(unittest.TestCase):
         )
 
         self.mock_var_services.delete_variable.assert_called_with("var1")
-        self.mock_console.success.assert_called()
-        self.mock_console.print_variable.assert_called_with(mock_var)
+        mock_render.assert_called_once_with(mock_var)
+        self.mock_console.print.assert_called_with("rendered_deleted")
 
     def test_run_delete_variable_failure(self):
         self.mock_var_services.delete_variable.return_value = False

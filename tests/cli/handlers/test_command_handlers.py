@@ -22,12 +22,18 @@ class TestCommandHandlers(unittest.TestCase):
         self.get_tag_services = lambda: self.mock_tag_services
         self.get_console = lambda: self.mock_console
 
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_created")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
     @patch("cmdbox.cli.handlers.command_handlers.get_tags_interactive")
     def test_run_add_command_interactive(
-        self, mock_get_tags, mock_prompt_desc, mock_prompt_tmpl, mock_prompt_alias
+        self,
+        mock_get_tags,
+        mock_prompt_desc,
+        mock_prompt_tmpl,
+        mock_prompt_alias,
+        mock_render,
     ):
         args = AddCommandArgs(
             alias=None, template=None, description=None, tags=None, interactive=True
@@ -36,7 +42,9 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_tmpl.return_value = "tmpl1"
         mock_prompt_desc.return_value = "desc1"
         mock_get_tags.return_value = ["tag1"]
-        self.mock_cmd_services.create_command.return_value = MagicMock()
+        mock_cmd = MagicMock()
+        self.mock_cmd_services.create_command.return_value = mock_cmd
+        mock_render.return_value = "rendered_created"
 
         run_add_command(
             args=args,
@@ -48,9 +56,11 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.create_command.assert_called_with(
             alias="alias1", template="tmpl1", description="desc1", tags=["tag1"]
         )
-        self.mock_console.success.assert_called()
+        mock_render.assert_called_once_with(mock_cmd)
+        self.mock_console.print.assert_called_with("rendered_created")
 
-    def test_run_add_command_non_interactive(self):
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_created")
+    def test_run_add_command_non_interactive(self, mock_render):
         args = AddCommandArgs(
             alias="alias1",
             template="tmpl1",
@@ -58,7 +68,9 @@ class TestCommandHandlers(unittest.TestCase):
             tags=["tag1"],
             interactive=False,
         )
-        self.mock_cmd_services.create_command.return_value = MagicMock()
+        mock_cmd = MagicMock()
+        self.mock_cmd_services.create_command.return_value = mock_cmd
+        mock_render.return_value = "rendered_created"
 
         run_add_command(
             args=args,
@@ -70,22 +82,31 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.create_command.assert_called_with(
             alias="alias1", template="tmpl1", description="desc1", tags=["tag1"]
         )
+        mock_render.assert_called_once_with(mock_cmd)
+        self.mock_console.print.assert_called_with("rendered_created")
 
-    def test_run_get_command(self):
-        self.mock_cmd_services.get_command.return_value = "fake_cmd"
+    @patch("cmdbox.cli.handlers.command_handlers.render_command")
+    def test_run_get_command(self, mock_render):
+        mock_cmd = MagicMock()
+        self.mock_cmd_services.get_command.return_value = mock_cmd
+        mock_render.return_value = "rendered_cmd"
         run_get_command(
             alias="alias1",
             get_cmd_services=self.get_cmd_services,
             get_console=self.get_console,
         )
         self.mock_cmd_services.get_command.assert_called_with("alias1")
-        self.mock_console.print_command.assert_called_with("fake_cmd")
+        mock_render.assert_called_once_with(mock_cmd)
+        self.mock_console.print.assert_called_with("rendered_cmd")
 
-    def test_run_update_command(self):
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_run_update_command(self, mock_render):
         mock_cmd = MagicMock()
         mock_cmd.id = 1
         self.mock_cmd_services.get_command.return_value = mock_cmd
-        self.mock_cmd_services.get_command_by_id.return_value = "updated_cmd"
+        mock_updated_cmd = MagicMock()
+        self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
+        mock_render.return_value = "rendered_updated"
 
         run_update_command(
             alias="alias1",
@@ -100,8 +121,8 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.update_command.assert_called_with(
             "alias1", template="new_tmpl", description="new_desc", alias="new_alias"
         )
-        self.mock_console.success.assert_called()
-        self.mock_console.print_command.assert_called_with("updated_cmd")
+        mock_render.assert_called_once_with(mock_updated_cmd)
+        self.mock_console.print.assert_called_with("rendered_updated")
 
     def test_run_update_command_no_fields(self):
         with self.assertRaises(typer.BadParameter):
@@ -115,8 +136,11 @@ class TestCommandHandlers(unittest.TestCase):
                 get_console=self.get_console,
             )
 
-    def test_run_list_command(self):
-        self.mock_cmd_services.list_commands.return_value = ["c1", "c2"]
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
+    def test_run_list_command(self, mock_render):
+        cmds = ["c1", "c2"]
+        self.mock_cmd_services.list_commands.return_value = cmds
+        mock_render.return_value = "rendered_list"
         run_list_command(
             limit=10,
             order="name",
@@ -128,12 +152,14 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.list_commands.assert_called_with(
             limit=10, order_by="name", tags=["t1"]
         )
-        self.mock_console.print_command_list.assert_called_with(
-            ["c1", "c2"], output_fields=["f1"]
-        )
+        mock_render.assert_called_once_with(cmds, title="Commands", fields=["f1"])
+        self.mock_console.print.assert_called_with("rendered_list")
 
-    def test_run_search_command(self):
-        self.mock_cmd_services.search_commands.return_value = ["c1"]
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
+    def test_run_search_command(self, mock_render):
+        cmds = ["c1"]
+        self.mock_cmd_services.search.return_value = cmds
+        mock_render.return_value = "rendered_search"
         run_search_command(
             term="term",
             limit=5,
@@ -142,17 +168,18 @@ class TestCommandHandlers(unittest.TestCase):
             get_cmd_services=self.get_cmd_services,
             get_console=self.get_console,
         )
-        self.mock_cmd_services.search_commands.assert_called_with(
+        self.mock_cmd_services.search.assert_called_with(
             "term", limit=5, fields=["sf1"]
         )
-        self.mock_console.print_command_list.assert_called_with(
-            ["c1"], output_fields=["f1"]
-        )
+        mock_render.assert_called_once_with(cmds, title="Search Results", fields=["f1"])
+        self.mock_console.print.assert_called_with("rendered_search")
 
-    def test_run_delete_command_success(self):
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_deleted")
+    def test_run_delete_command_success(self, mock_render):
         mock_cmd = MagicMock()
         self.mock_cmd_services.get_command.return_value = mock_cmd
         self.mock_cmd_services.delete_command.return_value = True
+        mock_render.return_value = "rendered_deleted"
 
         run_delete_command(
             alias="alias1",
@@ -161,8 +188,8 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.delete_command.assert_called_with("alias1")
-        self.mock_console.success.assert_called()
-        self.mock_console.print_command.assert_called_with(mock_cmd)
+        mock_render.assert_called_once_with(mock_cmd)
+        self.mock_console.print.assert_called_with("rendered_deleted")
 
     def test_run_delete_command_failure(self):
         self.mock_cmd_services.delete_command.return_value = False

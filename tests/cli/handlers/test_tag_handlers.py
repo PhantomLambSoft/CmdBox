@@ -20,13 +20,18 @@ class TestTagHandlers(unittest.TestCase):
         self.get_tag_services = lambda: self.mock_tag_services
         self.get_console = lambda: self.mock_console
 
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_created")
     @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_name")
     @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_description")
-    def test_run_add_tag_interactive(self, mock_prompt_desc, mock_prompt_name):
+    def test_run_add_tag_interactive(
+        self, mock_prompt_desc, mock_prompt_name, mock_render
+    ):
         args = AddTagArgs(name=None, description=None, interactive=True)
         mock_prompt_name.return_value = "tag1"
         mock_prompt_desc.return_value = "desc1"
-        self.mock_tag_services.create_tag.return_value = MagicMock()
+        mock_tag = MagicMock()
+        self.mock_tag_services.create_tag.return_value = mock_tag
+        mock_render.return_value = "rendered_created"
 
         run_add_tag(
             args=args,
@@ -37,11 +42,15 @@ class TestTagHandlers(unittest.TestCase):
         self.mock_tag_services.create_tag.assert_called_with(
             name="tag1", description="desc1"
         )
-        self.mock_console.success.assert_called()
+        mock_render.assert_called_once_with(mock_tag)
+        self.mock_console.print.assert_called_with("rendered_created")
 
-    def test_run_add_tag_non_interactive(self):
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_created")
+    def test_run_add_tag_non_interactive(self, mock_render):
         args = AddTagArgs(name="tag1", description="desc1", interactive=False)
-        self.mock_tag_services.create_tag.return_value = MagicMock()
+        mock_tag = MagicMock()
+        self.mock_tag_services.create_tag.return_value = mock_tag
+        mock_render.return_value = "rendered_created"
 
         run_add_tag(
             args=args,
@@ -52,22 +61,31 @@ class TestTagHandlers(unittest.TestCase):
         self.mock_tag_services.create_tag.assert_called_with(
             name="tag1", description="desc1"
         )
+        mock_render.assert_called_once_with(mock_tag)
+        self.mock_console.print.assert_called_with("rendered_created")
 
-    def test_run_get_tag(self):
-        self.mock_tag_services.get_tag.return_value = "fake_tag"
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag")
+    def test_run_get_tag(self, mock_render):
+        mock_tag = MagicMock()
+        self.mock_tag_services.get_tag.return_value = mock_tag
+        mock_render.return_value = "rendered_tag"
         run_get_tag(
             name="tag1",
             get_tag_services=self.get_tag_services,
             get_console=self.get_console,
         )
         self.mock_tag_services.get_tag.assert_called_with("tag1")
-        self.mock_console.print_tag.assert_called_with("fake_tag")
+        mock_render.assert_called_once_with(mock_tag)
+        self.mock_console.print.assert_called_with("rendered_tag")
 
-    def test_run_update_tag(self):
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_updated")
+    def test_run_update_tag(self, mock_render):
         mock_tag = MagicMock()
         mock_tag.id = 1
         self.mock_tag_services.get_tag.return_value = mock_tag
-        self.mock_tag_services.get_tag_by_id.return_value = "updated_tag"
+        mock_updated_tag = MagicMock()
+        self.mock_tag_services.get_tag_by_id.return_value = mock_updated_tag
+        mock_render.return_value = "rendered_updated"
 
         run_update_tag(
             name="tag1",
@@ -81,8 +99,9 @@ class TestTagHandlers(unittest.TestCase):
         self.mock_tag_services.update_tag.assert_called_with(
             "tag1", description="new_desc", name="new_name"
         )
-        self.mock_console.success.assert_called()
-        self.mock_console.print_tag.assert_called_with("updated_tag")
+        self.mock_console.success.assert_called_with("Tag updated successfully.")
+        mock_render.assert_called_once_with(mock_updated_tag)
+        self.mock_console.print.assert_called_with("rendered_updated")
 
     def test_run_update_tag_no_fields(self):
         with self.assertRaises(typer.BadParameter):
@@ -95,22 +114,27 @@ class TestTagHandlers(unittest.TestCase):
                 get_console=self.get_console,
             )
 
-    def test_run_list_tags(self):
-        self.mock_tag_services.list_tags.return_value = ["t1", "t2"]
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
+    def test_run_list_tags(self, mock_render):
+        tags = ["t1", "t2"]
+        self.mock_tag_services.list_tags.return_value = tags
+        mock_render.return_value = "rendered_list"
         run_list_tags(
             limit=10,
             order_by="name",
             fields=["f1"],
-            get_tag_services=self.get_tag_services,  # Note: tag_handlers.py uses get_var_services parameter name in run_list_tags but it's likely a typo in original code. I'll follow the code.
+            get_tag_services=self.get_tag_services,
             get_console=self.get_console,
         )
         self.mock_tag_services.list_tags.assert_called_with(limit=10, order_by="name")
-        self.mock_console.print_tag_list.assert_called_with(
-            ["t1", "t2"], output_fields=["f1"]
-        )
+        mock_render.assert_called_once_with(tags, title="Tags", fields=["f1"])
+        self.mock_console.print.assert_called_with("rendered_list")
 
-    def test_run_search_tags(self):
-        self.mock_tag_services.search_tags.return_value = ["t1"]
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
+    def test_run_search_tags(self, mock_render):
+        tags = ["t1"]
+        self.mock_tag_services.search_tags.return_value = tags
+        mock_render.return_value = "rendered_search"
         run_search_tags(
             term="term",
             limit=5,
@@ -122,14 +146,15 @@ class TestTagHandlers(unittest.TestCase):
         self.mock_tag_services.search_tags.assert_called_with(
             "term", limit=5, fields=["sf1"]
         )
-        self.mock_console.print_tag_list.assert_called_with(
-            ["t1"], output_fields=["f1"]
-        )
+        mock_render.assert_called_once_with(tags, title="Search Results", fields=["f1"])
+        self.mock_console.print.assert_called_with("rendered_search")
 
-    def test_run_delete_tag_success(self):
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_deleted")
+    def test_run_delete_tag_success(self, mock_render):
         mock_tag = MagicMock()
         self.mock_tag_services.get_tag.return_value = mock_tag
         self.mock_tag_services.delete_tag.return_value = True
+        mock_render.return_value = "rendered_deleted"
 
         run_delete_tag(
             name="tag1",
@@ -138,8 +163,8 @@ class TestTagHandlers(unittest.TestCase):
         )
 
         self.mock_tag_services.delete_tag.assert_called_with("tag1")
-        self.mock_console.success.assert_called()
-        self.mock_console.print_tag.assert_called_with(mock_tag)
+        mock_render.assert_called_once_with(mock_tag)
+        self.mock_console.print.assert_called_with("rendered_deleted")
 
     def test_run_delete_tag_failure(self):
         self.mock_tag_services.delete_tag.return_value = False

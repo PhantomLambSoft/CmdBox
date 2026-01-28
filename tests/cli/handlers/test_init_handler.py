@@ -6,11 +6,12 @@ import os
 
 from cmdbox.cli.handlers import init_handler
 from cmdbox.init.specs import ShellSpec
+from cmdbox.init import io, detect, specs
 
 
 class TestInitHandler(unittest.TestCase):
 
-    @patch("cmdbox.cli.handlers.init_handler.resources.files")
+    @patch("cmdbox.init.io.resources.files")
     def test_load_integration_text(self, mock_files):
         # Setup
         mock_resource = MagicMock()
@@ -18,17 +19,17 @@ class TestInitHandler(unittest.TestCase):
         mock_files.return_value = mock_resource
 
         # Execute
-        result = init_handler.load_integration_text("test.sh")
+        result = io.load_integration_text("test.sh")
 
         # Verify
         self.assertEqual(result, "snippet-content\n")
         mock_resource.joinpath.assert_called_once_with("test.sh")
 
-    @patch("cmdbox.cli.handlers.init_handler.Path.mkdir")
-    @patch("cmdbox.cli.handlers.init_handler.Path.exists")
-    @patch("cmdbox.cli.handlers.init_handler.Path.read_text")
-    @patch("cmdbox.cli.handlers.init_handler.Path.write_text")
-    @patch("cmdbox.cli.handlers.init_handler.shutil.copy2")
+    @patch("cmdbox.init.io.Path.mkdir")
+    @patch("cmdbox.init.io.Path.exists")
+    @patch("cmdbox.init.io.Path.read_text")
+    @patch("cmdbox.init.io.Path.write_text")
+    @patch("cmdbox.init.io.shutil.copy2")
     def test_upsert_marked_block_new_file(
         self, mock_copy, mock_write, mock_read, mock_exists, mock_mkdir
     ):
@@ -38,34 +39,36 @@ class TestInitHandler(unittest.TestCase):
         block_text = "some-integration"
 
         # Execute
-        init_handler.upsert_marked_block(path, block_text)
+        io.upsert_marked_block(path, block_text)
 
         # Verify
         mock_mkdir.assert_called_once_with(parents=True, exist_ok=True)
         mock_write.assert_called_once()
         written_content = mock_write.call_args[0][0]
-        self.assertIn(init_handler.START_MARK, written_content)
+        self.assertIn(io.START_MARK, written_content)
         self.assertIn(block_text, written_content)
-        self.assertIn(init_handler.END_MARK, written_content)
+        self.assertIn(io.END_MARK, written_content)
         mock_copy.assert_not_called()
 
-    @patch("cmdbox.cli.handlers.init_handler.Path.mkdir")
-    @patch("cmdbox.cli.handlers.init_handler.Path.exists")
-    @patch("cmdbox.cli.handlers.init_handler.Path.read_text")
-    @patch("cmdbox.cli.handlers.init_handler.Path.write_text")
-    @patch("cmdbox.cli.handlers.init_handler.shutil.copy2")
+    @patch("cmdbox.init.io.Path.mkdir")
+    @patch("cmdbox.init.io.Path.exists")
+    @patch("cmdbox.init.io.Path.read_text")
+    @patch("cmdbox.init.io.Path.write_text")
+    @patch("cmdbox.init.io.shutil.copy2")
     def test_upsert_marked_block_update_existing(
         self, mock_copy, mock_write, mock_read, mock_exists, mock_mkdir
     ):
         # Setup
         mock_exists.return_value = True
-        existing_content = f"some-stuff\n{init_handler.START_MARK}\nold-content\n{init_handler.END_MARK}\nmore-stuff"
+        existing_content = (
+            f"some-stuff\n{io.START_MARK}\nold-content\n{io.END_MARK}\nmore-stuff"
+        )
         mock_read.return_value = existing_content
         path = Path("/mock/path/.bashrc")
         new_block = "new-content"
 
         # Execute
-        init_handler.upsert_marked_block(path, new_block)
+        io.upsert_marked_block(path, new_block)
 
         # Verify
         mock_copy.assert_called_once()
@@ -78,13 +81,13 @@ class TestInitHandler(unittest.TestCase):
 
     def test_default_paths(self):
         with patch(
-            "cmdbox.cli.handlers.init_handler.Path.home",
+            "cmdbox.init.specs.Path.home",
             return_value=Path("/home/user"),
         ):
-            self.assertEqual(init_handler.default_bashrc(), Path("/home/user/.bashrc"))
-            self.assertEqual(init_handler.default_zshrc(), Path("/home/user/.zshrc"))
+            self.assertEqual(specs.default_bashrc(), Path("/home/user/.bashrc"))
+            self.assertEqual(specs.default_zshrc(), Path("/home/user/.zshrc"))
             self.assertEqual(
-                init_handler.default_fish_function(),
+                specs.default_fish_function(),
                 Path("/home/user/.config/fish/functions/cb.fish"),
             )
 
@@ -96,12 +99,10 @@ class TestInitHandler(unittest.TestCase):
             / "PowerShell"
             / "Microsoft.PowerShell_profile.ps1"
         )
-        self.assertEqual(init_handler.default_powershell_profile(), expected)
+        self.assertEqual(specs.default_powershell_profile(), expected)
 
     @patch.dict(os.environ, {}, clear=True)
-    @patch(
-        "cmdbox.cli.handlers.init_handler.Path.home", return_value=Path("/home/user")
-    )
+    @patch("cmdbox.init.specs.Path.home", return_value=Path("/home/user"))
     def test_default_powershell_profile_fallback(self, mock_home):
         expected = (
             Path("/home/user")
@@ -109,7 +110,7 @@ class TestInitHandler(unittest.TestCase):
             / "PowerShell"
             / "Microsoft.PowerShell_profile.ps1"
         )
-        self.assertEqual(init_handler.default_powershell_profile(), expected)
+        self.assertEqual(specs.default_powershell_profile(), expected)
 
     @patch("cmdbox.cli.handlers.init_handler.detect_shell")
     @patch("cmdbox.cli.handlers.init_handler.load_integration_text")
@@ -139,7 +140,7 @@ class TestInitHandler(unittest.TestCase):
 
         # We need to mock SHELLS or at least make sure it uses our mock for default_path_fn
         with patch.dict(
-            init_handler.SHELLS,
+            specs.SHELLS,
             {
                 "bash": ShellSpec(
                     "bash", "bash.sh", lambda: Path("/mock/.bashrc"), "profile_block"
@@ -169,7 +170,7 @@ class TestInitHandler(unittest.TestCase):
         get_console = lambda: mock_console
 
         with patch.dict(
-            init_handler.SHELLS,
+            specs.SHELLS,
             {
                 "fish": ShellSpec(
                     "fish", "fish.fish", lambda: Path("/mock/cb.fish"), "write_file"
@@ -195,7 +196,7 @@ class TestInitHandler(unittest.TestCase):
             return_value="snippet-code",
         ):
             with patch.dict(
-                init_handler.SHELLS,
+                specs.SHELLS,
                 {"cmd": ShellSpec("cmd", "cmd.bat", None, "wrapper_hint")},
             ):
                 # Execute
@@ -232,18 +233,18 @@ class TestInitHandler(unittest.TestCase):
 
         mock_console.print.assert_called_with("Detected shell: zsh")
 
-    @patch("psutil.Process")
-    @patch("os.getppid")
+    @patch("cmdbox.init.detect.psutil.Process")
+    @patch("cmdbox.init.detect.os.getppid")
     def test_detect_shell_process_windows_pwsh(self, mock_getppid, mock_process):
         mock_getppid.return_value = 123
         mock_parent = MagicMock()
         mock_parent.name.return_value = "pwsh.exe"
         mock_process.return_value.parent.return_value = mock_parent
 
-        self.assertEqual(init_handler.detect_shell(), "powershell")
+        self.assertEqual(detect.detect_shell(), "powershell")
 
-    @patch("psutil.Process")
-    @patch("os.getppid")
+    @patch("cmdbox.init.detect.psutil.Process")
+    @patch("cmdbox.init.detect.os.getppid")
     @patch.dict(os.environ, {"SHELL": "/usr/bin/zsh"}, clear=True)
     def test_detect_shell_fallback_env(self, mock_getppid, mock_process):
         mock_getppid.return_value = 123
@@ -251,19 +252,19 @@ class TestInitHandler(unittest.TestCase):
         mock_parent.name.return_value = "unknown"
         mock_process.return_value.parent.return_value = mock_parent
 
-        self.assertEqual(init_handler.detect_shell(), "zsh")
+        self.assertEqual(detect.detect_shell(), "zsh")
 
-    @patch("sys.platform", "win32")
+    @patch("cmdbox.init.detect.sys.platform", "win32")
     @patch.dict(os.environ, {"PSModulePath": "some-path"}, clear=True)
     def test_detect_shell_env_windows_ps(self):
-        self.assertEqual(init_handler.detect_shell_env(), "powershell")
+        self.assertEqual(detect.detect_shell_env(), "powershell")
 
-    @patch("sys.platform", "linux")
+    @patch("cmdbox.init.detect.sys.platform", "linux")
     @patch.dict(os.environ, {"SHELL": "/bin/fish"}, clear=True)
     def test_detect_shell_env_linux_fish(self):
-        self.assertEqual(init_handler.detect_shell_env(), "fish")
+        self.assertEqual(detect.detect_shell_env(), "fish")
 
-    @patch("sys.platform", "linux")
+    @patch("cmdbox.init.detect.sys.platform", "linux")
     @patch.dict(os.environ, {}, clear=True)
     def test_detect_shell_env_default(self):
-        self.assertEqual(init_handler.detect_shell_env(), "bash")
+        self.assertEqual(detect.detect_shell_env(), "bash")
