@@ -5,6 +5,11 @@ from typing import Callable
 import typer
 
 from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.cli.ui.presenters.init_presenter import (
+    render_install_instructions,
+    render_install_success,
+    render_shell_output,
+)
 from cmdbox.init.detect import detect_shell
 from cmdbox.init.io import load_integration_text, upsert_marked_block
 from cmdbox.init.specs import SHELLS
@@ -53,10 +58,11 @@ def run_init_command(
     snippet = load_integration_text(spec.filename)
 
     if not install:
-        line_sep = "-----------------------------------------------------"
-        console.print(line_sep, snippet, line_sep, sep="\n")
-        console.warning(
-            "TODO: provide link to website page for manual install instructions"
+        title = f"Install instructions for {spec.name}"
+        console.print(
+            render_install_instructions(
+                snippet, shell=shell, title=title, include_help_text=shell != "cmd"
+            )
         )
         return
 
@@ -72,8 +78,7 @@ def run_init_command(
                 f"No default install path available for shell: {spec.name}."
             )
         upsert_marked_block(target, snippet)
-        console.success(f"Shell integration installed successfully in {target}.")
-        console.print("Restart your shell for changes to take effect.")
+        console.print(render_install_success())
         return
 
     if spec.install_mode == "write_file":
@@ -88,19 +93,16 @@ def run_init_command(
 
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(snippet, encoding="utf-8")
-        console.success(f"Shell integration installed written to: {target}.")
-        console.print("Restart your shell for changes to take effect.")
+        console.print(render_install_success())
         return
 
     if spec.install_mode == "wrapper_hint":
-        # TODO: Provide link to documentation website when available
-        message = (
-            "cmd.exe integration is only supported as a wrapper script, not a profile snippet. "
-            'To install cmd.exe integration, create a "cb.cmd" file on your PATH containing the '
-            "contents below:"
+        title = "Unable to install snippet for cmd shell"
+        console.print(
+            render_install_instructions(
+                snippet, shell="cmd", title=title, include_help_text=False
+            )
         )
-        console.print(message)
-        console.print(snippet, end="")
         return
 
 
@@ -119,4 +121,4 @@ def run_detect_shell(*, get_console: Callable[[], ConsoleUI]) -> None:
     """
     console = get_console()
     shell = detect_shell()
-    console.print(f"Detected shell: {shell}")
+    console.print(render_shell_output(shell))
