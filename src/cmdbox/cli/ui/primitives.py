@@ -122,19 +122,21 @@ def banner(
 
     status: one of "success" | "info" | "warning" | "error" or a Theme style name
     """
-    title_text = Text(title, style=styles.title)
+    if status:
+        # Allow semantic names or full style names
+        status_style = getattr(styles, status, status)
+        border_style = status_style
+        title_style = status_style
+    else:
+        border_style = styles.panel_border
+        title_style = styles.title
+
+    title_text = Text(title, style=title_style)
 
     parts: list[RenderableType] = [title_text]
 
     if subtitle:
         parts.append(Text(subtitle, style=styles.subtitle))
-
-    if status:
-        # Allow semantic names or full style names
-        status_style = getattr(styles, status, status)
-        border_style = status_style
-    else:
-        border_style = styles.panel_border
 
     return Panel(
         Group(*parts),
