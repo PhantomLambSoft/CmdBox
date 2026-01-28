@@ -363,6 +363,7 @@ def stack(*renderables: RenderableType) -> RenderableType:
 def section(
     title: str,
     body: RenderableType,
+    caption: str | None = None,
     *,
     border_style: str = "ui.border",
     styles: UiStyles = UiStyles(),
@@ -373,6 +374,7 @@ def section(
     return Panel(
         body,
         title=Text(title, style=styles.panel_title),
+        subtitle=Text(caption, style="ui.caption") if caption else None,
         border_style=border_style,
         padding=(0, 1),
     )
