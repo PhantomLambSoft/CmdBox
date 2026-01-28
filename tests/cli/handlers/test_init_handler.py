@@ -112,12 +112,14 @@ class TestInitHandler(unittest.TestCase):
         )
         self.assertEqual(specs.default_powershell_profile(), expected)
 
+    @patch("cmdbox.cli.handlers.init_handler.render_install_instructions")
     @patch("cmdbox.cli.handlers.init_handler.detect_shell")
     @patch("cmdbox.cli.handlers.init_handler.load_integration_text")
-    def test_run_init_command_no_install(self, mock_load, mock_detect):
+    def test_run_init_command_no_install(self, mock_load, mock_detect, mock_render):
         # Setup
         mock_detect.return_value = "bash"
         mock_load.return_value = "snippet-code"
+        mock_render.return_value = "rendered_instructions"
         mock_console = MagicMock()
         get_console = lambda: mock_console
 
@@ -127,14 +129,18 @@ class TestInitHandler(unittest.TestCase):
         )
 
         # Verify
-        mock_console.print.assert_called()
-        self.assertIn("snippet-code", str(mock_console.print.call_args_list))
+        mock_render.assert_called_once()
+        mock_console.print.assert_called_with("rendered_instructions")
 
+    @patch("cmdbox.cli.handlers.init_handler.render_install_success")
     @patch("cmdbox.cli.handlers.init_handler.upsert_marked_block")
     @patch("cmdbox.cli.handlers.init_handler.load_integration_text")
-    def test_run_init_command_install_profile_block(self, mock_load, mock_upsert):
+    def test_run_init_command_install_profile_block(
+        self, mock_load, mock_upsert, mock_render
+    ):
         # Setup
         mock_load.return_value = "snippet-code"
+        mock_render.return_value = "rendered_success"
         mock_console = MagicMock()
         get_console = lambda: mock_console
 
@@ -154,18 +160,21 @@ class TestInitHandler(unittest.TestCase):
 
             # Verify
             mock_upsert.assert_called_once_with(Path("/mock/.bashrc"), "snippet-code")
-            mock_console.success.assert_called_once()
+            mock_render.assert_called_once()
+            mock_console.print.assert_called_once_with("rendered_success")
 
+    @patch("cmdbox.cli.handlers.init_handler.render_install_success")
     @patch("cmdbox.cli.handlers.init_handler.Path.write_text")
     @patch("cmdbox.cli.handlers.init_handler.Path.mkdir")
     @patch("cmdbox.cli.handlers.init_handler.Path.exists")
     @patch("cmdbox.cli.handlers.init_handler.load_integration_text")
     def test_run_init_command_install_write_file(
-        self, mock_load, mock_exists, mock_mkdir, mock_write
+        self, mock_load, mock_exists, mock_mkdir, mock_write, mock_render
     ):
         # Setup
         mock_load.return_value = "snippet-code"
         mock_exists.return_value = False
+        mock_render.return_value = "rendered_success"
         mock_console = MagicMock()
         get_console = lambda: mock_console
 
@@ -184,12 +193,15 @@ class TestInitHandler(unittest.TestCase):
 
             # Verify
             mock_write.assert_called_once_with("snippet-code", encoding="utf-8")
-            mock_console.success.assert_called_once()
+            mock_render.assert_called_once()
+            mock_console.print.assert_called_once_with("rendered_success")
 
-    def test_run_init_command_wrapper_hint(self):
+    @patch("cmdbox.cli.handlers.init_handler.render_install_instructions")
+    def test_run_init_command_wrapper_hint(self, mock_render):
         # Setup
         mock_console = MagicMock()
         get_console = lambda: mock_console
+        mock_render.return_value = "rendered_hint"
 
         with patch(
             "cmdbox.cli.handlers.init_handler.load_integration_text",
@@ -205,15 +217,8 @@ class TestInitHandler(unittest.TestCase):
                 )
 
                 # Verify
-                # Should print the hint message and the snippet
-                mock_console.print.assert_any_call("snippet-code", end="")
-                # Check for part of the message
-                self.assertTrue(
-                    any(
-                        "wrapper script" in str(args)
-                        for args, kwargs in mock_console.print.call_args_list
-                    )
-                )
+                mock_render.assert_called_once()
+                mock_console.print.assert_called_with("rendered_hint")
 
     def test_run_init_command_invalid_shell(self):
         mock_console = MagicMock()
@@ -223,15 +228,18 @@ class TestInitHandler(unittest.TestCase):
                 shell="invalid-shell", install=False, get_console=get_console
             )
 
+    @patch("cmdbox.cli.handlers.init_handler.render_shell_output")
     @patch("cmdbox.cli.handlers.init_handler.detect_shell")
-    def test_run_detect_shell(self, mock_detect):
+    def test_run_detect_shell(self, mock_detect, mock_render):
         mock_detect.return_value = "zsh"
+        mock_render.return_value = "rendered_shell"
         mock_console = MagicMock()
         get_console = lambda: mock_console
 
         init_handler.run_detect_shell(get_console=get_console)
 
-        mock_console.print.assert_called_with("Detected shell: zsh")
+        mock_render.assert_called_with("zsh")
+        mock_console.print.assert_called_with("rendered_shell")
 
     @patch("cmdbox.init.detect.psutil.Process")
     @patch("cmdbox.init.detect.os.getppid")
