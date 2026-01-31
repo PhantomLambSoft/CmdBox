@@ -2,7 +2,7 @@ from typing import Annotated
 
 import typer
 
-from cmdbox.cli.ui import console
+from cmdbox import container
 from cmdbox.version import __version__
 from cmdbox.database import ensure_schema, get_db
 from .commands.command_crud import app as command_crud_app
@@ -28,12 +28,14 @@ app.add_typer(init_app)
 def is_test_callback(value: bool):
     if value:
         get_db(testing=True)
-        console.print_success("Testing mode is active, database is in memory.")
+        console = container.get_console()
+        console.success("Testing mode is active, database is in memory.")
 
 
 def version_callback(value: bool):
     if value:
-        typer.echo(f"Version: {__version__}")
+        console = container.get_console()
+        console.print(f"CmdBox {__version__}")
         raise typer.Exit()
 
 
