@@ -51,9 +51,12 @@ class UIStyle:
 
 @dataclass(frozen=True)
 class DefaultFields:
-    command = ["alias", "template", "description"]
-    variable = ["name", "value"]
-    tag = ["name", "description"]
+    command_output = ["alias", "template", "description"]
+    command_search = ["alias", "template", "description"]
+    variable_output = ["name", "value"]
+    variable_search = ["name", "value"]
+    tag_output = ["name", "description"]
+    tag_search = ["name", "description"]
 
 
 @dataclass(frozen=True)
