@@ -164,7 +164,10 @@ class TestCommandHandlers(unittest.TestCase):
         cmds = ["c1", "c2", "c3"]
         self.mock_cmd_services.list_commands.return_value = cmds
         mock_render.return_value = "rendered_list"
-        self.mock_settings.default_fields.command = ["test_field_one", "test_field_two"]
+        self.mock_settings.default_fields.command_output = [
+            "test_field_one",
+            "test_field_two",
+        ]
         run_list_command(
             limit=10,
             order="name",
