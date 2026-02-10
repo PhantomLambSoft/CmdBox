@@ -1,7 +1,7 @@
 from dataclasses import asdict, is_dataclass, fields
 
 from cmdbox.settings.models import Settings
-from cmdbox.settings.repository import SettingsRepository
+from cmdbox.settings.settings_repository import SettingsRepository
 
 
 def build_dataclass(cls, data: dict):

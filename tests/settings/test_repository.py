@@ -1,7 +1,7 @@
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock
-from cmdbox.settings.repository import SettingsRepository
+from cmdbox.settings.settings_repository import SettingsRepository
 
 
 class TestSettingsRepository(unittest.TestCase):

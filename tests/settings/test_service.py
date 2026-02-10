@@ -1,9 +1,9 @@
 import unittest
 from unittest.mock import MagicMock
 from dataclasses import dataclass
-from cmdbox.settings.service import SettingsService, build_dataclass
+from cmdbox.settings.settings_service import SettingsService, build_dataclass
 from cmdbox.settings.models import Settings
-from cmdbox.settings.repository import SettingsRepository
+from cmdbox.settings.settings_repository import SettingsRepository
 
 
 class TestBuildDataclass(unittest.TestCase):

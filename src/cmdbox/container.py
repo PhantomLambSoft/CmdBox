@@ -4,7 +4,8 @@ from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.cli.ui.theme_builder import build_theme
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.settings.models import Settings
-from cmdbox.settings.repository import SettingsRepository
+from cmdbox.settings.settings_repository import SettingsRepository
+from cmdbox.settings.settings_service import SettingsService
 from cmdbox.core.paths import get_app_data_dir
 from cmdbox.database import get_db
 from cmdbox.repositories.command_repository import CommandRepository
@@ -16,7 +17,6 @@ from cmdbox.runtime.executor import Executor
 from cmdbox.services.command_services import CommandServices
 from cmdbox.services.run_service import RunService
 from cmdbox.services.tag_services import TagServices
-from cmdbox.settings.service import SettingsService
 
 
 settings = None
