@@ -50,6 +50,13 @@ class UIStyle:
 
 
 @dataclass(frozen=True)
+class DefaultFields:
+    command = ["alias", "template", "description"]
+    variable = ["name", "value"]
+    tag = ["name", "description"]
+
+
+@dataclass(frozen=True)
 class UiSettings:
     use_color: bool = True
     colors: UIStyle = UIStyle()
@@ -65,3 +72,4 @@ class ExecutionSettings:
 class Settings:
     ui: UiSettings = UiSettings()
     execution_settings: ExecutionSettings = ExecutionSettings()
+    default_fields: DefaultFields = DefaultFields()
