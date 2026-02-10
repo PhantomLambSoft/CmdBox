@@ -112,6 +112,7 @@ class TestCommandCrud(unittest.TestCase):
             tags=tags,
             fields=fields,
             get_cmd_services=mock_container.get_command_services,
+            get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
         )
 

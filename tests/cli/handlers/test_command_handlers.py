@@ -18,9 +18,11 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services = MagicMock()
         self.mock_tag_services = MagicMock()
         self.mock_console = MagicMock()
+        self.mock_settings = MagicMock()
         self.get_cmd_services = lambda: self.mock_cmd_services
         self.get_tag_services = lambda: self.mock_tag_services
         self.get_console = lambda: self.mock_console
+        self.get_settings = lambda: self.mock_settings
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_created")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
@@ -141,12 +143,14 @@ class TestCommandHandlers(unittest.TestCase):
         cmds = ["c1", "c2"]
         self.mock_cmd_services.list_commands.return_value = cmds
         mock_render.return_value = "rendered_list"
+        mock_settings = MagicMock()
         run_list_command(
             limit=10,
             order="name",
             tags=["t1"],
             fields=["f1"],
             get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
             get_console=self.get_console,
         )
         self.mock_cmd_services.list_commands.assert_called_with(
@@ -154,6 +158,28 @@ class TestCommandHandlers(unittest.TestCase):
         )
         mock_render.assert_called_once_with(cmds, title="Commands", fields=["f1"])
         self.mock_console.print.assert_called_with("rendered_list")
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
+    def test_run_list_commands_uses_correct_defaults_from_settings(self, mock_render):
+        cmds = ["c1", "c2", "c3"]
+        self.mock_cmd_services.list_commands.return_value = cmds
+        mock_render.return_value = "rendered_list"
+        self.mock_settings.default_fields.command = ["test_field_one", "test_field_two"]
+        run_list_command(
+            limit=10,
+            order="name",
+            tags=["t1"],
+            fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+        self.mock_cmd_services.list_commands.assert_called_with(
+            limit=10, order_by="name", tags=["t1"]
+        )
+        mock_render.assert_called_once_with(
+            cmds, title="Commands", fields=["test_field_one", "test_field_two"]
+        )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
     def test_run_search_command(self, mock_render):

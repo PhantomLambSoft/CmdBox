@@ -29,6 +29,7 @@ from cmdbox.cli.ui.presenters.result_presenter import (
 )
 from cmdbox.services.command_services import CommandServices
 from cmdbox.services.tag_services import TagServices
+from cmdbox.settings.models import Settings
 
 
 @dataclass(frozen=True)
@@ -126,12 +127,16 @@ def run_list_command(
     limit: int,
     order: str,
     tags: list[str],
-    fields: list[str],
+    fields: list[str] | None = None,
     get_cmd_services: Callable[[], CommandServices],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
+    if not fields:
+        settings = get_settings()
+        fields = settings.default_fields.command
     cmds = cmd_service.list_commands(limit=limit, order_by=order, tags=tags)
     rendered_cmd_list = render_command_list(cmds, title="Commands", fields=fields)
     console.print(rendered_cmd_list)

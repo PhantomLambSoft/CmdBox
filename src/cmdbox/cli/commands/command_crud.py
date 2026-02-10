@@ -170,7 +170,7 @@ def list_cmds(
         typer.Option(
             "--field",
             "-f",
-            help="The field(s) to display in the results list. Defaults to all fields.",
+            help="The field(s) to display in the results list. Defaults fields in settings.",
             autocompletion=command_field_options,
         ),
     ] = None,
@@ -181,6 +181,7 @@ def list_cmds(
         tags=tags,
         fields=fields,
         get_cmd_services=container.get_command_services,
+        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 
