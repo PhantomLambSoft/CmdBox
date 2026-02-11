@@ -132,6 +132,7 @@ def list_tags(
         fields=fields,
         order_by=order,
         get_tag_services=container.get_tag_services,
+        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 
@@ -176,6 +177,7 @@ def search(
         search_fields=search_fields,
         fields=fields,
         get_tag_services=container.get_tag_services,
+        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 

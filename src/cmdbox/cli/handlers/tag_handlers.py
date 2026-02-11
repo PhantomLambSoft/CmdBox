@@ -99,13 +99,16 @@ def run_list_tags(
     *,
     limit: int,
     order_by: str,
-    fields: list[str],
+    fields: list[str] | None = None,
     get_tag_services: Callable[[], TagServices],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
     tags = tag_service.list_tags(limit=limit, order_by=order_by)
+    if not fields:
+        fields = get_settings().default_fields.tag_output
     console.print(render_tag_list(tags, title="Tags", fields=fields))
 
 
@@ -113,15 +116,22 @@ def run_search_tags(
     *,
     term: str,
     limit: int,
-    search_fields: list[str],
-    fields: list[str],
+    search_fields: list[str] | None = None,
+    fields: list[str] | None = None,
     get_tag_services: Callable[[], TagServices],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
+
+    output_fields = fields if fields else get_settings().default_fields.tag_output
+    search_fields = (
+        search_fields if search_fields else get_settings().default_fields.tag_search
+    )
+
     tags = tag_service.search(term, limit=limit, fields=search_fields)
-    console.print(render_tag_list(tags, title="Search Results", fields=fields))
+    console.print(render_tag_list(tags, title="Search Results", fields=output_fields))
 
 
 def run_delete_tag(

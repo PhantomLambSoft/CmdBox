@@ -90,6 +90,7 @@ class TestTagCrud(unittest.TestCase):
             fields=fields,
             order_by=order,
             get_tag_services=mock_container.get_tag_services,
+            get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
         )
 
@@ -114,6 +115,7 @@ class TestTagCrud(unittest.TestCase):
             search_fields=search_fields,
             fields=fields,
             get_tag_services=mock_container.get_tag_services,
+            get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
         )
 
