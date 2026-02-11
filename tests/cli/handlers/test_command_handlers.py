@@ -143,7 +143,6 @@ class TestCommandHandlers(unittest.TestCase):
         cmds = ["c1", "c2"]
         self.mock_cmd_services.list_commands.return_value = cmds
         mock_render.return_value = "rendered_list"
-        mock_settings = MagicMock()
         run_list_command(
             limit=10,
             order="name",
@@ -195,6 +194,7 @@ class TestCommandHandlers(unittest.TestCase):
             search_fields=["sf1"],
             fields=["f1"],
             get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
             get_console=self.get_console,
         )
         self.mock_cmd_services.search.assert_called_with(
@@ -202,6 +202,39 @@ class TestCommandHandlers(unittest.TestCase):
         )
         mock_render.assert_called_once_with(cmds, title="Search Results", fields=["f1"])
         self.mock_console.print.assert_called_with("rendered_search")
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
+    def test_run_search_commands_uses_correct_defaults_from_settings(self, mock_render):
+        cmds = ["c1", "c2", "c3"]
+        self.mock_cmd_services.search.return_value = cmds
+        mock_render.return_value = "rendered_search"
+        self.mock_settings.default_fields.command_output = [
+            "test_field_one",
+            "test_field_two",
+        ]
+        self.mock_settings.default_fields.command_search = [
+            "test_field_three",
+            "test_field_four",
+        ]
+        run_search_command(
+            term="term",
+            limit=5,
+            search_fields=None,
+            fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+        self.mock_cmd_services.search.assert_called_with(
+            "term",
+            limit=5,
+            fields=["test_field_three", "test_field_four"],  # search fields
+        )
+        mock_render.assert_called_once_with(
+            cmds,
+            title="Search Results",
+            fields=["test_field_one", "test_field_two"],  # output fields
+        )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_deleted")
     def test_run_delete_command_success(self, mock_render):

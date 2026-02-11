@@ -136,7 +136,7 @@ def run_list_command(
     cmd_service = get_cmd_services()
     if not fields:
         settings = get_settings()
-        fields = settings.default_fields.command
+        fields = settings.default_fields.command_output
     cmds = cmd_service.list_commands(limit=limit, order_by=order, tags=tags)
     rendered_cmd_list = render_command_list(cmds, title="Commands", fields=fields)
     console.print(rendered_cmd_list)
@@ -146,15 +146,24 @@ def run_search_command(
     *,
     term: str,
     limit: int,
-    search_fields: list[str],
-    fields: list[str],
+    search_fields: list[str] | None = None,
+    fields: list[str] | None = None,
     get_cmd_services: Callable[[], CommandServices],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
+
+    output_fields = fields if fields else get_settings().default_fields.command_output
+    search_fields = (
+        search_fields if search_fields else get_settings().default_fields.command_search
+    )
+
     cmds = cmd_service.search(term, limit=limit, fields=search_fields)
-    rendered_cmd_list = render_command_list(cmds, title="Search Results", fields=fields)
+    rendered_cmd_list = render_command_list(
+        cmds, title="Search Results", fields=output_fields
+    )
     console.print(rendered_cmd_list)
 
 
