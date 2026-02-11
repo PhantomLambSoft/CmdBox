@@ -97,6 +97,7 @@ class TestVariableCrud(unittest.TestCase):
             limit=limit,
             fields=fields,
             get_var_services=mock_container.get_variable_services,
+            get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
         )
 
@@ -121,6 +122,7 @@ class TestVariableCrud(unittest.TestCase):
             search_fields=search_fields,
             fields=fields,
             get_var_services=mock_container.get_variable_services,
+            get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
         )
 

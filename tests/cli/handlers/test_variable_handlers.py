@@ -18,9 +18,11 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_var_services = MagicMock()
         self.mock_tag_services = MagicMock()
         self.mock_console = MagicMock()
+        self.mock_settings = MagicMock()
         self.get_var_services = lambda: self.mock_var_services
         self.get_tag_services = lambda: self.mock_tag_services
         self.get_console = lambda: self.mock_console
+        self.get_settings = lambda: self.mock_settings
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_created")
     @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_name")
@@ -133,6 +135,7 @@ class TestVariableHandlers(unittest.TestCase):
             tags=["t1"],
             fields=["f1"],
             get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
             get_console=self.get_console,
         )
         self.mock_var_services.list_variables.assert_called_with(
@@ -142,9 +145,35 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_console.print.assert_called_with("rendered_list")
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
+    def test_run_list_variables_uses_correct_defaults_from_settings(self, mock_render):
+        vars_ = ["v1", "v2", "v3"]
+        self.mock_var_services.list_variables.return_value = vars_
+        mock_render.return_value = "rendered_list"
+        self.mock_settings.default_fields.variable_output = [
+            "default_field_one",
+            "default_field_two",
+        ]
+        run_list_variables(
+            limit=10,
+            order_by="name",
+            tags=["t1"],
+            fields=None,
+            get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+        self.mock_var_services.list_variables.assert_called_with(
+            limit=10, order_by="name", tags=["t1"]
+        )
+        mock_render.assert_called_once_with(
+            vars_, title="Variables", fields=["default_field_one", "default_field_two"]
+        )
+        self.mock_console.print.assert_called_with("rendered_list")
+
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_search_variables(self, mock_render):
         vars_ = ["v1"]
-        self.mock_var_services.search_variables.return_value = vars_
+        self.mock_var_services.search.return_value = vars_
         mock_render.return_value = "rendered_search"
         run_search_variables(
             term="term",
@@ -152,13 +181,50 @@ class TestVariableHandlers(unittest.TestCase):
             search_fields=["sf1"],
             fields=["f1"],
             get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
             get_console=self.get_console,
         )
-        self.mock_var_services.search_variables.assert_called_with(
+        self.mock_var_services.search.assert_called_with(
             "term", limit=5, fields=["sf1"]
         )
         mock_render.assert_called_once_with(
             vars_, title="Search Results", fields=["f1"]
+        )
+        self.mock_console.print.assert_called_with("rendered_search")
+
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
+    def test_run_search_variables_uses_correct_defaults_from_settings(
+        self, mock_render
+    ):
+        vars_ = ["v1", "v2", "v3"]
+        self.mock_var_services.search.return_value = vars_
+        mock_render.return_value = "rendered_search"
+        self.mock_settings.default_fields.variable_output = [
+            "default_field_one",
+            "default_field_two",
+        ]
+        self.mock_settings.default_fields.variable_search = [
+            "default_field_three",
+            "default_field_four",
+        ]
+        run_search_variables(
+            term="term",
+            limit=5,
+            search_fields=None,
+            fields=None,
+            get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+        self.mock_var_services.search.assert_called_with(
+            "term",
+            limit=5,
+            fields=["default_field_three", "default_field_four"],  # search fields
+        )
+        mock_render.assert_called_once_with(
+            vars_,
+            title="Search Results",
+            fields=["default_field_one", "default_field_two"],  # output fields
         )
         self.mock_console.print.assert_called_with("rendered_search")
 

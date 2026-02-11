@@ -28,6 +28,7 @@ from cmdbox.cli.ui.presenters.result_presenter import (
 )
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.services.tag_services import TagServices
+from cmdbox.settings.models import Settings
 
 
 @dataclass(frozen=True)
@@ -113,13 +114,16 @@ def run_list_variables(
     limit: int,
     order_by: str,
     tags: list[str],
-    fields: list[str],
+    fields: list[str] | None = None,
     get_var_services: Callable[[], VariableServices],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     var_service = get_var_services()
     vars_ = var_service.list_variables(limit=limit, order_by=order_by, tags=tags)
+    if not fields:
+        fields = get_settings().default_fields.variable_output
     console.print(render_variable_list(vars_, title="Variables", fields=fields))
 
 
@@ -127,15 +131,26 @@ def run_search_variables(
     *,
     term: str,
     limit: int,
-    search_fields: list[str],
-    fields: list[str],
+    search_fields: list[str] | None = None,
+    fields: list[str] | None = None,
     get_var_services: Callable[[], VariableServices],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     var_service = get_var_services()
-    vars_ = var_service.search_variables(term, limit=limit, fields=search_fields)
-    console.print(render_variable_list(vars_, title="Search Results", fields=fields))
+
+    output_fields = fields if fields else get_settings().default_fields.variable_output
+    search_fields = (
+        search_fields
+        if search_fields
+        else get_settings().default_fields.variable_search
+    )
+
+    vars_ = var_service.search(term, limit=limit, fields=search_fields)
+    console.print(
+        render_variable_list(vars_, title="Search Results", fields=output_fields)
+    )
 
 
 def run_delete_variable(

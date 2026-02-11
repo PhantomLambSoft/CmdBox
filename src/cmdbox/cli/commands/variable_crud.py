@@ -139,6 +139,7 @@ def list_vars(
         limit=limit,
         fields=fields,
         get_var_services=container.get_variable_services,
+        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 
@@ -178,6 +179,7 @@ def search(
         search_fields=search_fields,
         fields=fields,
         get_var_services=container.get_variable_services,
+        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 
