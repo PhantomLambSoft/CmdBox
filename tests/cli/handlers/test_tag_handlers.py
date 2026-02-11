@@ -133,7 +133,7 @@ class TestTagHandlers(unittest.TestCase):
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
     def test_run_search_tags(self, mock_render):
         tags = ["t1"]
-        self.mock_tag_services.search_tags.return_value = tags
+        self.mock_tag_services.search.return_value = tags
         mock_render.return_value = "rendered_search"
         run_search_tags(
             term="term",
@@ -143,7 +143,7 @@ class TestTagHandlers(unittest.TestCase):
             get_tag_services=self.get_tag_services,
             get_console=self.get_console,
         )
-        self.mock_tag_services.search_tags.assert_called_with(
+        self.mock_tag_services.search.assert_called_with(
             "term", limit=5, fields=["sf1"]
         )
         mock_render.assert_called_once_with(tags, title="Search Results", fields=["f1"])

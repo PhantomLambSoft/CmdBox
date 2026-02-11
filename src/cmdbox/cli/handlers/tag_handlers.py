@@ -22,6 +22,7 @@ from cmdbox.cli.ui.presenters.tag_presenter import (
 from cmdbox.cli.prompts.validators import TagNameValidator
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.services.tag_services import TagServices
+from cmdbox.settings.models import Settings
 
 
 @dataclass(frozen=True)
@@ -119,7 +120,7 @@ def run_search_tags(
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
-    tags = tag_service.search_tags(term, limit=limit, fields=search_fields)
+    tags = tag_service.search(term, limit=limit, fields=search_fields)
     console.print(render_tag_list(tags, title="Search Results", fields=fields))
 
 
