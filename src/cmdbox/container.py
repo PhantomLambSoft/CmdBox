@@ -113,7 +113,7 @@ def get_command_display_field_resolver() -> FieldSelectionResolver:
 
 
 @lru_cache(maxsize=1)
-def get_command_search_field_selection_resolver() -> FieldSelectionResolver:
+def get_command_search_field_resolver() -> FieldSelectionResolver:
     return FieldSelectionResolver(allowed_fields=COMMAND_SEARCH_FIELDS)
 
 
