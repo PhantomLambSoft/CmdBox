@@ -5,12 +5,12 @@ from cmdbox.services.errors import EmptyFieldSelectionError, UnknownFieldError
 
 class TestFieldSelectionResolver(unittest.TestCase):
 
-    def test_resolve_none_returns_allowed_fields(self):
+    def test_resolve_none_returns_allowed_fields_with_no_defaults(self):
         resolver = FieldSelectionResolver(allowed_fields=["id", "name", "desc"])
         result = resolver.resolve(None)
         self.assertEqual(["id", "name", "desc"], result)
 
-    def test_resolve_none_returns_default_fields(self):
+    def test_resolve_none_returns_default_fields_when_present(self):
         resolver = FieldSelectionResolver(allowed_fields=["id", "name", "desc"])
         result = resolver.resolve(None, default_fields=["id", "name"])
         self.assertEqual(["id", "name"], result)
@@ -41,8 +41,22 @@ class TestFieldSelectionResolver(unittest.TestCase):
 
     def test_resolve_valid_fields(self):
         resolver = FieldSelectionResolver(allowed_fields=["id", "name", "desc"])
-        result = resolver.resolve(["ID", "name"])
-        self.assertEqual(["ID", "name"], result)
+        result = resolver.resolve(["id", "name"])
+        self.assertEqual(["id", "name"], result)
+
+    def test_supplied_fields_are_case_insensitive(self):
+        resolver = FieldSelectionResolver(
+            allowed_fields=["id", "name", "template", "description"]
+        )
+        result = resolver.resolve(["ID", "Name", "TEMPLATE", "DeScRiPtIoN"])
+        self.assertEqual(["id", "name", "template", "description"], result)
+
+    def test_allowed_fields_are_case_insensitive(self):
+        resolver = FieldSelectionResolver(
+            allowed_fields=["ID", "Name", "TEMPLATE", "DeScRiPtIoN"]
+        )
+        result = resolver.resolve(["id", "name", "template", "description"])
+        self.assertEqual(["id", "name", "template", "description"], result)
 
     def test_resolve_unknown_field_raises_error(self):
         resolver = FieldSelectionResolver(allowed_fields=["id", "name"])
@@ -67,8 +81,8 @@ class TestFieldSelectionResolver(unittest.TestCase):
         resolver = FieldSelectionResolver(
             allowed_fields=["id", "name"], allow_duplicates=True
         )
-        result = resolver.resolve(["id", "ID", "name", "id"])
-        self.assertEqual(["id", "ID", "name", "id"], result)
+        result = resolver.resolve(["id", "id", "name", "id"])
+        self.assertEqual(["id", "id", "name", "id"], result)
 
     def test_alias_substitution(self):
         aliases = {"n": "name", "i": "id"}
