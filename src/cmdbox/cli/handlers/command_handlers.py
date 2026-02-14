@@ -28,6 +28,7 @@ from cmdbox.cli.ui.presenters.result_presenter import (
     render_tag_detach_result,
 )
 from cmdbox.services.command_services import CommandServices
+from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.tag_services import TagServices
 from cmdbox.settings.models import Settings
 
@@ -131,14 +132,22 @@ def run_list_command(
     get_cmd_services: Callable[[], CommandServices],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
+    get_display_field_resolver: Callable[[], FieldSelectionResolver],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
-    if not fields:
-        settings = get_settings()
-        fields = settings.default_fields.command_output
+
+    settings = get_settings()
+    resolved_fields = get_display_field_resolver().resolve(
+        fields,
+        default_fields=settings.default_fields.command_output,
+        aliases=settings.field_aliases.alias_map,
+    )
+
     cmds = cmd_service.list_commands(limit=limit, order_by=order, tags=tags)
-    rendered_cmd_list = render_command_list(cmds, title="Commands", fields=fields)
+    rendered_cmd_list = render_command_list(
+        cmds, title="Commands", fields=resolved_fields
+    )
     console.print(rendered_cmd_list)
 
 
@@ -151,13 +160,22 @@ def run_search_command(
     get_cmd_services: Callable[[], CommandServices],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
+    get_display_field_resolver: Callable[[], FieldSelectionResolver],
+    get_search_field_resolver: Callable[[], FieldSelectionResolver],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
 
-    output_fields = fields if fields else get_settings().default_fields.command_output
-    search_fields = (
-        search_fields if search_fields else get_settings().default_fields.command_search
+    settings = get_settings()
+    output_fields = get_display_field_resolver().resolve(
+        fields,
+        default_fields=settings.default_fields.command_output,
+        aliases=settings.field_aliases.alias_map,
+    )
+    search_fields = get_search_field_resolver().resolve(
+        search_fields,
+        default_fields=settings.default_fields.command_search,
+        aliases=settings.field_aliases.alias_map,
     )
 
     cmds = cmd_service.search(term, limit=limit, fields=search_fields)

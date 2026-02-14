@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 import typer
 from cmdbox.cli.handlers.command_handlers import (
     AddCommandArgs,
@@ -10,9 +10,27 @@ from cmdbox.cli.handlers.command_handlers import (
     run_search_command,
     run_delete_command,
 )
+from cmdbox.services.field_selection import FieldSelectionResolver
 
 
 class TestCommandHandlers(unittest.TestCase):
+
+    DISPLAY_FIELDS = [
+        "f1",
+        "f2",
+        "test_field_one",
+        "test_field_two",
+        "test_field_three",
+        "test_field_four",
+    ]
+    SEARCH_FIELDS = [
+        "sf1",
+        "sf2",
+        "test_field_one",
+        "test_field_two",
+        "test_field_three",
+        "test_field_four",
+    ]
 
     def setUp(self):
         self.mock_cmd_services = MagicMock()
@@ -23,6 +41,12 @@ class TestCommandHandlers(unittest.TestCase):
         self.get_tag_services = lambda: self.mock_tag_services
         self.get_console = lambda: self.mock_console
         self.get_settings = lambda: self.mock_settings
+        self.get_display_field_resolver = lambda: FieldSelectionResolver(
+            self.DISPLAY_FIELDS
+        )
+        self.get_search_field_resolver = lambda: FieldSelectionResolver(
+            self.SEARCH_FIELDS
+        )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_created")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
@@ -151,6 +175,7 @@ class TestCommandHandlers(unittest.TestCase):
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_cmd_services.list_commands.assert_called_with(
             limit=10, order_by="name", tags=["t1"]
@@ -175,6 +200,7 @@ class TestCommandHandlers(unittest.TestCase):
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_cmd_services.list_commands.assert_called_with(
             limit=10, order_by="name", tags=["t1"]
@@ -182,6 +208,30 @@ class TestCommandHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             cmds, title="Commands", fields=["test_field_one", "test_field_two"]
         )
+        self.mock_console.print.assert_called_with("rendered_list")
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
+    def test_run_list_command_uses_all_keyword_correctly(self, mock_render):
+        cmds = ["c1", "c2", "c3"]
+        self.mock_cmd_services.list_commands.return_value = cmds
+        mock_render.return_value = "rendered_list"
+        run_list_command(
+            limit=10,
+            order="name",
+            tags=["t1"],
+            fields=["all"],
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+        )
+        self.mock_cmd_services.list_commands.assert_called_with(
+            limit=10, order_by="name", tags=["t1"]
+        )
+        mock_render.assert_called_once_with(
+            cmds, title="Commands", fields=self.DISPLAY_FIELDS
+        )
+        self.mock_console.print.assert_called_with("rendered_list")
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
     def test_run_search_command(self, mock_render):
@@ -196,6 +246,8 @@ class TestCommandHandlers(unittest.TestCase):
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_cmd_services.search.assert_called_with(
             "term", limit=5, fields=["sf1"]
@@ -224,6 +276,8 @@ class TestCommandHandlers(unittest.TestCase):
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_cmd_services.search.assert_called_with(
             "term",
@@ -235,6 +289,30 @@ class TestCommandHandlers(unittest.TestCase):
             title="Search Results",
             fields=["test_field_one", "test_field_two"],  # output fields
         )
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
+    def test_run_search_commands_uses_all_keyword_correctly(self, mock_render):
+        cmds = ["c1"]
+        self.mock_cmd_services.search.return_value = cmds
+        mock_render.return_value = "rendered_search"
+        run_search_command(
+            term="term",
+            limit=5,
+            search_fields=["all"],
+            fields=["all"],
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
+        )
+        self.mock_cmd_services.search.assert_called_with(
+            "term", limit=5, fields=self.SEARCH_FIELDS
+        )
+        mock_render.assert_called_once_with(
+            cmds, title="Search Results", fields=self.DISPLAY_FIELDS
+        )
+        self.mock_console.print.assert_called_with("rendered_search")
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_deleted")
     def test_run_delete_command_success(self, mock_render):
