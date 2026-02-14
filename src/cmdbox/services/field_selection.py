@@ -27,6 +27,19 @@ class FieldSelectionResolver:
     allow_duplicates: bool = False
     all_token: str = "all"
 
+    @property
+    def _allowed_fields(self):
+        """
+        Property method that retrieves a list of allowed fields in lowercase.
+
+        This method iterates through the fields defined in the `allowed_fields`
+        attribute, converts each field to lowercase, and returns the updated list.
+
+        Returns:
+            list: A list of strings representing the fields converted to lowercase.
+        """
+        return [x.lower() for x in self.allowed_fields]
+
     def resolve(
         self,
         raw: Sequence[str] | None,
@@ -59,24 +72,25 @@ class FieldSelectionResolver:
             EmptyFieldSelectionError: If `raw` contains no valid field tokens or is equivalent
             to an empty selection within the specified context.
         """
-        if not self.allowed_fields:
+        if not self._allowed_fields:
             return []
 
         if raw is None:
             fields = (
                 list(default_fields)
                 if default_fields is not None
-                else self.allowed_fields
+                else self._allowed_fields
             )
             return self.validate(fields, context)
 
+        raw = [x.lower() for x in raw]
         tokens = [self.apply_alias(x, aliases) for x in raw if x.strip()]
 
         if not tokens:
             raise EmptyFieldSelectionError(context=context)
 
         if any(x.lower() == self.all_token.lower() for x in tokens):
-            return self.allowed_fields
+            return self._allowed_fields
 
         return self.validate(tokens, context)
 
@@ -108,8 +122,8 @@ class FieldSelectionResolver:
         for token in tokens:
             key = token.lower()
 
-            if key not in self.allowed_fields:
-                raise UnknownFieldError(token, self.allowed_fields, context=context)
+            if key not in self._allowed_fields:
+                raise UnknownFieldError(token, self._allowed_fields, context=context)
 
             if not self.allow_duplicates and key in seen:
                 continue
