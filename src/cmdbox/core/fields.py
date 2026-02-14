@@ -30,13 +30,13 @@ VARIABLE_SEARCH_FIELDS = [
     "last_updated",
 ]
 
-TAGS_DISPLAY_FIELDS = [
+TAG_DISPLAY_FIELDS = [
     "name",
     "description",
     "date_created",
     "last_updated",
 ]
-TAGS_SEARCH_FIELDS = [
+TAG_SEARCH_FIELDS = [
     "name",
     "description",
     "date_created",
