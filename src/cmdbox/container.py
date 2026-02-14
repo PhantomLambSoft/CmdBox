@@ -2,7 +2,14 @@ from functools import lru_cache
 
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.cli.ui.theme_builder import build_theme
-from cmdbox.core.fields import COMMAND_DISPLAY_FIELDS, COMMAND_SEARCH_FIELDS
+from cmdbox.core.fields import (
+    COMMAND_DISPLAY_FIELDS,
+    COMMAND_SEARCH_FIELDS,
+    VARIABLE_DISPLAY_FIELDS,
+    VARIABLE_SEARCH_FIELDS,
+    TAG_DISPLAY_FIELDS,
+    TAG_SEARCH_FIELDS,
+)
 from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.settings.models import Settings
@@ -108,3 +115,23 @@ def get_command_display_field_resolver() -> FieldSelectionResolver:
 @lru_cache(maxsize=1)
 def get_command_search_field_selection_resolver() -> FieldSelectionResolver:
     return FieldSelectionResolver(allowed_fields=COMMAND_SEARCH_FIELDS)
+
+
+@lru_cache(maxsize=1)
+def get_variable_display_field_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=VARIABLE_DISPLAY_FIELDS)
+
+
+@lru_cache(maxsize=1)
+def get_variable_search_field_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=VARIABLE_SEARCH_FIELDS)
+
+
+@lru_cache(maxsize=1)
+def get_tag_display_field_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=TAG_DISPLAY_FIELDS)
+
+
+@lru_cache(maxsize=1)
+def get_tag_search_field_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=TAG_SEARCH_FIELDS)
