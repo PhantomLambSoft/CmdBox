@@ -2,6 +2,8 @@ from functools import lru_cache
 
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.cli.ui.theme_builder import build_theme
+from cmdbox.core.fields import COMMAND_DISPLAY_FIELDS, COMMAND_SEARCH_FIELDS
+from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.settings.models import Settings
 from cmdbox.settings.settings_repository import SettingsRepository
@@ -96,3 +98,13 @@ def get_tag_services() -> TagServices:
     get_db()
     tag_repo = get_tag_repo()
     return TagServices(tag_repository=tag_repo)
+
+
+@lru_cache(maxsize=1)
+def get_command_display_field_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=COMMAND_DISPLAY_FIELDS)
+
+
+@lru_cache(maxsize=1)
+def get_command_search_field_selection_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=COMMAND_SEARCH_FIELDS)
