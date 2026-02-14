@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -60,6 +60,29 @@ class DefaultFields:
 
 
 @dataclass(frozen=True)
+class FieldAliases:
+    alias_mapping: dict[str, list[str]] = field(
+        default_factory=lambda: {
+            "alias": ["a", "al"],
+            "template": ["t", "temp"],
+            "description": ["d", "desc"],
+            "date_created": ["dc", "created"],
+            "last_updated": ["lu", "updated"],
+            "used": ["u"],
+            "last_used": ["lu"],
+        }
+    )
+
+    @property
+    def alias_map(self) -> dict[str, str]:
+        out: dict[str, str] = {}
+        for field_name, aliases in self.alias_mapping.items():
+            for alias in aliases:
+                out[alias.lower()] = field_name
+        return out
+
+
+@dataclass(frozen=True)
 class UiSettings:
     use_color: bool = True
     colors: UIStyle = UIStyle()
@@ -76,3 +99,4 @@ class Settings:
     ui: UiSettings = UiSettings()
     execution_settings: ExecutionSettings = ExecutionSettings()
     default_fields: DefaultFields = DefaultFields()
+    field_aliases: FieldAliases = FieldAliases()
