@@ -4,6 +4,7 @@ from cmdbox.services.errors import EmptyFieldSelectionError, UnknownFieldError
 
 
 class TestFieldSelectionResolver(unittest.TestCase):
+
     def test_resolve_none_returns_allowed_fields(self):
         resolver = FieldSelectionResolver(allowed_fields=["id", "name", "desc"])
         result = resolver.resolve(None)
@@ -71,16 +72,14 @@ class TestFieldSelectionResolver(unittest.TestCase):
 
     def test_alias_substitution(self):
         aliases = {"n": "name", "i": "id"}
-        resolver = FieldSelectionResolver(
-            allowed_fields=["id", "name"], aliases=aliases
-        )
-        result = resolver.resolve(["i", "N"])
+        resolver = FieldSelectionResolver(allowed_fields=["id", "name"])
+        result = resolver.resolve(["i", "N"], aliases=aliases)
         self.assertEqual(["id", "name"], result)
 
     def test_alias_case_insensitivity(self):
         aliases = {"NAME_ALIAS": "name"}
-        resolver = FieldSelectionResolver(allowed_fields=["name"], aliases=aliases)
-        result = resolver.resolve(["name_alias"])
+        resolver = FieldSelectionResolver(allowed_fields=["name"])
+        result = resolver.resolve(["name_alias"], aliases=aliases)
         self.assertEqual(["name"], result)
 
     def test_resolve_empty_allowed_fields(self):
@@ -95,11 +94,11 @@ class TestFieldSelectionResolver(unittest.TestCase):
 
     def test_apply_alias_no_aliases(self):
         resolver = FieldSelectionResolver(allowed_fields=["id"])
-        self.assertEqual("id", resolver.apply_alias("id"))
+        self.assertEqual("id", resolver.apply_alias("id", None))
 
     def test_apply_alias_no_match(self):
-        resolver = FieldSelectionResolver(allowed_fields=["id"], aliases={"a": "id"})
-        self.assertEqual("other", resolver.apply_alias("other"))
+        resolver = FieldSelectionResolver(allowed_fields=["id"])
+        self.assertEqual("other", resolver.apply_alias("other", {"a": "id"}))
 
     def test_validate_preserves_case_of_allowed_fields_matches(self):
         resolver = FieldSelectionResolver(allowed_fields=["id", "name"])

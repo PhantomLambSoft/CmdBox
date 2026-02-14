@@ -17,8 +17,6 @@ class FieldSelectionResolver:
     Attributes:
         allowed_fields (list[str]): A list of fields that are explicitly allowed. Any field not
             present in this list will result in a validation error.
-        aliases (Mapping[str, str] | None): A mapping of alias names to their corresponding target
-            field names. Aliases allow users to refer to fields using alternate identifiers.
         allow_duplicates (bool): A flag indicating whether duplicate fields are permitted in the
             final resolved list. Defaults to False.
         all_token (str): A special token used to indicate that all allowed fields should be selected.
@@ -26,7 +24,6 @@ class FieldSelectionResolver:
     """
 
     allowed_fields: list[str]
-    aliases: Mapping[str, str] | None = None
     allow_duplicates: bool = False
     all_token: str = "all"
 
@@ -35,6 +32,7 @@ class FieldSelectionResolver:
         raw: Sequence[str] | None,
         *,
         default_fields: Sequence[str] | None = None,
+        aliases: Mapping[str, str] | None = None,
         context: str | None = None,
     ) -> list[str]:
         """
@@ -48,6 +46,8 @@ class FieldSelectionResolver:
                 fallback.
             default_fields (Sequence[str] | None, optional): A sequence of default field names
                 to use if `raw` is None. If omitted or None, all allowed fields are used.
+            aliases: (Mapping[str, str] | None, optional): A dictionary mapping field aliases to
+                a corresponding field name. If provided, aliases will be applied to the raw input.
             context (str | None, optional): An optional string providing additional contextual
                 information for validation or error handling.
 
@@ -70,7 +70,7 @@ class FieldSelectionResolver:
             )
             return self.validate(fields, context)
 
-        tokens = [x.strip() for x in raw if x.strip()]
+        tokens = [self.apply_alias(x, aliases) for x in raw if x.strip()]
 
         if not tokens:
             raise EmptyFieldSelectionError(context=context)
@@ -82,27 +82,30 @@ class FieldSelectionResolver:
 
     def validate(self, tokens: Sequence[str], context: str | None) -> list[str]:
         """
-        Validates a list of tokens against allowed fields and applies transformations.
+        Validates a sequence of tokens based on allowed fields and duplicate rules.
 
-        This method processes a list of tokens by applying transformations, validating
-        their presence in the allowed fields, and handling duplicate entries based on
-        the configuration settings. If a token is not allowed, an exception is raised.
+        This method processes the provided tokens to ensure they are within the set of
+        allowed fields. Optionally, it filters out duplicate tokens based on the
+        `allow_duplicates` rule. If any token does not match the allowed fields, an
+        `UnknownFieldError` is raised.
 
         Args:
-            tokens (Sequence[str]): A sequence of string tokens to validate.
-            context (str | None): Optional context for error reporting.
-
-        Raises:
-            UnknownFieldError: If a token is not found in the set of allowed fields.
+            tokens (Sequence[str]): A sequence of tokens to validate.
+            context (str | None): An optional context string providing additional
+                information for debug or error messages.
 
         Returns:
-            list[str]: A list of validated and transformed tokens.
+            list[str]: A list of validated tokens, preserving the original order and
+            optionally excluding duplicates.
+
+        Raises:
+            UnknownFieldError: If a token is not in the allowed fields or violates
+            validation rules.
         """
         out: list[str] = []
         seen: set[str] = set()
 
         for token in tokens:
-            token = self.apply_alias(token)
             key = token.lower()
 
             if key not in self.allowed_fields:
@@ -116,26 +119,29 @@ class FieldSelectionResolver:
 
         return out
 
-    def apply_alias(self, token: str) -> str:
+    def apply_alias(self, token: str, aliases: Mapping[str, str] | None) -> str:
         """
-        Applies alias substitution to a given token.
+        Processes a token and applies alias transformations if a matching alias is found.
 
-        This method checks if the given token matches any alias in the alias mapping.
-        If a match is found (case-insensitive), it substitutes the token with the
-        corresponding target value. If no match is found or the alias list is empty,
-        the original token is returned unchanged.
+        This method checks if a given token matches any of the keys in the provided alias
+        mappings. If a match is found, the token is replaced with the associated value
+        from the mapping. If no match is found or no aliases are provided, the original
+        token is returned unmodified.
 
         Args:
-            token (str): The token to check against the alias mapping.
+            token (str): The token to be processed and potentially transformed.
+            aliases (Mapping[str, str] | None): A dictionary where keys represent alias
+                tokens, and values are the replacement tokens. If None is provided, no
+                alias transformations will be applied.
 
         Returns:
-            str: The substituted token if an alias match is found; otherwise, the
-            original token.
+            str: The transformed token if a matching alias was found, or the original
+            token otherwise.
         """
-        if not self.aliases:
+        if not aliases:
             return token
 
-        for alias, target in self.aliases.items():
+        for alias, target in aliases.items():
             if alias.lower() == token.lower():
                 return target
 
