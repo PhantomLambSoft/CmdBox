@@ -183,6 +183,7 @@ def list_cmds(
         get_cmd_services=container.get_command_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
+        get_display_field_resolver=container.get_command_display_field_resolver,
     )
 
 
@@ -221,7 +222,10 @@ def search(
         search_fields=search_fields,
         fields=fields,
         get_cmd_services=container.get_command_services,
+        get_settings=container.get_settings,
         get_console=container.get_console,
+        get_display_field_resolver=container.get_command_display_field_resolver,
+        get_search_field_resolver=container.get_command_search_field_selection_resolver,
     )
 
 
