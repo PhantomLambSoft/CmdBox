@@ -21,6 +21,7 @@ from cmdbox.cli.ui.presenters.tag_presenter import (
 )
 from cmdbox.cli.prompts.validators import TagNameValidator
 from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.tag_services import TagServices
 from cmdbox.settings.models import Settings
 
@@ -103,12 +104,19 @@ def run_list_tags(
     get_tag_services: Callable[[], TagServices],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
+    get_display_field_resolver: Callable[[], FieldSelectionResolver],
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
     tags = tag_service.list_tags(limit=limit, order_by=order_by)
-    if not fields:
-        fields = get_settings().default_fields.tag_output
+
+    settings = get_settings()
+    fields = get_display_field_resolver().resolve(
+        fields,
+        default_fields=settings.default_fields.tag_output,
+        aliases=settings.field_aliases.alias_map,
+    )
+
     console.print(render_tag_list(tags, title="Tags", fields=fields))
 
 
@@ -121,13 +129,22 @@ def run_search_tags(
     get_tag_services: Callable[[], TagServices],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
+    get_display_field_resolver: Callable[[], FieldSelectionResolver],
+    get_search_field_resolver: Callable[[], FieldSelectionResolver],
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
 
-    output_fields = fields if fields else get_settings().default_fields.tag_output
-    search_fields = (
-        search_fields if search_fields else get_settings().default_fields.tag_search
+    settings = get_settings()
+    output_fields = get_display_field_resolver().resolve(
+        fields,
+        default_fields=settings.default_fields.tag_output,
+        aliases=settings.field_aliases.alias_map,
+    )
+    search_fields = get_search_field_resolver().resolve(
+        search_fields,
+        default_fields=settings.default_fields.tag_search,
+        aliases=settings.field_aliases.alias_map,
     )
 
     tags = tag_service.search(term, limit=limit, fields=search_fields)

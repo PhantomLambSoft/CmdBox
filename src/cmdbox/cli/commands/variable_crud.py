@@ -141,6 +141,7 @@ def list_vars(
         get_var_services=container.get_variable_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
+        get_display_field_resolver=container.get_variable_display_field_resolver,
     )
 
 
@@ -181,6 +182,8 @@ def search(
         get_var_services=container.get_variable_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
+        get_display_field_resolver=container.get_variable_display_field_resolver,
+        get_search_field_resolver=container.get_variable_search_field_resolver,
     )
 
 

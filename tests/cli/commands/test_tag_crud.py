@@ -92,6 +92,7 @@ class TestTagCrud(unittest.TestCase):
             get_tag_services=mock_container.get_tag_services,
             get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
+            get_display_field_resolver=mock_container.get_tag_display_field_resolver,
         )
 
     @patch("cmdbox.cli.commands.tag_crud.tag_handlers.run_search_tags")
@@ -117,6 +118,8 @@ class TestTagCrud(unittest.TestCase):
             get_tag_services=mock_container.get_tag_services,
             get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
+            get_display_field_resolver=mock_container.get_tag_display_field_resolver,
+            get_search_field_resolver=mock_container.get_tag_search_field_resolver,
         )
 
     @patch("cmdbox.cli.commands.tag_crud.tag_handlers.run_delete_tag")

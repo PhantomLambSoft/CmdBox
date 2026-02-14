@@ -99,6 +99,7 @@ class TestVariableCrud(unittest.TestCase):
             get_var_services=mock_container.get_variable_services,
             get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
+            get_display_field_resolver=mock_container.get_variable_display_field_resolver,
         )
 
     @patch("cmdbox.cli.commands.variable_crud.variable_handlers.run_search_variables")
@@ -124,6 +125,8 @@ class TestVariableCrud(unittest.TestCase):
             get_var_services=mock_container.get_variable_services,
             get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
+            get_display_field_resolver=mock_container.get_variable_display_field_resolver,
+            get_search_field_resolver=mock_container.get_variable_search_field_resolver,
         )
 
     @patch("cmdbox.cli.commands.variable_crud.variable_handlers.run_delete_variable")

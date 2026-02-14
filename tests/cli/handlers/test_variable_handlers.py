@@ -10,9 +10,31 @@ from cmdbox.cli.handlers.variable_handlers import (
     run_search_variables,
     run_delete_variable,
 )
+from cmdbox.services.field_selection import FieldSelectionResolver
 
 
 class TestVariableHandlers(unittest.TestCase):
+
+    DISPLAY_FIELDS = [
+        "f1",
+        "f2",
+        "test_field_one",
+        "test_field_two",
+        "test_field_three",
+        "test_field_four",
+        "default_field_one",
+        "default_field_two",
+    ]
+    SEARCH_FIELDS = [
+        "sf1",
+        "sf2",
+        "test_field_one",
+        "test_field_two",
+        "test_field_three",
+        "test_field_four",
+        "default_field_three",
+        "default_field_four",
+    ]
 
     def setUp(self):
         self.mock_var_services = MagicMock()
@@ -23,6 +45,12 @@ class TestVariableHandlers(unittest.TestCase):
         self.get_tag_services = lambda: self.mock_tag_services
         self.get_console = lambda: self.mock_console
         self.get_settings = lambda: self.mock_settings
+        self.get_display_field_resolver = lambda: FieldSelectionResolver(
+            self.DISPLAY_FIELDS
+        )
+        self.get_search_field_resolver = lambda: FieldSelectionResolver(
+            self.SEARCH_FIELDS
+        )
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_created")
     @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_name")
@@ -137,6 +165,7 @@ class TestVariableHandlers(unittest.TestCase):
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_var_services.list_variables.assert_called_with(
             limit=10, order_by="name", tags=["t1"]
@@ -161,12 +190,36 @@ class TestVariableHandlers(unittest.TestCase):
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_var_services.list_variables.assert_called_with(
             limit=10, order_by="name", tags=["t1"]
         )
         mock_render.assert_called_once_with(
             vars_, title="Variables", fields=["default_field_one", "default_field_two"]
+        )
+        self.mock_console.print.assert_called_with("rendered_list")
+
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
+    def test_run_list_variables_uses_all_keyword_correctly(self, mock_render):
+        vars_ = ["v1", "v2"]
+        self.mock_var_services.list_variables.return_value = vars_
+        mock_render.return_value = "rendered_list"
+        run_list_variables(
+            limit=10,
+            order_by="name",
+            tags=["t1"],
+            fields=["all"],
+            get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+        )
+        self.mock_var_services.list_variables.assert_called_with(
+            limit=10, order_by="name", tags=["t1"]
+        )
+        mock_render.assert_called_once_with(
+            vars_, title="Variables", fields=self.DISPLAY_FIELDS
         )
         self.mock_console.print.assert_called_with("rendered_list")
 
@@ -183,6 +236,8 @@ class TestVariableHandlers(unittest.TestCase):
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_var_services.search.assert_called_with(
             "term", limit=5, fields=["sf1"]
@@ -215,6 +270,8 @@ class TestVariableHandlers(unittest.TestCase):
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_var_services.search.assert_called_with(
             "term",
@@ -225,6 +282,30 @@ class TestVariableHandlers(unittest.TestCase):
             vars_,
             title="Search Results",
             fields=["default_field_one", "default_field_two"],  # output fields
+        )
+        self.mock_console.print.assert_called_with("rendered_search")
+
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
+    def test_run_search_variables_uses_all_keyword_correctly(self, mock_render):
+        vars_ = ["v1"]
+        self.mock_var_services.search.return_value = vars_
+        mock_render.return_value = "rendered_search"
+        run_search_variables(
+            term="term",
+            limit=5,
+            search_fields=["all"],
+            fields=["all"],
+            get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
+        )
+        self.mock_var_services.search.assert_called_with(
+            "term", limit=5, fields=self.SEARCH_FIELDS
+        )
+        mock_render.assert_called_once_with(
+            vars_, title="Search Results", fields=self.DISPLAY_FIELDS
         )
         self.mock_console.print.assert_called_with("rendered_search")
 

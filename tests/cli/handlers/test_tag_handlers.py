@@ -10,9 +10,31 @@ from cmdbox.cli.handlers.tag_handlers import (
     run_search_tags,
     run_delete_tag,
 )
+from cmdbox.services.field_selection import FieldSelectionResolver
 
 
 class TestTagHandlers(unittest.TestCase):
+
+    DISPLAY_FIELDS = [
+        "f1",
+        "f2",
+        "test_field_one",
+        "test_field_two",
+        "test_field_three",
+        "test_field_four",
+        "default_field_one",
+        "default_field_two",
+    ]
+    SEARCH_FIELDS = [
+        "sf1",
+        "sf2",
+        "test_field_one",
+        "test_field_two",
+        "test_field_three",
+        "test_field_four",
+        "default_field_three",
+        "default_field_four",
+    ]
 
     def setUp(self):
         self.mock_tag_services = MagicMock()
@@ -21,6 +43,12 @@ class TestTagHandlers(unittest.TestCase):
         self.get_tag_services = lambda: self.mock_tag_services
         self.get_console = lambda: self.mock_console
         self.get_settings = lambda: self.mock_settings
+        self.get_display_field_resolver = lambda: FieldSelectionResolver(
+            self.DISPLAY_FIELDS
+        )
+        self.get_search_field_resolver = lambda: FieldSelectionResolver(
+            self.SEARCH_FIELDS
+        )
 
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_created")
     @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_name")
@@ -128,6 +156,7 @@ class TestTagHandlers(unittest.TestCase):
             get_tag_services=self.get_tag_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_tag_services.list_tags.assert_called_with(limit=10, order_by="name")
         mock_render.assert_called_once_with(tags, title="Tags", fields=["f1"])
@@ -149,10 +178,31 @@ class TestTagHandlers(unittest.TestCase):
             get_tag_services=self.get_tag_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_tag_services.list_tags.assert_called_with(limit=10, order_by="name")
         mock_render.assert_called_once_with(
             tags, title="Tags", fields=["default_field_one", "default_field_two"]
+        )
+        self.mock_console.print.assert_called_with("rendered_list")
+
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
+    def test_run_list_tags_uses_all_keyword_correctly(self, mock_render):
+        tags = ["t1", "t2"]
+        self.mock_tag_services.list_tags.return_value = tags
+        mock_render.return_value = "rendered_list"
+        run_list_tags(
+            limit=10,
+            order_by="name",
+            fields=["all"],
+            get_tag_services=self.get_tag_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+        )
+        self.mock_tag_services.list_tags.assert_called_with(limit=10, order_by="name")
+        mock_render.assert_called_once_with(
+            tags, title="Tags", fields=self.DISPLAY_FIELDS
         )
         self.mock_console.print.assert_called_with("rendered_list")
 
@@ -169,6 +219,8 @@ class TestTagHandlers(unittest.TestCase):
             get_tag_services=self.get_tag_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_tag_services.search.assert_called_with(
             "term", limit=5, fields=["sf1"]
@@ -186,8 +238,8 @@ class TestTagHandlers(unittest.TestCase):
             "default_field_two",
         ]
         self.mock_settings.default_fields.tag_search = [
-            "default_three",
-            "default_four",
+            "default_field_three",
+            "default_field_four",
         ]
         run_search_tags(
             term="term",
@@ -197,14 +249,40 @@ class TestTagHandlers(unittest.TestCase):
             get_tag_services=self.get_tag_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_tag_services.search.assert_called_with(
-            "term", limit=5, fields=["default_three", "default_four"]
+            "term", limit=5, fields=["default_field_three", "default_field_four"]
         )
         mock_render.assert_called_once_with(
             tags,
             title="Search Results",
             fields=["default_field_one", "default_field_two"],
+        )
+        self.mock_console.print.assert_called_with("rendered_search")
+
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
+    def test_run_search_tags_uses_all_keyword_correctly(self, mock_render):
+        tags = ["t1"]
+        self.mock_tag_services.search.return_value = tags
+        mock_render.return_value = "rendered_search"
+        run_search_tags(
+            term="term",
+            limit=5,
+            search_fields=["all"],
+            fields=["all"],
+            get_tag_services=self.get_tag_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
+        )
+        self.mock_tag_services.search.assert_called_with(
+            "term", limit=5, fields=self.SEARCH_FIELDS
+        )
+        mock_render.assert_called_once_with(
+            tags, title="Search Results", fields=self.DISPLAY_FIELDS
         )
         self.mock_console.print.assert_called_with("rendered_search")
 
