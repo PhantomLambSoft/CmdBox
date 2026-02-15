@@ -12,6 +12,7 @@ from cmdbox.cli.ui.primitives import (
 )
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
 from cmdbox.resolve.types import ResolveResult
+from cmdbox.runtime.executor import RunContext
 from cmdbox.runtime.results import ExecutionResult
 
 
@@ -61,7 +62,11 @@ def render_execution_result(result: ExecutionResult, *, title: str = "Run"):
 
 
 def render_preview_result(
-    result: ResolveResult, *, title: str = "Preview", show_trace: bool = True
+    result: ResolveResult,
+    *,
+    title: str = "Preview",
+    show_trace: bool = True,
+    ctx: RunContext = None,
 ):
     parts = [
         code_block(result.text, title="Resolved command", border_style="run.command"),
@@ -70,11 +75,18 @@ def render_preview_result(
     if show_trace and result.trace:
         parts += [spacer(0), _render_trace_steps(result)]
 
+    if ctx:
+        parts += [spacer(0), render_run_context(ctx)]
+
     return section(
         title=title,
         body=stack(*parts),
         border_style="ui.border",
     )
+
+
+def render_run_context(ctx: RunContext, *, title: str = "Run context"):
+    return code_block(str(ctx), title=title, border_style="ui.border")
 
 
 def _render_trace_steps(result: ResolveResult):
