@@ -85,3 +85,159 @@ class TestExecutor(unittest.TestCase):
         self.assertIsNone(ctx.cwd)
         self.assertIsNone(ctx.env)
         self.assertFalse(ctx.capture)
+        self.assertIsNone(ctx.shell)
+        self.assertFalse(ctx.emit)
+
+    def test_is_multiline(self):
+        self.assertFalse(self.executor.is_multiline("echo hello"))
+        self.assertFalse(self.executor.is_multiline("echo hello\n"))
+        self.assertFalse(self.executor.is_multiline("\necho hello"))
+        self.assertFalse(self.executor.is_multiline("\necho hello\n"))
+        self.assertTrue(self.executor.is_multiline("echo hello\necho world"))
+        self.assertTrue(self.executor.is_multiline("echo hello\r\necho world"))
+        self.assertTrue(self.executor.is_multiline("\necho hello\necho world\n"))
+        self.assertFalse(self.executor.is_multiline(""))
+        self.assertFalse(self.executor.is_multiline("\n"))
+
+    @patch("sys.stdout")
+    def test_emit_command(self, mock_stdout):
+        with self.assertRaises(Exception) as cm:
+            self.executor.emit_command("echo hello")
+
+        from typer import Exit
+
+        self.assertIsInstance(cm.exception, Exit)
+        self.assertEqual(cm.exception.exit_code, 0)
+        mock_stdout.write.assert_called_with("echo hello\n")
+
+    @patch("cmdbox.runtime.executor.Executor.emit_command")
+    def test_run_emit(self, mock_emit):
+        ctx = RunContext(emit=True)
+        result = self.executor.run("echo hello", ctx)
+        self.assertIsNone(result)
+        mock_emit.assert_called_once_with("echo hello")
+
+    def test_script_suffix_for_shell(self):
+        self.assertEqual(self.executor.script_suffix_for_shell("cmd.exe"), ".cmd")
+        self.assertEqual(self.executor.script_suffix_for_shell("cmd"), ".cmd")
+        self.assertEqual(self.executor.script_suffix_for_shell("powershell"), ".ps1")
+        self.assertEqual(self.executor.script_suffix_for_shell("pwsh"), ".ps1")
+        self.assertEqual(self.executor.script_suffix_for_shell("fish"), ".fish")
+        self.assertEqual(self.executor.script_suffix_for_shell("bash"), ".sh")
+        self.assertEqual(self.executor.script_suffix_for_shell("zsh"), ".sh")
+        self.assertEqual(self.executor.script_suffix_for_shell(""), ".sh")
+
+    def test_script_header_for_shell(self):
+        self.assertEqual(
+            self.executor.script_header_for_shell("bash"), "#!/usr/bin/env bash\n"
+        )
+        self.assertEqual(
+            self.executor.script_header_for_shell("zsh"), "#!/usr/bin/env zsh\n"
+        )
+        self.assertEqual(
+            self.executor.script_header_for_shell("fish"), "#!/usr/bin/env fish\n"
+        )
+        self.assertEqual(self.executor.script_header_for_shell("cmd"), "")
+        self.assertEqual(self.executor.script_header_for_shell("powershell"), "")
+
+    def test_build_script_exec_args(self):
+        self.assertEqual(
+            self.executor.build_script_exec_args("test.cmd", "cmd"),
+            ["cmd.exe", "/d", "/s", "/c", "test.cmd"],
+        )
+        self.assertEqual(
+            self.executor.build_script_exec_args("test.ps1", "powershell"),
+            [
+                "powershell",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "test.ps1",
+            ],
+        )
+        self.assertEqual(
+            self.executor.build_script_exec_args("test.ps1", "pwsh"),
+            [
+                "pwsh",
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                "test.ps1",
+            ],
+        )
+        self.assertEqual(
+            self.executor.build_script_exec_args("test.fish", "fish"),
+            ["fish", "test.fish"],
+        )
+        self.assertEqual(
+            self.executor.build_script_exec_args("test.sh", "zsh"), ["zsh", "test.sh"]
+        )
+        self.assertEqual(
+            self.executor.build_script_exec_args("test.sh", "bash"), ["bash", "test.sh"]
+        )
+        self.assertEqual(
+            self.executor.build_script_exec_args("test.sh", ""), ["sh", "test.sh"]
+        )
+
+    @patch("cmdbox.runtime.executor.subprocess.run")
+    @patch("os.remove")
+    @patch("tempfile.NamedTemporaryFile")
+    def test_run_multiline_as_script(self, mock_temp, mock_remove, mock_run):
+        # Setup
+        command = "echo hello\necho world"
+        ctx = RunContext(cwd="/tmp", capture=True)
+        env = {"VAR": "VAL"}
+
+        mock_file = MagicMock()
+        mock_file.name = "temp_script.sh"
+        mock_temp.return_value.__enter__.return_value = mock_file
+
+        mock_completed = MagicMock()
+        mock_completed.returncode = 0
+        mock_completed.stdout = "hello\nworld\n"
+        mock_completed.stderr = ""
+        mock_run.return_value = mock_completed
+
+        # Execute
+        result = self.executor.run_multiline_as_script(command, ctx, env)
+
+        # Assert
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.stdout, "hello\nworld\n")
+        mock_temp.assert_called_once()
+        mock_file.write.assert_any_call("echo hello\necho world\n")
+        mock_run.assert_called_once()
+        mock_remove.assert_called_once_with("temp_script.sh")
+
+    @patch("cmdbox.runtime.executor.subprocess.run")
+    @patch("os.remove")
+    @patch("tempfile.NamedTemporaryFile")
+    def test_run_multiline_as_script_cleanup_on_failure(
+        self, mock_temp, mock_remove, mock_run
+    ):
+        # Setup
+        command = "echo hello\necho world"
+        ctx = RunContext()
+        env = {}
+
+        mock_file = MagicMock()
+        mock_file.name = "temp_script.sh"
+        mock_temp.return_value.__enter__.return_value = mock_file
+
+        mock_run.side_effect = RuntimeError("Execution failed")
+
+        # Execute & Assert
+        with self.assertRaises(RuntimeError):
+            self.executor.run_multiline_as_script(command, ctx, env)
+
+        mock_remove.assert_called_once_with("temp_script.sh")
+
+    @patch("cmdbox.runtime.executor.Executor.run_multiline_as_script")
+    def test_run_dispatch_multiline(self, mock_run_multiline):
+        command = "echo hello\necho world"
+        self.executor.run(command)
+        mock_run_multiline.assert_called_once()

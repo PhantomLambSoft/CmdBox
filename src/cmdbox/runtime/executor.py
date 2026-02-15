@@ -1,6 +1,7 @@
 import os
-import subprocess
 import sys
+import subprocess
+import tempfile
 from dataclasses import dataclass
 from typing import Mapping
 
@@ -68,12 +69,15 @@ class Executor:
         if ctx.emit:
             self.emit_command(command)
             return None  # Just a safeguard, this should not return if emit is True
-        popen_args = build_shell_command(command, preferred_shell=ctx.shell)
 
         env = os.environ.copy()
         if ctx.env:
             env.update(dict(ctx.env))
 
+        if self.is_multiline(command):
+            return self.run_multiline_as_script(command, ctx=ctx, env=env)
+
+        popen_args = build_shell_command(command, preferred_shell=ctx.shell)
         completed = subprocess.run(
             popen_args,
             cwd=ctx.cwd,
@@ -107,3 +111,173 @@ class Executor:
         cmd = command.strip("\n") + "\n"
         sys.stdout.write(cmd)
         raise typer.Exit(code=0)
+
+    @staticmethod
+    def is_multiline(command: str) -> bool:
+        """
+        Determines if the given command is multiline. A command is considered multiline
+        if it contains at least one newline character after stripping leading and trailing
+        newlines.
+
+        Args:
+            command (str): The command string to check.
+
+        Returns:
+            bool: True if the command contains at least one newline character after
+            trimming leading and trailing newline characters, False otherwise.
+        """
+        return "\n" in command.strip("\n")
+
+    def run_multiline_as_script(
+        self, command: str, ctx: RunContext, env: dict[str, str]
+    ) -> ExecutionResult:
+        """
+        Executes a multiline command as a script in the context of a specified shell environment.
+
+        This method creates a temporary script file containing the provided multiline command and
+        executes it using subprocess. The command is normalized for consistent behavior across
+        platforms, and an optional shell-specific header is prepended based on the execution context.
+
+        Args:
+            command (str): The multiline command to execute as a script.
+            ctx (RunContext): Context about the execution, including shell type, working directory,
+                and whether to capture output.
+            env (dict[str, str]): A dictionary of environment variables to set during script execution.
+
+        Returns:
+            ExecutionResult: An object containing the executed command, its exit code, and captured
+            standard output and error streams.
+        """
+        shell = (ctx.shell or "").lower()
+        suffix = self.script_suffix_for_shell(shell)
+        script_path = None
+
+        # Normalize newlines so contents is consistent across platforms
+        script_body = command.replace("\r\n", "\n").rstrip("\n") + "\n"
+
+        try:
+            with tempfile.NamedTemporaryFile(
+                mode="w",
+                encoding="utf-8",
+                delete=False,
+                suffix=suffix,
+            ) as file:
+                script_path = file.name
+                header = self.script_header_for_shell(shell)
+                if header:
+                    file.write(header)
+                file.write(script_body)
+
+            popen_args = self.build_script_exec_args(script_path, shell=shell)
+
+            completed = subprocess.run(
+                popen_args,
+                cwd=ctx.cwd,
+                text=True,
+                env=env,
+                capture_output=ctx.capture,
+            )
+            return ExecutionResult(
+                command=command,
+                exit_code=completed.returncode,
+                stdout=completed.stdout or "",
+                stderr=completed.stderr or "",
+            )
+        finally:
+            if script_path:
+                try:
+                    os.remove(script_path)
+                except OSError:
+                    pass
+
+    @staticmethod
+    def script_suffix_for_shell(shell: str) -> str:
+        """
+        Determines the appropriate script file suffix for a given shell.
+
+        This function inspects the input shell name or its characteristics and returns
+        the corresponding script file suffix based on the shell's type.
+
+        Args:
+            shell (str): The name of the shell or its identifier.
+
+        Returns:
+            str: The appropriate script file suffix for the given shell.
+        """
+        if "cmd" in shell or shell == "cmd.exe":
+            return ".cmd"
+        if "powershell" in shell or shell == "pwsh":
+            return ".ps1"
+        if "fish" in shell:
+            return ".fish"
+        # Default to bash
+        return ".sh"
+
+    @staticmethod
+    def script_header_for_shell(shell: str) -> str:
+        """
+        Generates a script header for the given shell type.
+
+        This method determines the appropriate script header based on the
+        specified shell string. Supported shells include bash, zsh, and fish.
+        If the shell type isn't recognized or no header is required, it returns
+        an empty string.
+
+        Args:
+            shell (str): The name of the shell for which the script header is
+                to be generated.
+
+        Returns:
+            str: The script header string corresponding to the provided shell,
+                or an empty string if no header is required.
+        """
+        if "bash" in shell:
+            return "#!/usr/bin/env bash\n"
+        if "zsh" in shell:
+            return "#!/usr/bin/env zsh\n"
+        if "fish" in shell:
+            return "#!/usr/bin/env fish\n"
+        # Other types do not require a header
+        return ""
+
+    @staticmethod
+    def build_script_exec_args(script_path: str, shell: str) -> list[str]:
+        """
+        Assembles a list of arguments to execute a given script based on the specified shell.
+
+        This method generates the appropriate command and arguments to execute
+        a script, tailored to the shell type provided. It ensures compatibility with
+        various shell environments such as cmd, PowerShell, bash, zsh, and fish.
+
+        Args:
+            script_path (str): The file path to the script that needs to be executed.
+            shell (str): The name or identifier of the shell environment used for script execution.
+
+        Returns:
+            list[str]: A list of arguments that, when executed, run the specified script in the given shell.
+        """
+        if "cmd" in shell or shell == "cmd.exe":
+            return ["cmd.exe", "/d", "/s", "/c", script_path]
+
+        if "powershell" in shell or shell == "pwsh":
+            exe = "pwsh" if "pwsh" in shell else "powershell"
+            return [
+                exe,
+                "-NoProfile",
+                "-NonInteractive",
+                "-ExecutionPolicy",
+                "Bypass",
+                "-File",
+                script_path,
+            ]
+
+        if "fish" in shell:
+            return ["fish", script_path]
+
+        if "zsh" in shell:
+            return ["zsh", script_path]
+
+        if "bash" in shell:
+            return ["bash", script_path]
+
+        return ["sh", script_path]
