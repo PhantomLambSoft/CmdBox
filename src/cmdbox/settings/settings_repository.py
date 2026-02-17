@@ -1,6 +1,8 @@
 from pathlib import Path
 from tomlkit import dumps, parse, document
 
+from cmdbox.common.io import atomic_write_text
+
 
 class SettingsRepository:
     """
@@ -24,7 +26,11 @@ class SettingsRepository:
         return doc.unwrap()
 
     def save(self, data: dict) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
         doc = document()
         doc.update(data)
-        self.path.write_text(dumps(doc), encoding="utf-8")
+        atomic_write_text(self.path, dumps(doc), encoding="utf-8")
+
+    def dict_to_text(self, data: dict) -> str:
+        doc = document()
+        doc.update(data)
+        return dumps(doc)
