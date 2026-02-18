@@ -1,7 +1,8 @@
 import unittest
-from unittest.mock import MagicMock
-from dataclasses import dataclass
+from unittest.mock import MagicMock, patch
+from dataclasses import dataclass, asdict
 from cmdbox.settings.settings_service import SettingsService, build_dataclass
+from cmdbox.cli.ui.editor import EditCanceled
 from cmdbox.settings.models import Settings
 from cmdbox.settings.settings_repository import SettingsRepository
 
@@ -92,3 +93,85 @@ class TestSettingsService(unittest.TestCase):
         override = {"ui": {"use_color": False}}
         result = self.service._merge(base, override)
         self.assertEqual(result, {"ui": {"use_color": False, "other": 1}})
+
+    def test_edit_success(self):
+        # mock_repo.load will be called:
+        # 1. in __init__ (returns {})
+        # 2. in edit() (returns {"ui": {"use_color": True}})
+        # 3. in edit() -> _load() (returns {"ui": {"use_color": False}})
+        self.mock_repo.load.side_effect = [
+            {},
+            {"ui": {"use_color": True}},
+            {"ui": {"use_color": False}},
+        ]
+        self.mock_repo.dict_to_text.return_value = "ui = { use_color = true }"
+
+        service = SettingsService(self.mock_repo)
+
+        def edit_fn(text):
+            return "ui = { use_color = false }"
+
+        updated = service.edit(edit_fn)
+
+        self.assertFalse(updated.ui.use_color)
+        self.mock_repo.save.assert_called_once_with({"ui": {"use_color": False}})
+
+    def test_edit_canceled(self):
+        self.mock_repo.load.return_value = {}
+        self.mock_repo.dict_to_text.return_value = ""
+
+        def edit_fn(text):
+            raise EditCanceled()
+
+        with self.assertRaises(EditCanceled):
+            self.service.edit(edit_fn)
+
+        self.mock_repo.save.assert_not_called()
+
+    def test_edit_no_changes(self):
+        # mock_repo.load will be called:
+        # 1. in __init__ (returns {})
+        # 2. in edit() (returns {"ui": {"use_color": True}})
+        self.mock_repo.load.side_effect = [
+            {},
+            {"ui": {"use_color": True}},
+        ]
+        service = SettingsService(self.mock_repo)
+        self.mock_repo.dict_to_text.return_value = "ui = { use_color = true }"
+
+        def edit_fn(text):
+            return text
+
+        updated = service.edit(edit_fn)
+
+        self.assertEqual(updated, service.get())
+        self.mock_repo.save.assert_not_called()
+
+    def test_edit_invalid_toml(self):
+        self.mock_repo.load.return_value = {}
+        self.mock_repo.dict_to_text.return_value = ""
+
+        def edit_fn(text):
+            return "invalid = ["
+
+        with self.assertRaisesRegex(ValueError, "Invalid TOML"):
+            self.service.edit(edit_fn)
+
+        self.mock_repo.save.assert_not_called()
+
+    def test_edit_validation_failed(self):
+        self.mock_repo.load.return_value = {}
+        self.mock_repo.dict_to_text.return_value = ""
+
+        def edit_fn(text):
+            return "some = 'data'"
+
+        with patch(
+            "cmdbox.settings.settings_service.build_dataclass"
+        ) as mock_build_dataclass:
+            mock_build_dataclass.side_effect = TypeError("Validation Error")
+
+            with self.assertRaisesRegex(ValueError, "Settings validation failed"):
+                self.service.edit(edit_fn)
+
+        self.mock_repo.save.assert_not_called()
