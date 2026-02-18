@@ -10,6 +10,7 @@ from .commands.command_run import app as command_run_app
 from .commands.variable_crud import app as variable_crud_app
 from .commands.tag_crud import app as tag_crud_app
 from .commands.init import app as init_app
+from .commands.settings import app as settings_app
 
 
 app = typer.Typer(
@@ -23,6 +24,7 @@ app.add_typer(variable_crud_app, name="var")
 app.add_typer(tag_crud_app, name="tag")
 app.add_typer(command_run_app)
 app.add_typer(init_app)
+app.add_typer(settings_app, name="settings")
 
 
 def is_test_callback(value: bool):
