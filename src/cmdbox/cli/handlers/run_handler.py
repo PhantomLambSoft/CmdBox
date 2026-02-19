@@ -27,6 +27,7 @@ class RawRunContext:
     capture: bool = False
     shell: str | None = None
     emit: bool = False
+    verbose: bool = False
 
 
 def run_run_command(
@@ -40,7 +41,7 @@ def run_run_command(
     run_service = get_run_service()
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
     ex_result = run_service.run(alias, ctx=run_ctx)
-    if not run_ctx.emit:
+    if run_ctx.verbose and not run_ctx.emit:
         console.print(render_execution_result(ex_result))
 
 
@@ -55,7 +56,7 @@ def run_preview_command(
     run_service = get_run_service()
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
     prev_result = run_service.preview(alias)
-    rendered_result = render_preview_result(prev_result)
+    rendered_result = render_preview_result(prev_result, ctx=run_ctx)
     console.print(rendered_result)
 
 
@@ -87,6 +88,7 @@ def get_run_ctx(raw_run_ctx: RawRunContext | None) -> RunContext:
         capture=raw_run_ctx.capture,
         shell=raw_run_ctx.shell,
         emit=raw_run_ctx.emit,
+        verbose=raw_run_ctx.verbose,
     )
 
 

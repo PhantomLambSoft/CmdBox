@@ -57,11 +57,23 @@ def run(
             hidden=True,
         ),
     ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            "-v",
+            help="Outputs additional information alongside the command output.",
+        ),
+    ] = False,
 ):
     if preview_cmd:
-        preview(alias=alias, cwd=cwd, env=env, capture=capture, shell=shell)
+        preview(
+            alias=alias, cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose
+        )
         return
-    ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell, emit=emit)
+    ctx = RawRunContext(
+        cwd=cwd, env=env, capture=capture, shell=shell, emit=emit, verbose=verbose
+    )
     run_run_command(
         alias=alias,
         run_ctx=ctx,
@@ -104,8 +116,16 @@ def preview(
             "--shell", "-s", help="The shell to use for the command execution."
         ),
     ] = None,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            "-v",
+            help="Outputs additional information alongside the command output.",
+        ),
+    ] = False,
 ):
-    ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell)
+    ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose)
     run_preview_command(
         alias=alias,
         run_ctx=ctx,

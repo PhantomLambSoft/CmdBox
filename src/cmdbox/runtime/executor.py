@@ -35,6 +35,8 @@ class RunContext:
             template is emitted to the current terminal window to be evaluated
             in the current session.  If False, the command is executed in a
             different session using a subprocess.  Defaults to False.
+        verbose (bool): Whether to output additional information alongside the
+            command output. Defaults to False.
     """
 
     cwd: str | None = None
@@ -42,6 +44,7 @@ class RunContext:
     capture: bool = False
     shell: str | None = None
     emit: bool = False
+    verbose: bool = False
 
 
 class Executor:

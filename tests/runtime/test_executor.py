@@ -87,6 +87,7 @@ class TestExecutor(unittest.TestCase):
         self.assertFalse(ctx.capture)
         self.assertIsNone(ctx.shell)
         self.assertFalse(ctx.emit)
+        self.assertFalse(ctx.verbose)
 
     def test_is_multiline(self):
         self.assertFalse(self.executor.is_multiline("echo hello"))

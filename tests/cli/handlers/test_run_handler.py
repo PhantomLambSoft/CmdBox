@@ -55,14 +55,18 @@ class TestRunHandler(unittest.TestCase):
         self.assertIsNone(ctx.env)
         self.assertFalse(ctx.capture)
         self.assertIsNone(ctx.shell)
+        self.assertFalse(ctx.verbose)
 
     def test_get_run_ctx_valid(self):
-        raw_ctx = RawRunContext(cwd="/tmp", env="KEY=VALUE", capture=True, shell="bash")
+        raw_ctx = RawRunContext(
+            cwd="/tmp", env="KEY=VALUE", capture=True, shell="bash", verbose=True
+        )
         ctx = get_run_ctx(raw_ctx)
         self.assertEqual(ctx.cwd, "/tmp")
         self.assertEqual(ctx.env, {"KEY": "VALUE"})
         self.assertTrue(ctx.capture)
         self.assertEqual(ctx.shell, "bash")
+        self.assertTrue(ctx.verbose)
 
     @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
     def test_run_run_command(self, mock_render):
@@ -76,14 +80,38 @@ class TestRunHandler(unittest.TestCase):
 
         run_run_command(
             alias="test-alias",
-            run_ctx=None,
+            run_ctx=RawRunContext(verbose=True),
             get_run_service=lambda: mock_run_service,
             get_console=lambda: mock_console,
         )
 
-        mock_run_service.run.assert_called_once_with("test-alias", ctx=RunContext())
+        mock_run_service.run.assert_called_once_with(
+            "test-alias", ctx=RunContext(verbose=True)
+        )
         mock_render.assert_called_once_with(mock_ex_result)
         mock_console.print.assert_called_once_with("rendered_result")
+
+    @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
+    def test_run_run_command_no_verbose(self, mock_render):
+        mock_run_service = MagicMock()
+        mock_console = MagicMock()
+        mock_ex_result = ExecutionResult(
+            command="echo hello", exit_code=0, stdout="hello", stderr=""
+        )
+        mock_run_service.run.return_value = mock_ex_result
+
+        run_run_command(
+            alias="test-alias",
+            run_ctx=RawRunContext(verbose=False),
+            get_run_service=lambda: mock_run_service,
+            get_console=lambda: mock_console,
+        )
+
+        mock_run_service.run.assert_called_once_with(
+            "test-alias", ctx=RunContext(verbose=False)
+        )
+        mock_render.assert_not_called()
+        mock_console.print.assert_not_called()
 
     @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
     def test_run_run_command_with_error(self, mock_render):
@@ -97,7 +125,7 @@ class TestRunHandler(unittest.TestCase):
 
         run_run_command(
             alias="test-alias",
-            run_ctx=None,
+            run_ctx=RawRunContext(verbose=True),
             get_run_service=lambda: mock_run_service,
             get_console=lambda: mock_console,
         )
@@ -141,14 +169,11 @@ class TestRunHandler(unittest.TestCase):
         )
 
         mock_run_service.preview.assert_called_once_with("test-alias")
-        mock_render.assert_called_once_with(mock_resolve_result)
+        mock_render.assert_called_once_with(mock_resolve_result, ctx=RunContext())
         mock_console.print.assert_called_once_with("rendered_preview")
 
     @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
     def test_run_preview_command_with_ctx(self, mock_render):
-        # Even if run_ctx is passed to run_preview_command, it's currently only used
-        # to initialize run_ctx variable, but run_service.preview only takes alias.
-        # Let's verify this behavior.
         mock_run_service = MagicMock()
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
@@ -164,5 +189,7 @@ class TestRunHandler(unittest.TestCase):
         )
 
         mock_run_service.preview.assert_called_once_with("test-alias")
-        mock_render.assert_called_once_with(mock_resolve_result)
+        mock_render.assert_called_once_with(
+            mock_resolve_result, ctx=RunContext(cwd="/tmp")
+        )
         mock_console.print.assert_called_once_with("rendered_preview")

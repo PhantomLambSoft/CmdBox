@@ -24,6 +24,7 @@ class TestCommandRun(unittest.TestCase):
         self.assertIsNone(kwargs["run_ctx"].env)
         self.assertFalse(kwargs["run_ctx"].capture)
         self.assertIsNone(kwargs["run_ctx"].shell)
+        self.assertFalse(kwargs["run_ctx"].verbose)
         self.assertEqual(kwargs["get_run_service"], mock_container.get_run_service)
         self.assertEqual(kwargs["get_console"], mock_container.get_console)
 
@@ -36,9 +37,17 @@ class TestCommandRun(unittest.TestCase):
         env = ["VAR1=VAL1", "VAR2=VAL2"]
         capture = True
         shell = "bash"
+        verbose = True
 
         # Execute
-        command_run.run(alias=alias, cwd=cwd, env=env, capture=capture, shell=shell)
+        command_run.run(
+            alias=alias,
+            cwd=cwd,
+            env=env,
+            capture=capture,
+            shell=shell,
+            verbose=verbose,
+        )
 
         # Verify
         mock_run_run_command.assert_called_once()
@@ -48,6 +57,7 @@ class TestCommandRun(unittest.TestCase):
         self.assertEqual(kwargs["run_ctx"].env, env)
         self.assertTrue(kwargs["run_ctx"].capture)
         self.assertEqual(kwargs["run_ctx"].shell, shell)
+        self.assertTrue(kwargs["run_ctx"].verbose)
 
     @patch("cmdbox.cli.commands.command_run.preview")
     def test_run_with_preview_flag(self, mock_preview):
@@ -57,6 +67,7 @@ class TestCommandRun(unittest.TestCase):
         env = ["VAR1=VAL1"]
         capture = True
         shell = "zsh"
+        verbose = True
 
         # Execute
         command_run.run(
@@ -66,11 +77,17 @@ class TestCommandRun(unittest.TestCase):
             env=env,
             capture=capture,
             shell=shell,
+            verbose=verbose,
         )
 
         # Verify
         mock_preview.assert_called_once_with(
-            alias=alias, cwd=cwd, env=env, capture=capture, shell=shell
+            alias=alias,
+            cwd=cwd,
+            env=env,
+            capture=capture,
+            shell=shell,
+            verbose=verbose,
         )
 
     @patch("cmdbox.cli.commands.command_run.run_preview_command")
@@ -91,6 +108,7 @@ class TestCommandRun(unittest.TestCase):
         self.assertIsNone(kwargs["run_ctx"].env)
         self.assertFalse(kwargs["run_ctx"].capture)
         self.assertIsNone(kwargs["run_ctx"].shell)
+        self.assertFalse(kwargs["run_ctx"].verbose)
         self.assertEqual(kwargs["get_run_service"], mock_container.get_run_service)
         self.assertEqual(kwargs["get_console"], mock_container.get_console)
 
@@ -103,9 +121,12 @@ class TestCommandRun(unittest.TestCase):
         env = ["VAR1=VAL1"]
         capture = True
         shell = "fish"
+        verbose = True
 
         # Execute
-        command_run.preview(alias=alias, cwd=cwd, env=env, capture=capture, shell=shell)
+        command_run.preview(
+            alias=alias, cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose
+        )
 
         # Verify
         mock_run_preview_command.assert_called_once()
@@ -115,6 +136,7 @@ class TestCommandRun(unittest.TestCase):
         self.assertEqual(kwargs["run_ctx"].env, env)
         self.assertTrue(kwargs["run_ctx"].capture)
         self.assertEqual(kwargs["run_ctx"].shell, shell)
+        self.assertTrue(kwargs["run_ctx"].verbose)
 
     @patch("cmdbox.cli.commands.command_run.run_run_command")
     @patch("cmdbox.cli.commands.command_run.container")
