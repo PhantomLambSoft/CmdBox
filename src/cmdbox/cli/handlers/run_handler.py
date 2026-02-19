@@ -10,9 +10,10 @@ from cmdbox.cli.ui.presenters.result_presenter import (
 )
 from cmdbox.runtime.executor import RunContext
 from cmdbox.services.run_service import RunService
+from cmdbox.settings.models import Settings
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=False)
 class RawRunContext:
     """
     This dataclass is effectively the same as the actual RunContext
@@ -27,7 +28,7 @@ class RawRunContext:
     capture: bool = False
     shell: str | None = None
     emit: bool = False
-    verbose: bool = False
+    verbose: bool | None = False
 
 
 def run_run_command(
@@ -35,13 +36,17 @@ def run_run_command(
     alias: str,
     run_ctx: RawRunContext | None = None,
     get_run_service: Callable[[], RunService],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ):
-    console = get_console()
+    if run_ctx and run_ctx.verbose is None:
+        settings = get_settings()
+        run_ctx.verbose = settings.execution_settings.default_verbose
     run_service = get_run_service()
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
     ex_result = run_service.run(alias, ctx=run_ctx)
     if run_ctx.verbose and not run_ctx.emit:
+        console = get_console()
         console.print(render_execution_result(ex_result))
 
 
@@ -50,13 +55,17 @@ def run_preview_command(
     alias: str,
     run_ctx: RawRunContext | None = None,
     get_run_service: Callable[[], RunService],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ):
-    console = get_console()
+    if run_ctx and run_ctx.verbose is None:
+        settings = get_settings()
+        run_ctx.verbose = settings.execution_settings.default_verbose
     run_service = get_run_service()
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
     prev_result = run_service.preview(alias)
     rendered_result = render_preview_result(prev_result, ctx=run_ctx)
+    console = get_console()
     console.print(rendered_result)
 
 

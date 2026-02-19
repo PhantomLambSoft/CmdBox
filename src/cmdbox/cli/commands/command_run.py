@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -25,6 +25,7 @@ def run(
             autocompletion=complete_command_aliases,
         ),
     ],
+    *,
     preview_cmd: Annotated[bool, typer.Option("--preview", "-p", is_flag=True)] = False,
     cwd: Annotated[
         str,
@@ -58,13 +59,12 @@ def run(
         ),
     ] = False,
     verbose: Annotated[
-        bool,
+        Optional[bool],
         typer.Option(
-            "--verbose",
-            "-v",
+            "--verbose/--no-verbose",
             help="Outputs additional information alongside the command output.",
         ),
-    ] = False,
+    ] = None,
 ):
     if preview_cmd:
         preview(
@@ -78,6 +78,7 @@ def run(
         alias=alias,
         run_ctx=ctx,
         get_run_service=container.get_run_service,
+        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 
@@ -92,6 +93,7 @@ def preview(
             autocompletion=complete_command_aliases,
         ),
     ],
+    *,
     cwd: Annotated[
         str,
         typer.Option(
@@ -117,18 +119,18 @@ def preview(
         ),
     ] = None,
     verbose: Annotated[
-        bool,
+        Optional[bool],
         typer.Option(
-            "--verbose",
-            "-v",
+            "--verbose/--no-verbose",
             help="Outputs additional information alongside the command output.",
         ),
-    ] = False,
+    ] = None,
 ):
     ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose)
     run_preview_command(
         alias=alias,
         run_ctx=ctx,
         get_run_service=container.get_run_service,
+        get_settings=container.get_settings,
         get_console=container.get_console,
     )
