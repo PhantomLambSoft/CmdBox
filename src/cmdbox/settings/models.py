@@ -92,6 +92,7 @@ class UiSettings:
 class ExecutionSettings:
     default_shell: str = "auto"  # auto | bash | zsh | pwsh | cmd
     capture_output: bool = False
+    default_verbose: bool = False
 
 
 @dataclass(frozen=True)
