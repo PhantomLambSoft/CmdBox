@@ -1,7 +1,8 @@
 from dataclasses import dataclass
-from typing import Optional, Callable, Any, Sequence, Dict
+from typing import Optional, Callable, Any, Sequence
 
 import typer
+from more_itertools.more import set_partitions
 
 from cmdbox.cli.common.update_fields import (
     merge_fields,
@@ -99,26 +100,80 @@ def run_update_command(
     description: Optional[str],
     new_alias: Optional[str],
     set_pairs: Optional[Sequence[str]],
+    edit_mode: bool,
+    edit_fields: Optional[str],
     get_cmd_services: Callable[[], CommandServices],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     allowed = {"alias", "template", "description"}
-    fields: Dict[str, Any] = {}
-    if template is not None:
-        fields["template"] = template
-    if description is not None:
-        fields["description"] = description
-    if new_alias is not None:
-        fields["alias"] = new_alias
+    fields: dict[str, Any] = {}
 
-    fields = merge_fields(fields, parse_set_pairs(set_pairs))
-    fields = filter_allowed(fields, allowed)
-    if not fields:
-        raise typer.BadParameter("No fields specified to update.")
     cmd_service = get_cmd_services()
     cmd = cmd_service.get_command(alias)
-    cmd_service.update_command(alias, **fields)
     console = get_console()
+
+    if edit_mode:
+        if any([template, description, new_alias, set_pairs]):
+            raise typer.BadParameter(
+                "--edit cannot be combined with field options or --set"
+            )
+
+        updated_fields: dict[str, Any] = {}
+        if edit_fields:
+            edit_fields = [x.strip() for x in edit_fields.split(",")]
+
+        field_aliases = get_settings().field_aliases.alias_mapping
+
+        def check_field_alias(field: str) -> bool:
+            return (
+                edit_fields is None
+                or field in edit_fields
+                or any(x in edit_fields for x in field_aliases.get(field, []))
+            )
+
+        if check_field_alias("alias"):
+            updated_fields["alias"] = prompt_for_alias(
+                AliasValidator(), default=cmd.alias
+            )
+        if check_field_alias("template"):
+            updated_fields["template"] = prompt_for_template(
+                TemplateValidator(), default=cmd.template
+            )
+        if check_field_alias("description"):
+            updated_fields["description"] = prompt_for_description(
+                default=cmd.description
+            )
+
+        fields = updated_fields
+
+    else:
+        if template is not None:
+            fields["template"] = template
+        if description is not None:
+            fields["description"] = description
+        if new_alias is not None:
+            fields["alias"] = new_alias
+
+        fields = merge_fields(fields, parse_set_pairs(set_pairs))
+        fields = filter_allowed(fields, allowed)
+
+        if not fields:
+            raise typer.BadParameter("No fields specified to update.")
+
+    current = {
+        "alias": cmd.alias,
+        "template": cmd.template,
+        "description": cmd.description,
+    }
+    fields = {key: value for key, value in fields.items() if current.get(key) != value}
+
+    if not fields:
+        console.info("No changes detected.")
+        return
+
+    cmd_service.update_command(alias, **fields)
+
     updated_cmd = cmd_service.get_command_by_id(cmd.id)
     console.print(render_command_updated(updated_cmd))
 

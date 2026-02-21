@@ -80,6 +80,8 @@ class TestCommandCrud(unittest.TestCase):
             description=description,
             new_alias=new_alias,
             set_=set_pairs,
+            edit_mode=False,
+            edit_fields="template,description",
         )
 
         # Verify
@@ -89,7 +91,10 @@ class TestCommandCrud(unittest.TestCase):
             description=description,
             new_alias=new_alias,
             set_pairs=set_pairs,
+            edit_mode=False,
+            edit_fields="template,description",
             get_cmd_services=mock_container.get_command_services,
+            get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
         )
 

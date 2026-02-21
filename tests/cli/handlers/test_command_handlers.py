@@ -126,13 +126,13 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_console.print.assert_called_with("rendered_cmd")
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
-    def test_run_update_command(self, mock_render):
+    def test_run_update_command_with_fields_supplied(self, mock_render):
         mock_cmd = MagicMock()
         mock_cmd.id = 1
         self.mock_cmd_services.get_command.return_value = mock_cmd
         mock_updated_cmd = MagicMock()
         self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
-        mock_render.return_value = "rendered_updated"
+        mock_render.return_value = "rendered_update"
 
         run_update_command(
             alias="alias1",
@@ -140,7 +140,10 @@ class TestCommandHandlers(unittest.TestCase):
             description="new_desc",
             new_alias="new_alias",
             set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
             get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
             get_console=self.get_console,
         )
 
@@ -148,9 +151,9 @@ class TestCommandHandlers(unittest.TestCase):
             "alias1", template="new_tmpl", description="new_desc", alias="new_alias"
         )
         mock_render.assert_called_once_with(mock_updated_cmd)
-        self.mock_console.print.assert_called_with("rendered_updated")
+        self.mock_console.print.assert_called_with("rendered_update")
 
-    def test_run_update_command_no_fields(self):
+    def test_run_update_command_no_fields_edit_mode_false(self):
         with self.assertRaises(typer.BadParameter):
             run_update_command(
                 alias="alias1",
@@ -158,9 +161,258 @@ class TestCommandHandlers(unittest.TestCase):
                 description=None,
                 new_alias=None,
                 set_pairs=None,
+                edit_mode=False,
+                edit_fields=None,
                 get_cmd_services=self.get_cmd_services,
+                get_settings=self.get_settings,
                 get_console=self.get_console,
             )
+
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_run_update_command_no_fields_edit_mode_true(
+        self,
+        mock_render,
+        mock_prompt_desc,
+        mock_prompt_tmpl,
+        mock_prompt_alias,
+    ):
+        mock_render.return_value = "rendered_update"
+        mock_prompt_alias.return_value = "new_prompt_alias"
+        mock_prompt_tmpl.return_value = "new_prompt_tmpl"
+        mock_prompt_desc.return_value = "new_prompt_desc"
+
+        mock_cmd = MagicMock()
+        mock_cmd.id = 1
+        mock_cmd.template = "old_tmpl"
+        mock_cmd.description = "old_desc"
+        mock_cmd.alias = "old_alias"
+
+        self.mock_cmd_services.get_command.return_value = mock_cmd
+        mock_updated_cmd = MagicMock()
+        self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            set_pairs=None,
+            edit_mode=True,
+            edit_fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_called_with(
+            "alias1",
+            template="new_prompt_tmpl",
+            description="new_prompt_desc",
+            alias="new_prompt_alias",
+        )
+        mock_render.assert_called_once_with(mock_updated_cmd)
+        mock_prompt_desc.assert_called_once_with(default="old_desc")
+        mock_prompt_tmpl.assert_called_once_with(ANY, default="old_tmpl")
+        mock_prompt_alias.assert_called_once_with(ANY, default="old_alias")
+        self.mock_console.print.assert_called_with("rendered_update")
+
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_run_update_command_no_fields_edit_mode_true_edit_field_provided(
+        self,
+        mock_render,
+        mock_prompt_desc,
+        mock_prompt_tmpl,
+        mock_prompt_alias,
+    ):
+        mock_render.return_value = "rendered_update"
+        mock_prompt_alias.return_value = "new_prompt_alias"
+        mock_prompt_tmpl.return_value = "new_prompt_tmpl"
+        mock_prompt_desc.return_value = "new_prompt_desc"
+
+        mock_cmd = MagicMock()
+        mock_cmd.id = 1
+        mock_cmd.template = "old_tmpl"
+        mock_cmd.description = "old_desc"
+        mock_cmd.alias = "old_alias"
+
+        self.mock_cmd_services.get_command.return_value = mock_cmd
+        mock_updated_cmd = MagicMock()
+        self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            set_pairs=None,
+            edit_mode=True,
+            edit_fields="template",
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_called_with(
+            "alias1",
+            template="new_prompt_tmpl",
+        )
+        mock_render.assert_called_once_with(mock_updated_cmd)
+        mock_prompt_desc.assert_not_called()
+        mock_prompt_tmpl.assert_called_once_with(ANY, default="old_tmpl")
+        mock_prompt_alias.assert_not_called()
+        self.mock_console.print.assert_called_with("rendered_update")
+
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_run_update_command_no_fields_edit_mode_true_multiple_edit_fields_provided(
+        self,
+        mock_render,
+        mock_prompt_desc,
+        mock_prompt_tmpl,
+        mock_prompt_alias,
+    ):
+        mock_render.return_value = "rendered_update"
+        mock_prompt_alias.return_value = "new_prompt_alias"
+        mock_prompt_tmpl.return_value = "new_prompt_tmpl"
+        mock_prompt_desc.return_value = "new_prompt_desc"
+
+        mock_cmd = MagicMock()
+        mock_cmd.id = 1
+        mock_cmd.template = "old_tmpl"
+        mock_cmd.description = "old_desc"
+        mock_cmd.alias = "old_alias"
+
+        self.mock_cmd_services.get_command.return_value = mock_cmd
+        mock_updated_cmd = MagicMock()
+        self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            set_pairs=None,
+            edit_mode=True,
+            edit_fields="template, description",
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_called_with(
+            "alias1",
+            template="new_prompt_tmpl",
+            description="new_prompt_desc",
+        )
+        mock_render.assert_called_once_with(mock_updated_cmd)
+        mock_prompt_desc.assert_called_once_with(default="old_desc")
+        mock_prompt_tmpl.assert_called_once_with(ANY, default="old_tmpl")
+        mock_prompt_alias.assert_not_called()
+        self.mock_console.print.assert_called_with("rendered_update")
+
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_run_update_command_no_fields_edit_mode_true_edit_field_provided_as_aliases_from_settings(
+        self,
+        mock_render,
+        mock_prompt_desc,
+        mock_prompt_tmpl,
+        mock_prompt_alias,
+    ):
+        mock_render.return_value = "rendered_update"
+        mock_prompt_alias.return_value = "new_prompt_alias"
+        mock_prompt_tmpl.return_value = "new_prompt_tmpl"
+        mock_prompt_desc.return_value = "new_prompt_desc"
+
+        mock_cmd = MagicMock()
+        mock_cmd.id = 1
+        mock_cmd.template = "old_tmpl"
+        mock_cmd.description = "old_desc"
+        mock_cmd.alias = "old_alias"
+
+        self.mock_cmd_services.get_command.return_value = mock_cmd
+        mock_updated_cmd = MagicMock()
+        self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
+        self.mock_settings.field_aliases.alias_mapping = {"template": ["tpl"]}
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            set_pairs=None,
+            edit_mode=True,
+            edit_fields="tpl",
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_called_with(
+            "alias1",
+            template="new_prompt_tmpl",
+        )
+        mock_render.assert_called_once_with(mock_updated_cmd)
+        mock_prompt_desc.assert_not_called()
+        mock_prompt_tmpl.assert_called_once_with(ANY, default="old_tmpl")
+        mock_prompt_alias.assert_not_called()
+        self.mock_console.print.assert_called_with("rendered_update")
+
+    def test_run_update_command_in_edit_mode_with_fields_raised_error(self):
+        with self.assertRaises(typer.BadParameter):
+            run_update_command(
+                alias="alias1",
+                template="Boonshwackle",
+                description=None,
+                new_alias=None,
+                set_pairs=None,
+                edit_mode=True,
+                edit_fields=None,
+                get_cmd_services=self.get_cmd_services,
+                get_settings=self.get_settings,
+                get_console=self.get_console,
+            )
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_run_update_command_does_not_update_if_updated_fields_are_unchanged(
+        self, mock_render
+    ):
+        mock_cmd = MagicMock()
+        mock_cmd.id = 1
+        mock_cmd.alias = "alias1"
+        mock_cmd.template = "old_tmpl"
+        mock_cmd.description = "old_desc"
+        self.mock_cmd_services.get_command.return_value = mock_cmd
+        mock_updated_cmd = MagicMock()
+        self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
+        mock_render.return_value = "rendered_update"
+
+        run_update_command(
+            alias="alias1",
+            template="old_tmpl",
+            description="old_desc",
+            new_alias="alias1",
+            set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_not_called()
+        mock_render.assert_not_called()
+        self.mock_console.info.assert_called_with("No changes detected.")
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
     def test_run_list_command(self, mock_render):
