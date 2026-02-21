@@ -73,12 +73,6 @@ def render_command(command: Command):
         header, _, extractor = value
         rows.append((header, extractor(command)))
     cmd_display = kv_table(rows)
-
-    tags = [link.tag.name for link in command.tags]
-    if len(tags) > 0:
-        tag_display = tag_block(tags=tags)
-        return stack(cmd_display, tag_display)
-
     return cmd_display
 
 
