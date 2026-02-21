@@ -9,36 +9,43 @@ from cmdbox.cli.prompts.validators import (
 )
 
 
-def prompt_for_alias(validator: AliasValidator) -> str:
-    alias = prompt("Enter alias: ", validator=validator)
+def prompt_for_alias(validator: AliasValidator, default: str = None) -> str:
+    alias = prompt("Enter alias: ", validator=validator, default=default)
     return alias
 
 
-def prompt_for_template(validator: TemplateValidator) -> str:
-    template = prompt("Enter template: ", multiline=True, validator=validator)
+def prompt_for_template(validator: TemplateValidator, default: str = None) -> str:
+    template = prompt(
+        "Enter template: ", multiline=True, validator=validator, default=default
+    )
     return template
 
 
-def prompt_for_description() -> str:
-    description = prompt("Enter description: ")
+def prompt_for_description(default: str = None) -> str:
+    description = prompt("Enter description: ", default=default)
     return description
 
 
-def prompt_for_name(validator: NameValidator | TagNameValidator) -> str:
-    name = prompt("Enter name: ", validator=validator)
+def prompt_for_name(
+    validator: NameValidator | TagNameValidator, default: str = None
+) -> str:
+    name = prompt("Enter name: ", validator=validator, default=default)
     return name
 
 
-def prompt_for_value() -> str:
-    value = prompt("Enter variable value: ")
+def prompt_for_value(default: str = None) -> str:
+    value = prompt("Enter variable value: ", default=default)
     return value
 
 
 def prompt_for_tags(
-    tag_completer: TagCompleter, validator: TagNameValidator
+    tag_completer: TagCompleter, validator: TagNameValidator, default: str = None
 ) -> list[str] | None:
     tags = prompt(
-        "Enter tags (comma-separated): ", completer=tag_completer, validator=validator
+        "Enter tags (comma-separated): ",
+        completer=tag_completer,
+        validator=validator,
+        default=default,
     )
     if not tags:
         return None
