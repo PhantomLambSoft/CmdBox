@@ -372,7 +372,7 @@ class TestCommandHandlers(unittest.TestCase):
         with self.assertRaises(typer.BadParameter):
             run_update_command(
                 alias="alias1",
-                template="Boonshwackle",
+                template="AmarilloByMorning",
                 description=None,
                 new_alias=None,
                 set_pairs=None,
