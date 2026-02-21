@@ -51,12 +51,16 @@ class UIStyle:
 
 @dataclass(frozen=True)
 class DefaultFields:
-    command_output = ["alias", "template", "description"]
-    command_search = ["alias", "template", "description"]
-    variable_output = ["name", "value"]
-    variable_search = ["name", "value"]
-    tag_output = ["name", "description"]
-    tag_search = ["name", "description"]
+    command_output: list[str] = field(
+        default_factory=lambda: ["alias", "template", "description"]
+    )
+    command_search: list[str] = field(
+        default_factory=lambda: ["alias", "template", "description"]
+    )
+    variable_output: list[str] = field(default_factory=lambda: ["name", "value"])
+    variable_search: list[str] = field(default_factory=lambda: ["name", "value"])
+    tag_output: list[str] = field(default_factory=lambda: ["name", "description"])
+    tag_search: list[str] = field(default_factory=lambda: ["name", "description"])
 
 
 @dataclass(frozen=True)
