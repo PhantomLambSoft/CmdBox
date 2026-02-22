@@ -87,13 +87,28 @@ def update(
             autocompletion=tag_editable_field_options,
         ),
     ] = None,
+    edit_mode: Annotated[
+        bool,
+        typer.Option("--edit", "-e", help="Edit mode."),
+    ] = False,
+    edit_fields: Annotated[
+        str,
+        typer.Option(
+            "--edit-fields",
+            "-ef",
+            help="A list of fields to be edited in edit mode, separated by commas. Defaults to all fields.",
+        ),
+    ] = None,
 ):
     tag_handlers.run_update_tag(
         name=name,
         description=description,
         new_name=new_name,
         set_pairs=set_,
+        edit_mode=edit_mode,
+        edit_fields=edit_fields,
         get_tag_services=container.get_tag_services,
+        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 

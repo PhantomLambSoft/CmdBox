@@ -60,7 +60,12 @@ class TestTagCrud(unittest.TestCase):
 
         # Execute
         tag_crud.update(
-            name=name, description=description, new_name=new_name, set_=set_pairs
+            name=name,
+            description=description,
+            new_name=new_name,
+            set_=set_pairs,
+            edit_mode=False,
+            edit_fields=None,
         )
 
         # Verify
@@ -69,7 +74,10 @@ class TestTagCrud(unittest.TestCase):
             description=description,
             new_name=new_name,
             set_pairs=set_pairs,
+            edit_mode=False,
+            edit_fields=None,
             get_tag_services=mock_container.get_tag_services,
+            get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
         )
 

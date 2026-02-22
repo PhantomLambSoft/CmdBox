@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 import typer
 from cmdbox.cli.handlers.tag_handlers import (
     AddTagArgs,
@@ -109,7 +109,7 @@ class TestTagHandlers(unittest.TestCase):
         self.mock_console.print.assert_called_with("rendered_tag")
 
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_updated")
-    def test_run_update_tag(self, mock_render):
+    def test_run_update_tag_with_fields_supplied(self, mock_render):
         mock_tag = MagicMock()
         mock_tag.id = 1
         self.mock_tag_services.get_tag.return_value = mock_tag
@@ -122,27 +122,238 @@ class TestTagHandlers(unittest.TestCase):
             description="new_desc",
             new_name="new_name",
             set_pairs=[],
+            edit_mode=False,
+            edit_fields=None,
             get_tag_services=self.get_tag_services,
+            get_settings=self.get_settings,
             get_console=self.get_console,
         )
 
         self.mock_tag_services.update_tag.assert_called_with(
             "tag1", description="new_desc", name="new_name"
         )
-        self.mock_console.success.assert_called_with("Tag updated successfully.")
         mock_render.assert_called_once_with(mock_updated_tag)
         self.mock_console.print.assert_called_with("rendered_updated")
 
-    def test_run_update_tag_no_fields(self):
+    def test_run_update_tag_no_fields_edit_mode_false(self):
         with self.assertRaises(typer.BadParameter):
             run_update_tag(
                 name="tag1",
                 description=None,
                 new_name=None,
                 set_pairs=[],
+                edit_mode=False,
+                edit_fields=None,
                 get_tag_services=self.get_tag_services,
+                get_settings=self.get_settings,
                 get_console=self.get_console,
             )
+
+    @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_description")
+    @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_name")
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_updated")
+    def test_run_update_tag_with_fields_edit_mode_true(
+        self,
+        mock_render,
+        mock_prompt_name,
+        mock_prompt_desc,
+    ):
+        mock_render.return_value = "rendered_updated"
+        mock_prompt_name.return_value = "new_prompt_name"
+        mock_prompt_desc.return_value = "new_prompt_desc"
+
+        mock_tag = MagicMock()
+        mock_tag.id = 1
+        mock_tag.name = "tag1"
+        mock_tag.description = "old_desc"
+        self.mock_tag_services.get_tag.return_value = mock_tag
+        mock_updated_tag = MagicMock()
+        self.mock_tag_services.get_tag_by_id.return_value = mock_updated_tag
+
+        run_update_tag(
+            name="tag1",
+            description=None,
+            new_name=None,
+            set_pairs=[],
+            edit_mode=True,
+            edit_fields=None,
+            get_tag_services=self.get_tag_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_tag_services.update_tag.assert_called_with(
+            "tag1", description="new_prompt_desc", name="new_prompt_name"
+        )
+        mock_render.assert_called_once_with(mock_updated_tag)
+        mock_prompt_name.assert_called_once_with(ANY, default="tag1")
+        mock_prompt_desc.assert_called_once_with(default="old_desc")
+        self.mock_console.print.assert_called_with("rendered_updated")
+
+    @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_description")
+    @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_name")
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_updated")
+    def test_run_update_tag_with_fields_edit_mode_true_edit_fields_provided(
+        self,
+        mock_render,
+        mock_prompt_name,
+        mock_prompt_desc,
+    ):
+        mock_render.return_value = "rendered_updated"
+        mock_prompt_name.return_value = "new_prompt_name"
+        mock_prompt_desc.return_value = "new_prompt_desc"
+
+        mock_tag = MagicMock()
+        mock_tag.id = 1
+        mock_tag.name = "tag1"
+        mock_tag.description = "old_desc"
+        self.mock_tag_services.get_tag.return_value = mock_tag
+        mock_updated_tag = MagicMock()
+        self.mock_tag_services.get_tag_by_id.return_value = mock_updated_tag
+
+        run_update_tag(
+            name="tag1",
+            description=None,
+            new_name=None,
+            set_pairs=[],
+            edit_mode=True,
+            edit_fields="description",
+            get_tag_services=self.get_tag_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_tag_services.update_tag.assert_called_with(
+            "tag1", description="new_prompt_desc"
+        )
+        mock_render.assert_called_once_with(mock_updated_tag)
+        mock_prompt_name.assert_not_called()
+        mock_prompt_desc.assert_called_once_with(default="old_desc")
+        self.mock_console.print.assert_called_with("rendered_updated")
+
+    @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_description")
+    @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_name")
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_updated")
+    def test_run_update_tag_with_fields_edit_mode_true_multiple_edit_fields_provided(
+        self,
+        mock_render,
+        mock_prompt_name,
+        mock_prompt_desc,
+    ):
+        mock_render.return_value = "rendered_updated"
+        mock_prompt_name.return_value = "new_prompt_name"
+        mock_prompt_desc.return_value = "new_prompt_desc"
+
+        mock_tag = MagicMock()
+        mock_tag.id = 1
+        mock_tag.name = "tag1"
+        mock_tag.description = "old_desc"
+        self.mock_tag_services.get_tag.return_value = mock_tag
+        mock_updated_tag = MagicMock()
+        self.mock_tag_services.get_tag_by_id.return_value = mock_updated_tag
+
+        run_update_tag(
+            name="tag1",
+            description=None,
+            new_name=None,
+            set_pairs=[],
+            edit_mode=True,
+            edit_fields="name, description",
+            get_tag_services=self.get_tag_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_tag_services.update_tag.assert_called_with(
+            "tag1", description="new_prompt_desc", name="new_prompt_name"
+        )
+        mock_render.assert_called_once_with(mock_updated_tag)
+        mock_prompt_name.assert_called_once_with(ANY, default="tag1")
+        mock_prompt_desc.assert_called_once_with(default="old_desc")
+        self.mock_console.print.assert_called_with("rendered_updated")
+
+    @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_description")
+    @patch("cmdbox.cli.handlers.tag_handlers.prompt_for_name")
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_updated")
+    def test_run_update_tag_with_fields_edit_mode_true_edit_fields_provided_aliases_taken_from_settings(
+        self,
+        mock_render,
+        mock_prompt_name,
+        mock_prompt_desc,
+    ):
+        mock_render.return_value = "rendered_updated"
+        mock_prompt_name.return_value = "new_prompt_name"
+        mock_prompt_desc.return_value = "new_prompt_desc"
+
+        mock_tag = MagicMock()
+        mock_tag.id = 1
+        mock_tag.name = "tag1"
+        mock_tag.description = "old_desc"
+        self.mock_tag_services.get_tag.return_value = mock_tag
+        mock_updated_tag = MagicMock()
+        self.mock_tag_services.get_tag_by_id.return_value = mock_updated_tag
+        self.mock_settings.field_aliases.alias_mapping = {"description": ["desc"]}
+
+        run_update_tag(
+            name="tag1",
+            description=None,
+            new_name=None,
+            set_pairs=[],
+            edit_mode=True,
+            edit_fields="desc",
+            get_tag_services=self.get_tag_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_tag_services.update_tag.assert_called_with(
+            "tag1", description="new_prompt_desc"
+        )
+        mock_render.assert_called_once_with(mock_updated_tag)
+        mock_prompt_name.assert_not_called()
+        mock_prompt_desc.assert_called_once_with(default="old_desc")
+        self.mock_console.print.assert_called_with("rendered_updated")
+
+    def test_run_update_tag_in_edit_mode_with_fields_raises_error(self):
+        with self.assertRaises(typer.BadParameter):
+            run_update_tag(
+                name="tag1",
+                description="ClearBlueSky",
+                new_name=None,
+                set_pairs=[],
+                edit_mode=True,
+                edit_fields=None,
+                get_tag_services=self.get_tag_services,
+                get_settings=self.get_settings,
+                get_console=self.get_console,
+            )
+
+    @patch("cmdbox.cli.handlers.tag_handlers.render_tag_updated")
+    def test_run_update_tag_does_not_update_if_fields_are_unchanged(self, mock_render):
+        mock_render.return_value = "rendered_updated"
+        mock_tag = MagicMock()
+        mock_tag.id = 1
+        mock_tag.name = "tag1"
+        mock_tag.description = "old_desc"
+        self.mock_tag_services.get_tag.return_value = mock_tag
+        mock_updated_tag = MagicMock()
+        self.mock_tag_services.get_tag_by_id.return_value = mock_updated_tag
+
+        run_update_tag(
+            name="tag1",
+            description="old_desc",
+            new_name="tag1",
+            set_pairs=[],
+            edit_mode=False,
+            edit_fields=None,
+            get_tag_services=self.get_tag_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_tag_services.update_tag.assert_not_called()
+        mock_render.assert_not_called()
+        self.mock_console.info.assert_called_with("No changes detected.")
 
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
     def test_run_list_tags(self, mock_render):

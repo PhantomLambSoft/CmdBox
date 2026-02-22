@@ -71,27 +71,74 @@ def run_update_tag(
     name: str,
     description: Optional[str],
     new_name: Optional[str],
-    set_pairs: Sequence[str],
+    set_pairs: Optional[Sequence[str]],
+    edit_mode: bool,
+    edit_fields: Optional[str],
     get_tag_services: Callable[[], TagServices],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     allowed = {"name", "description"}
     fields: Dict[str, Any] = {}
-    if description is not None:
-        fields["description"] = description
-    if new_name is not None:
-        fields["name"] = new_name
-
-    fields = merge_fields(fields, parse_set_pairs(set_pairs))
-    fields = filter_allowed(fields, allowed)
-    if not fields:
-        raise typer.BadParameter("No fields specified to update.")
 
     tag_service = get_tag_services()
     tag = tag_service.get_tag(name)
-    tag_service.update_tag(name, **fields)
     console = get_console()
-    console.success("Tag updated successfully.")
+
+    if edit_mode:
+        if any([description, new_name, set_pairs]):
+            raise typer.BadParameter(
+                "--edit cannot be combined with field options or --set."
+            )
+
+        updated_fields: dict[str, Any] = {}
+        if edit_fields:
+            edit_fields = [x.strip() for x in edit_fields.split(",")]
+
+        field_aliases = get_settings().field_aliases.alias_mapping
+
+        def check_field_aliases(field: str) -> bool:
+            return (
+                edit_fields is None
+                or field in edit_fields
+                or any(x in edit_fields for x in field_aliases.get(field, []))
+            )
+
+        if check_field_aliases("name"):
+            updated_fields["name"] = prompt_for_name(
+                TagNameValidator(), default=tag.name
+            )
+        if check_field_aliases("description"):
+            updated_fields["description"] = prompt_for_description(
+                default=tag.description
+            )
+
+        fields = updated_fields
+
+    else:
+        if description is not None:
+            fields["description"] = description
+        if new_name is not None:
+            fields["name"] = new_name
+
+        fields = merge_fields(fields, parse_set_pairs(set_pairs))
+        fields = filter_allowed(fields, allowed)
+
+        if not fields:
+            raise typer.BadParameter("No fields specified to update.")
+
+    current = {
+        "name": tag.name,
+        "description": tag.description,
+    }
+    fields = {key: value for key, value in fields.items() if current.get(key) != value}
+
+    if not fields:
+        console.info("No changes detected.")
+        return
+
+    tag_service.update_tag(name, **fields)
+
     updated_tag = tag_service.get_tag_by_id(tag.id)
     console.print(render_tag_updated(updated_tag))
 
