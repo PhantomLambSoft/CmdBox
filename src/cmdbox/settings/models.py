@@ -100,8 +100,23 @@ class ExecutionSettings:
 
 
 @dataclass(frozen=True)
+class LoggingFileSettings:
+    enabled: bool = False
+    level: str = "INFO"
+    max_bytes: int = 1_000_000
+    backups: int = 3
+
+
+@dataclass(frozen=True)
+class LoggingSettings:
+    console_level: str = "WARNING"
+    file: LoggingFileSettings = LoggingFileSettings()
+
+
+@dataclass(frozen=True)
 class Settings:
     ui: UiSettings = UiSettings()
     execution_settings: ExecutionSettings = ExecutionSettings()
     default_fields: DefaultFields = DefaultFields()
     field_aliases: FieldAliases = FieldAliases()
+    logging: LoggingSettings = LoggingSettings()
