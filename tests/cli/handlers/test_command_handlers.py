@@ -414,6 +414,36 @@ class TestCommandHandlers(unittest.TestCase):
         mock_render.assert_not_called()
         self.mock_console.info.assert_called_with("No changes detected.")
 
+    def test_run_update_raises_error_when_field_variable_is_also_in_set(self):
+        with self.assertRaises(typer.BadParameter):
+            run_update_command(
+                alias="alias1",
+                template="WriteThisDown",
+                description=None,
+                new_alias=None,
+                set_pairs=["template=MarinaDelRey"],
+                edit_mode=False,
+                edit_fields=None,
+                get_cmd_services=self.get_cmd_services,
+                get_settings=self.get_settings,
+                get_console=self.get_console,
+            )
+
+    def test_run_update_raises_error_when_set_is_provided_with_edit_flag(self):
+        with self.assertRaises(typer.BadParameter):
+            run_update_command(
+                alias="alias1",
+                template=None,
+                description=None,
+                new_alias=None,
+                set_pairs=["description=OceanFrontProperty"],
+                edit_mode=True,
+                edit_fields=None,
+                get_cmd_services=self.get_cmd_services,
+                get_settings=self.get_settings,
+                get_console=self.get_console,
+            )
+
     @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
     def test_run_list_command(self, mock_render):
         cmds = ["c1", "c2"]
