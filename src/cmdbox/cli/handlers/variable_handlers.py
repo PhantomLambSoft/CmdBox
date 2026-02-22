@@ -101,7 +101,7 @@ def run_update_variable(
     console = get_console()
 
     if edit_mode:
-        if any([new_name, value]):
+        if any([new_name, value, set_pairs]):
             raise typer.BadParameter(
                 "--edit cannot be combined with field options or --set."
             )
