@@ -34,7 +34,7 @@ class TagServices:
         """
         return self._repo.create(name=name, description=description)
 
-    def update_tag(self, name: str, **fields) -> Tag:
+    def update_tag(self, name_: str, **fields) -> Tag:
         """
         Updates an existing tag by its name with new field values.
 
@@ -42,13 +42,13 @@ class TagServices:
         with the provided fields. The update is performed using the repository.
 
         Args:
-            name (str): The name of the tag to update.
+            name_ (str): The name of the tag to update.
             **fields: Arbitrary field values to update on the tag.
 
         Returns:
             Tag: The updated tag object.
         """
-        tag = self._repo.get_by_name(name)
+        tag = self._repo.get_by_name(name_)
         return self._repo.update(tag, **fields)
 
     def delete_tag(self, name: str) -> bool:

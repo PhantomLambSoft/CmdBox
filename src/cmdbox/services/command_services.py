@@ -78,7 +78,7 @@ class CommandServices:
         cmd = self._repo.get_by_alias(alias)
         return self._repo.update(cmd, **fields)
 
-    def delete_command(self, alias: str) -> bool:
+    def delete_command(self, alias_: str) -> bool:
         """
         Deletes a command by its alias.
 
@@ -86,12 +86,12 @@ class CommandServices:
         provided alias.
 
         Args:
-            alias: The alias of the command to delete.
+            alias_: The alias of the command to delete.
 
         Returns:
             bool: True if the command was deleted successfully, False otherwise.
         """
-        cmd = self._repo.get_by_alias(alias)
+        cmd = self._repo.get_by_alias(alias_)
         return self._repo.delete(cmd)
 
     def add_tags(self, alias: str, tags: list[str]) -> TagAttachResult:

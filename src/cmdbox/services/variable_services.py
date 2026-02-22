@@ -54,7 +54,7 @@ class VariableServices:
                 self._repo.add_tags(var, tags)
         return var
 
-    def update_variable(self, name: str, **fields) -> Variable:
+    def update_variable(self, name_: str, **fields) -> Variable:
         """
         Updates an existing variable by its name with new field values.
 
@@ -62,13 +62,13 @@ class VariableServices:
         with the provided fields. The update is performed using the repository.
 
         Args:
-            name (str): The name of the variable to update.
+            name_ (str): The name of the variable to update.
             **fields: Arbitrary field values to update on the variable.
 
         Returns:
             Variable: The updated variable object.
         """
-        var = self._repo.get_by_name(name)
+        var = self._repo.get_by_name(name_)
         return self._repo.update(var, **fields)
 
     def delete_variable(self, name: str) -> bool:
