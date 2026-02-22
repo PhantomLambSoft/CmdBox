@@ -6,11 +6,8 @@ from cmdbox.cli.ui.primitives import (
     table_panel,
     kv_table,
     section,
-    tag_block,
-    stack,
 )
 from cmdbox.models import Tag
-from cmdbox.repositories.results import TagAttachResult, TagDetachResult
 
 
 TAG_COLUMNS: dict[str, tuple[str, dict, Callable[[Tag], object]]] = {
