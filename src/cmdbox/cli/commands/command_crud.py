@@ -30,7 +30,7 @@ def add(
     template: Annotated[
         str,
         typer.Argument(
-            help="The actual command value that will be executed when the command is recalled using the alias"
+            help="The actual command value that will be executed when the command is recalled using the alias."
         ),
     ] = None,
     description: Annotated[
@@ -294,7 +294,8 @@ def add_tags(
     tags: Annotated[
         list[str],
         typer.Argument(
-            help="The tags to add to the command.", autocompletion=complete_tag_names
+            help="The tags to add to the command, separated by commas.",
+            autocompletion=complete_tag_names,
         ),
     ] = None,
 ) -> None:
@@ -324,7 +325,7 @@ def remove_tags(
     tags: Annotated[
         list[str],
         typer.Argument(
-            help="The tags to remove from the command.",
+            help="The tags to remove from the command, separated by commas.",
             autocompletion=complete_tag_names,
         ),
     ] = None,
