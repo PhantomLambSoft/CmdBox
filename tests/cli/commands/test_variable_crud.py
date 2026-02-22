@@ -66,7 +66,14 @@ class TestVariableCrud(unittest.TestCase):
         set_pairs = ["key1=val1"]
 
         # Execute
-        variable_crud.update(name=name, value=value, new_name=new_name, set_=set_pairs)
+        variable_crud.update(
+            name=name,
+            value=value,
+            new_name=new_name,
+            set_=set_pairs,
+            edit_mode=False,
+            edit_fields="name,value",
+        )
 
         # Verify
         mock_run_update_variable.assert_called_once_with(
@@ -74,7 +81,10 @@ class TestVariableCrud(unittest.TestCase):
             value=value,
             new_name=new_name,
             set_pairs=set_pairs,
+            edit_mode=False,
+            edit_fields="name,value",
             get_var_services=mock_container.get_variable_services,
+            get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
         )
 

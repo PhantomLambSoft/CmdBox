@@ -84,13 +84,28 @@ def update(
             autocompletion=variable_field_options,
         ),
     ] = None,
+    edit_mode: Annotated[
+        bool,
+        typer.Option("--edit", "-e", help="Edit mode."),
+    ] = False,
+    edit_fields: Annotated[
+        str,
+        typer.Option(
+            "--edit-fields",
+            "-ef",
+            help="A list of fields to be edited in edit mode, separated by commas. Defaults to all fields.",
+        ),
+    ] = None,
 ) -> None:
     variable_handlers.run_update_variable(
         name=name,
         value=value,
         new_name=new_name,
         set_pairs=set_,
+        edit_mode=edit_mode,
+        edit_fields=edit_fields,
         get_var_services=container.get_variable_services,
+        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 

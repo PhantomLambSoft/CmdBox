@@ -87,25 +87,69 @@ def run_update_variable(
     value: Optional[str],
     new_name: Optional[str],
     set_pairs: Optional[Sequence[str]],
+    edit_mode: bool,
+    edit_fields: Optional[str],
     get_var_services: Callable[[], VariableServices],
+    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     allowed = {"name", "value"}
     fields: Dict[str, Any] = {}
-    if value is not None:
-        fields["value"] = value
-    if new_name is not None:
-        fields["name"] = new_name
 
-    fields = merge_fields(fields, parse_set_pairs(set_pairs))
-    fields = filter_allowed(fields, allowed)
-    if not fields:
-        raise typer.BadParameter("No fields specified to update.")
     var_service = get_var_services()
     var = var_service.get_variable(name)
-    var_service.update_variable(name, **fields)
     console = get_console()
-    console.success("Variable updated successfully.")
+
+    if edit_mode:
+        if any([new_name, value]):
+            raise typer.BadParameter(
+                "--edit cannot be combined with field options or --set."
+            )
+
+        updated_fields: dict[str, Any] = {}
+        if edit_fields:
+            edit_fields = [x.strip() for x in edit_fields.split(",")]
+
+        field_aliases = get_settings().field_aliases.alias_mapping
+
+        def check_field_aliases(field: str) -> bool:
+            return (
+                edit_fields is None
+                or field in edit_fields
+                or any(x in edit_fields for x in field_aliases.get(field, []))
+            )
+
+        if check_field_aliases("name"):
+            updated_fields["name"] = prompt_for_name(NameValidator(), default=var.name)
+        if check_field_aliases("value"):
+            updated_fields["value"] = prompt_for_value(default=var.value)
+
+        fields = merge_fields(fields, updated_fields)
+
+    else:
+        if value is not None:
+            fields["value"] = value
+        if new_name is not None:
+            fields["name"] = new_name
+
+        fields = merge_fields(fields, parse_set_pairs(set_pairs))
+        fields = filter_allowed(fields, allowed)
+
+        if not fields:
+            raise typer.BadParameter("No fields specified to update.")
+
+    current = {
+        "name": var.name,
+        "value": var.value,
+    }
+    fields = {key: value for key, value in fields.items() if current.get(key) != value}
+
+    if not fields:
+        console.info("No changes detected.")
+        return
+
+    var_service.update_variable(name, **fields)
+
     updated_var = var_service.get_variable_by_id(var.id)
     console.print(render_variable_updated(updated_var))
 

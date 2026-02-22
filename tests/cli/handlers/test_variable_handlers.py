@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, ANY
 import typer
 from cmdbox.cli.handlers.variable_handlers import (
     AddVariableArgs,
@@ -117,7 +117,7 @@ class TestVariableHandlers(unittest.TestCase):
         self.mock_console.print.assert_called_with("rendered_var")
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_updated")
-    def test_run_update_variable(self, mock_render):
+    def test_run_update_variable_with_fields_supplied(self, mock_render):
         mock_var = MagicMock()
         mock_var.id = 1
         self.mock_var_services.get_variable.return_value = mock_var
@@ -130,27 +130,244 @@ class TestVariableHandlers(unittest.TestCase):
             value="new_val",
             new_name="new_name",
             set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
             get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
             get_console=self.get_console,
         )
 
         self.mock_var_services.update_variable.assert_called_with(
             "var1", value="new_val", name="new_name"
         )
-        self.mock_console.success.assert_called_with("Variable updated successfully.")
         mock_render.assert_called_once_with(mock_updated_var)
         self.mock_console.print.assert_called_with("rendered_updated")
 
-    def test_run_update_variable_no_fields(self):
+    def test_run_update_variable_no_fields_edit_mode_false(self):
         with self.assertRaises(typer.BadParameter):
             run_update_variable(
                 name="var1",
                 value=None,
                 new_name=None,
                 set_pairs=None,
+                edit_mode=False,
+                edit_fields=None,
                 get_var_services=self.get_var_services,
+                get_settings=self.get_settings,
                 get_console=self.get_console,
             )
+
+    @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_value")
+    @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_name")
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_updated")
+    def test_run_update_variable_no_fields_edit_mode_true(
+        self,
+        mock_render,
+        mock_prompt_name,
+        mock_prompt_value,
+    ):
+        mock_render.return_value = "rendered_updated"
+        mock_prompt_name.return_value = "new_prompt_name"
+        mock_prompt_value.return_value = "new_prompt_val"
+
+        mock_var = MagicMock()
+        mock_var.id = 1
+        mock_var.name = "old_name"
+        mock_var.value = "old_val"
+
+        self.mock_var_services.get_variable.return_value = mock_var
+        mock_updated_var = MagicMock()
+        self.mock_var_services.get_variable_by_id.return_value = mock_updated_var
+
+        run_update_variable(
+            name="var1",
+            value=None,
+            new_name=None,
+            set_pairs=None,
+            edit_mode=True,
+            edit_fields=None,
+            get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_var_services.update_variable.assert_called_with(
+            "var1", value="new_prompt_val", name="new_prompt_name"
+        )
+        mock_render.assert_called_once_with(mock_updated_var)
+        mock_prompt_name.assert_called_with(ANY, default="old_name")
+        mock_prompt_value.assert_called_with(default="old_val")
+        self.mock_console.print.assert_called_with("rendered_updated")
+
+    @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_value")
+    @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_name")
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_updated")
+    def test_run_update_variable_no_fields_edit_mode_true_edit_field_provided(
+        self,
+        mock_render,
+        mock_prompt_name,
+        mock_prompt_value,
+    ):
+        mock_render.return_value = "rendered_updated"
+        mock_prompt_name.return_value = "new_prompt_name"
+        mock_prompt_value.return_value = "new_prompt_val"
+
+        mock_var = MagicMock()
+        mock_var.id = 1
+        mock_var.name = "old_name"
+        mock_var.value = "old_val"
+
+        self.mock_var_services.get_variable.return_value = mock_var
+        mock_updated_var = MagicMock()
+        self.mock_var_services.get_variable_by_id.return_value = mock_updated_var
+
+        run_update_variable(
+            name="var1",
+            value=None,
+            new_name=None,
+            set_pairs=None,
+            edit_mode=True,
+            edit_fields="value",
+            get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_var_services.update_variable.assert_called_with(
+            "var1", value="new_prompt_val"
+        )
+        mock_render.assert_called_once_with(mock_updated_var)
+        mock_prompt_name.assert_not_called()
+        mock_prompt_value.assert_called_with(default="old_val")
+        self.mock_console.print.assert_called_with("rendered_updated")
+
+    @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_value")
+    @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_name")
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_updated")
+    def test_run_update_variable_no_fields_edit_mode_true_multiple_edit_fields_provided(
+        self,
+        mock_render,
+        mock_prompt_name,
+        mock_prompt_value,
+    ):
+        mock_render.return_value = "rendered_updated"
+        mock_prompt_name.return_value = "new_prompt_name"
+        mock_prompt_value.return_value = "new_prompt_val"
+
+        mock_var = MagicMock()
+        mock_var.id = 1
+        mock_var.name = "old_name"
+        mock_var.value = "old_val"
+
+        self.mock_var_services.get_variable.return_value = mock_var
+        mock_updated_var = MagicMock()
+        self.mock_var_services.get_variable_by_id.return_value = mock_updated_var
+
+        run_update_variable(
+            name="var1",
+            value=None,
+            new_name=None,
+            set_pairs=None,
+            edit_mode=True,
+            edit_fields="name, value",
+            get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_var_services.update_variable.assert_called_with(
+            "var1", value="new_prompt_val", name="new_prompt_name"
+        )
+        mock_render.assert_called_once_with(mock_updated_var)
+        mock_prompt_name.assert_called_with(ANY, default="old_name")
+        mock_prompt_value.assert_called_with(default="old_val")
+        self.mock_console.print.assert_called_with("rendered_updated")
+
+    @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_value")
+    @patch("cmdbox.cli.handlers.variable_handlers.prompt_for_name")
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_updated")
+    def test_run_update_variable_no_fields_edit_mode_true_edit_field_provided_as_aliases_from_settings(
+        self,
+        mock_render,
+        mock_prompt_name,
+        mock_prompt_value,
+    ):
+        mock_render.return_value = "rendered_updated"
+        mock_prompt_name.return_value = "new_prompt_name"
+        mock_prompt_value.return_value = "new_prompt_val"
+
+        mock_var = MagicMock()
+        mock_var.id = 1
+        mock_var.name = "old_name"
+        mock_var.value = "old_val"
+
+        self.mock_var_services.get_variable.return_value = mock_var
+        mock_updated_var = MagicMock()
+        self.mock_var_services.get_variable_by_id.return_value = mock_updated_var
+        self.mock_settings.field_aliases.alias_mapping = {"value": ["val"]}
+
+        run_update_variable(
+            name="var1",
+            value=None,
+            new_name=None,
+            set_pairs=None,
+            edit_mode=True,
+            edit_fields="val",
+            get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_var_services.update_variable.assert_called_with(
+            "var1", value="new_prompt_val"
+        )
+        mock_render.assert_called_once_with(mock_updated_var)
+        mock_prompt_name.assert_not_called()
+        mock_prompt_value.assert_called_with(default="old_val")
+        self.mock_console.print.assert_called_with("rendered_updated")
+
+    def test_run_update_variable_in_edit_mode_with_fields_raised_error(self):
+        with self.assertRaises(typer.BadParameter):
+            run_update_variable(
+                name="var1",
+                value="ICanStillMakeCheyenne",
+                new_name=None,
+                set_pairs=None,
+                edit_mode=True,
+                edit_fields=None,
+                get_var_services=self.get_var_services,
+                get_settings=self.get_settings,
+                get_console=self.get_console,
+            )
+
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_updated")
+    def test_run_update_variable_does_not_update_if_updated_fields_are_unchanged(
+        self, mock_render
+    ):
+        mock_var = MagicMock()
+        mock_var.id = 1
+        mock_var.name = "var1"
+        mock_var.value = "old_val"
+        self.mock_var_services.get_variable.return_value = mock_var
+        mock_updated_var = MagicMock()
+        self.mock_var_services.get_variable_by_id.return_value = mock_updated_var
+        mock_render.return_value = "rendered_updated"
+
+        run_update_variable(
+            name="var1",
+            value="old_val",
+            new_name="var1",
+            set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
+            get_var_services=self.get_var_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_var_services.update_variable.assert_not_called()
+        mock_render.assert_not_called()
+        self.mock_console.info.assert_called_with("No changes detected.")
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_list_variables(self, mock_render):
