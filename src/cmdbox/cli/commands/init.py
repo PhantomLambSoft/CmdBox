@@ -31,7 +31,10 @@ def init(
     path: Annotated[
         str, typer.Option("--path", "-p", help="The path to the shell profile.")
     ] = None,
-):
+) -> None:
+    """
+    Initialize CmdBox for a shell environment.
+    """
     run_init_command(
         shell=shell, install=install, path=path, get_console=container.get_console
     )
@@ -39,6 +42,6 @@ def init(
 
 @app.command(name="shell", hidden=True)
 @cli_guard
-def detect_shell():
+def detect_shell() -> None:
     """Detects and prints the current shell being used."""
     run_detect_shell(get_console=container.get_console)

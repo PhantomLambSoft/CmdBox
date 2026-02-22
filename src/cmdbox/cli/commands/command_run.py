@@ -26,7 +26,14 @@ def run(
         ),
     ],
     *,
-    preview_cmd: Annotated[bool, typer.Option("--preview", "-p", is_flag=True)] = False,
+    preview_cmd: Annotated[
+        bool,
+        typer.Option(
+            "--preview",
+            "-p",
+            help="Output the command that will be executed without actually running it.",
+        ),
+    ] = False,
     cwd: Annotated[
         str,
         typer.Option(
@@ -65,7 +72,10 @@ def run(
             help="Outputs additional information alongside the command output.",
         ),
     ] = None,
-):
+) -> None:
+    """
+    Run stored commands by using their alias.
+    """
     if preview_cmd:
         preview(
             alias=alias, cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose
@@ -125,7 +135,10 @@ def preview(
             help="Outputs additional information alongside the command output.",
         ),
     ] = None,
-):
+) -> None:
+    """
+    Output the command that will be executed without actually running it.
+    """
     ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose)
     run_preview_command(
         alias=alias,

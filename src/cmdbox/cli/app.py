@@ -19,12 +19,12 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-app.add_typer(command_crud_app, name="cmd")
-app.add_typer(variable_crud_app, name="var")
-app.add_typer(tag_crud_app, name="tag")
+app.add_typer(command_crud_app, name="cmd", help="CRUD operations for commands.")
+app.add_typer(variable_crud_app, name="var", help="CRUD operations for variables.")
+app.add_typer(tag_crud_app, name="tag", help="CRUD operations for tags.")
 app.add_typer(command_run_app)
 app.add_typer(init_app)
-app.add_typer(settings_app, name="settings")
+app.add_typer(settings_app, name="settings", help="Manage CmdBox settings.")
 
 
 def is_test_callback(value: bool):

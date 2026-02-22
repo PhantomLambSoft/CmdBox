@@ -23,6 +23,11 @@ def edit(
         ),
     ] = False,
 ) -> None:
+    """
+    Edits the settings file. If the `--external` flag is used, the settings file will be
+    opened in the default text editor. Otherwise, the settings will be edited interactively
+    in the terminal.
+    """
     settings_handler.run_edit_settings(
         external,
         get_settings_service=container.get_settings_service,

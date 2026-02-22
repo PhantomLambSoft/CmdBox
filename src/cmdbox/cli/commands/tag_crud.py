@@ -34,6 +34,11 @@ def add(
         ),
     ] = False,
 ) -> None:
+    """
+    Adds a new tag with a name and description. The tag can be created in
+    interactive if no options are provided or the `--interactive` flag is
+    used.
+    """
     add_tag_args = tag_handlers.AddTagArgs(
         name=name, description=description, interactive=interactive
     )
@@ -54,6 +59,9 @@ def get(
         ),
     ],
 ) -> None:
+    """
+    Gets and displays a saved tag under the provided name.
+    """
     tag_handlers.run_get_tag(
         name=name,
         get_tag_services=container.get_tag_services,
@@ -99,7 +107,12 @@ def update(
             help="A list of fields to be edited in edit mode, separated by commas. Defaults to all fields.",
         ),
     ] = None,
-):
+) -> None:
+    """
+    Updates an existing tag with the provided options. Each field can be updated
+    individually or in bulk using the `--set` option. Using the `--edit` option enables
+    editing the already stored values in an interactive mode.
+    """
     tag_handlers.run_update_tag(
         name=name,
         description=description,
@@ -142,6 +155,10 @@ def list_tags(
         ),
     ] = None,
 ) -> None:
+    """
+    Displays all stored tags in a list format. The number of results can be limited
+    with the `--limit` option. The output fields can be customized with the `--field` option.
+    """
     tag_handlers.run_list_tags(
         limit=limit,
         fields=fields,
@@ -187,6 +204,11 @@ def search(
         ),
     ] = None,
 ) -> None:
+    """
+    Searches the database for tags matching the provided search term. The search fields
+    can be customized with the `--in` option. The output fields can be customized with the
+    `--field` option.
+    """
     tag_handlers.run_search_tags(
         term=term,
         limit=limit,
@@ -213,6 +235,9 @@ def delete(
         ),
     ],
 ) -> None:
+    """
+    Deletes the tag stored under the provided name.
+    """
     tag_handlers.run_delete_tag(
         name=name,
         get_tag_services=container.get_tag_services,

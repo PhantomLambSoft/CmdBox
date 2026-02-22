@@ -51,18 +51,9 @@ def add(
     ] = False,
 ) -> None:
     """
-    Adds a new command with an alias, a template, description, and associated tags. The
-    command can be created in interactive mode if desired or if required arguments are
-    not provided.
-
-    Args:
-        alias (str): The name of the command. Will be used to recall the command.
-        template (str): The actual command value that will be executed when the command is
-            recalled using the alias.
-        description (str): A description of the command.
-        tags (list[str]): A list of tags to associate with the command, separated by commas.
-        interactive (bool): Specifies whether to enable interactive mode for entering command
-            details.
+    Adds a new command with an alias, a template, description, and tags. The command
+    can be created in interactive if no options are provided or the `--interactive`
+    flag is used.
     """
     add_cmd_args = command_handlers.AddCommandArgs(
         alias=alias,
@@ -90,6 +81,9 @@ def get(
         ),
     ],
 ) -> None:
+    """
+    Retrieves and displays a saved command stored under the provided alias.
+    """
     command_handlers.run_get_command(
         alias=alias,
         get_cmd_services=container.get_command_services,
@@ -138,6 +132,11 @@ def update(
         ),
     ] = None,
 ) -> None:
+    """
+    Updates an existing command with the provided options. Each field can be updated
+    individually or in bulk using the `--set` option. Using the `--edit` option enables
+    editing the already stored values in an interactive mode.
+    """
     command_handlers.run_update_command(
         alias=alias,
         template=template,
@@ -190,6 +189,10 @@ def list_cmds(
         ),
     ] = None,
 ) -> None:
+    """
+    Displays all stored commands in a list format. The number of results can be limited
+    with the `--limit` option. The output fields can be customized with the `--field` option.
+    """
     command_handlers.run_list_command(
         limit=limit,
         order=order,
@@ -231,6 +234,11 @@ def search(
         ),
     ] = None,
 ) -> None:
+    """
+    Searches the database for commands matching the provided search term. The search fields
+    can be customized with the `--in` option. The output fields can be customized with the
+    `--field` option.
+    """
     command_handlers.run_search_command(
         term=term,
         limit=limit,
@@ -258,6 +266,9 @@ def delete(
         ),
     ],
 ) -> None:
+    """
+    Deletes the command stored under the provided alias.
+    """
     command_handlers.run_delete_command(
         alias=alias,
         get_cmd_services=container.get_command_services,
@@ -287,6 +298,10 @@ def add_tags(
         ),
     ] = None,
 ) -> None:
+    """
+    Adds the provided tags to the command stored under the provided alias. Tags must
+    be existing.
+    """
     command_handlers.run_attach_tags(
         alias=alias,
         tag_names=tags,
@@ -314,6 +329,9 @@ def remove_tags(
         ),
     ] = None,
 ) -> None:
+    """
+    Removes the provided tags from the command stored under the provided alias.
+    """
     command_handlers.run_detach_tags(
         alias=alias,
         tag_names=tags,

@@ -34,6 +34,11 @@ def add(
         typer.Option("--interactive", "-i", is_flag=True, help="Interactive mode."),
     ] = False,
 ) -> None:
+    """
+    Adds a new variable with the specified name, value, and tags. The variable
+    can be created in interactive mode if no options are provided or the `--interactive`
+    flag is used.
+    """
     add_var_args = variable_handlers.AddVariableArgs(
         name=name, value=value, tags=tags, interactive=interactive
     )
@@ -56,6 +61,9 @@ def get(
         ),
     ],
 ) -> None:
+    """
+    Retrieves and displays the variable stored under the provided name.
+    """
     variable_handlers.run_get_variable(
         name=name,
         get_var_services=container.get_variable_services,
@@ -97,6 +105,11 @@ def update(
         ),
     ] = None,
 ) -> None:
+    """
+    Updates an existing variable with the provided options. Each field can be updated
+    individually or in bulk using the `--set` option. Using the `--edit` option enables
+    editing the already stored values in an interactive mode.
+    """
     variable_handlers.run_update_variable(
         name=name,
         value=value,
@@ -148,6 +161,10 @@ def list_vars(
         ),
     ] = None,
 ) -> None:
+    """
+    Displays all stored variables in a list format. The number of results can be limited
+    with the `--limit` option. The output fields can be customized with the `--field` option.
+    """
     variable_handlers.run_list_variables(
         order_by=order,
         tags=tags,
@@ -189,6 +206,11 @@ def search(
         ),
     ] = None,
 ) -> None:
+    """
+    Searches the database for variables matching the provided search term. The search fields
+    can be customized with the `--in` option. The output fields can be customized with the
+    `--field` option.
+    """
     variable_handlers.run_search_variables(
         term=term,
         limit=limit,
@@ -216,6 +238,9 @@ def delete(
         ),
     ],
 ) -> None:
+    """
+    Deletes the variable stored under the provided name.
+    """
     variable_handlers.run_delete_variable(
         name=name,
         get_var_services=container.get_variable_services,
@@ -245,6 +270,10 @@ def add_tags(
         ),
     ] = None,
 ) -> None:
+    """
+    Adds the provided tags to the command stored under the provided alias. Tags must
+    be existing.
+    """
     variable_handlers.run_attach_tags(
         name=name,
         tag_names=tags,
@@ -272,6 +301,9 @@ def remove_tags(
         ),
     ] = None,
 ) -> None:
+    """
+    Removes the provided tags from the command stored under the provided alias.
+    """
     variable_handlers.run_detach_tags(
         name=name,
         tag_names=tags,
