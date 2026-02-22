@@ -7,7 +7,6 @@ executing commands.
 
 It is designed for developers, sysadmins, power users, and anyone who wants a better terminal experience.
 
----
 ## Why CmdBox Exists
 Many terminal users struggle with remembering and executing commands, relying on shell history, scattered notes, and 
 repeated searches to recall commands. As workflow grows, this becomes inefficient and fragile.
@@ -20,8 +19,6 @@ CmdBox gives you:
 - Clean rich output
 - Configurable field views
 - Shell integration
-
----
 
 ## Quick Start
 #### Basic commands
@@ -54,7 +51,7 @@ cb run ssh-server
 # What is executed:
 ssh maxpowers@192.168.1.10
 ```
----
+
 ## Features
 * Structured command storage
 * Parameterized command templates and variables
@@ -63,7 +60,6 @@ ssh maxpowers@192.168.1.10
 * Rich-based UI with configurable themes
 * Configurable output views
 
----
 ## Installation
 If you have pip installed:
 ```bash
