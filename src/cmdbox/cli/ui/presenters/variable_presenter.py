@@ -43,7 +43,12 @@ DEFAULT_FIELDS = ["name", "value"]
 
 
 def render_variable_created(variable: Variable):
-    pass
+    rendered_variable = render_variable(variable)
+    return section(
+        title=f'Variable "{variable.name}" created',
+        body=rendered_variable,
+        border_style="status.success",
+    )
 
 
 def render_variable(variable: Variable):
