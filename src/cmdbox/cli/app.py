@@ -52,7 +52,6 @@ def common(
             "-t",
             callback=is_test_callback,
             is_flag=True,
-            is_eager=True,
             help="Enables testing mode.  Database will be created in memory and will not affect the "
             "applications persistent database.",
         ),
