@@ -3,6 +3,7 @@ from typing import Annotated
 import typer
 
 from cmdbox import container
+from cmdbox.cli.ui.presenters.app_presenter import render_version
 from cmdbox.version import __version__
 from cmdbox.database import ensure_schema, get_db
 from .commands.command_crud import app as command_crud_app
@@ -31,13 +32,14 @@ def is_test_callback(value: bool):
     if value:
         get_db(testing=True)
         console = container.get_console()
-        console.success("Testing mode is active, database is in memory.")
+        console.info("Testing mode is active, database is in memory.")
 
 
 def version_callback(value: bool):
     if value:
         console = container.get_console()
-        console.print(f"CmdBox {__version__}")
+        rendered_version = render_version(__version__)
+        console.print(rendered_version)
         raise typer.Exit()
 
 
@@ -59,18 +61,17 @@ def common(
         bool,
         typer.Option(
             "--version",
-            "-v",
+            "-V",
             callback=version_callback,
             is_eager=True,
             help="Print the app version and exit.",
         ),
     ] = None,
 ) -> None:
-    pass
+    ensure_schema()
 
 
 def main() -> None:
-    ensure_schema()
     app()
 
 
