@@ -7,7 +7,6 @@ from cmdbox.cli.ui.primitives import (
     kv_table,
     section,
     tag_block,
-    stack,
 )
 from cmdbox.models import Variable
 
