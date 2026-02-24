@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+import uuid
 from typing import Annotated
 
 import typer
@@ -89,10 +89,11 @@ def common(
 
     settings = container.get_settings()
 
+    run_id = uuid.uuid4().hex[:6]
     log_config = build_log_config(
         settings=settings, verbose=verbose, debug=debug, file_logs=file_logs
     )
-    configure_logging(log_config)
+    configure_logging(log_config, run_id=run_id)
 
     log = get_logger()
     log.debug(

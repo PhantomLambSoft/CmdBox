@@ -27,7 +27,25 @@ class SecretRedactionFilter(logging.Filter):
         return s
 
 
-def configure_logging(config: LogConfig) -> None:
+class RunIdFilter(logging.Filter):
+    """
+    A logging filter that appends a unique run identifier to log records.
+
+    Attributes:
+        run_id (str): The identifier for the current run, which will be
+            appended to log records.
+    """
+
+    def __init__(self, run_id: str) -> None:
+        super().__init__()
+        self.run_id = run_id
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        record.run_id = self.run_id
+        return True
+
+
+def configure_logging(config: LogConfig, run_id: str) -> None:
     """
     Configures logging for the application, setting up a logger with both console and file
     handlers as specified by the provided configuration. Filters and formatters are applied
@@ -36,6 +54,7 @@ def configure_logging(config: LogConfig) -> None:
     Args:
         config (LogConfig): Configuration object specifying the logging settings, including
             log levels, file path, maximum file size, and number of backups.
+        run_id (str): Unique identifier for the current run, used to tag log records.
     """
     logger = get_logger()
     logger.setLevel(logging.DEBUG)  # capture everything, then filter
@@ -45,15 +64,19 @@ def configure_logging(config: LogConfig) -> None:
         logger.removeHandler(h)
 
     formatter = logging.Formatter(
-        fmt="%(asctime)s | %(levelname)s | %(name)s: %(message)s",
+        fmt="%(asctime)s | %(levelname)s | %(run_id)s | %(name)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
+
+    secret_redaction_filter = SecretRedactionFilter()
+    run_id_filter = RunIdFilter(run_id)
 
     # Console handler
     ch = logging.StreamHandler(sys.stderr)
     ch.setLevel(config.console_level)
     ch.setFormatter(formatter)
-    ch.addFilter(SecretRedactionFilter())
+    ch.addFilter(secret_redaction_filter)
+    ch.addFilter(run_id_filter)
     logger.addHandler(ch)
 
     # File handler
@@ -66,5 +89,6 @@ def configure_logging(config: LogConfig) -> None:
         )
         fh.setLevel(config.file_level)
         fh.setFormatter(formatter)
-        fh.addFilter(SecretRedactionFilter())
+        fh.addFilter(secret_redaction_filter)
+        fh.addFilter(run_id_filter)
         logger.addHandler(fh)
