@@ -28,15 +28,11 @@ from cmdbox.services.run_service import RunService
 from cmdbox.services.tag_services import TagServices
 
 
-settings = None
-
-
+@lru_cache(maxsize=1)
 def get_settings_service() -> SettingsService:
-    global settings
-    if not settings:
-        config_path = get_app_data_dir() / "config.toml"
-        repo = SettingsRepository(config_path)
-        settings = SettingsService(repo)
+    config_path = get_app_data_dir() / "config.toml"
+    repo = SettingsRepository(config_path)
+    settings = SettingsService(repo)
     return settings
 
 
@@ -44,6 +40,7 @@ def get_settings() -> Settings:
     return get_settings_service().get()
 
 
+@lru_cache(maxsize=1)
 def get_console() -> ConsoleUI:
     _settings = get_settings()
     theme = build_theme(_settings)
