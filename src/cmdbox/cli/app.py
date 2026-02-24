@@ -1,9 +1,12 @@
+from dataclasses import dataclass
 from typing import Annotated
 
 import typer
 
 from cmdbox import container
 from cmdbox.cli.ui.presenters.app_presenter import render_version
+from cmdbox.logging_setup.log_handlers import configure_logging
+from cmdbox.logging_setup.log_config import build_log_config, get_logger
 from cmdbox.version import __version__
 from cmdbox.database import ensure_schema, get_db
 from .commands.command_crud import app as command_crud_app
@@ -28,13 +31,6 @@ app.add_typer(init_app)
 app.add_typer(settings_app, name="settings", help="Manage CmdBox settings.")
 
 
-def is_test_callback(value: bool):
-    if value:
-        get_db(testing=True)
-        console = container.get_console()
-        console.info("Testing mode is active, database is in memory.")
-
-
 def version_callback(value: bool):
     if value:
         console = container.get_console()
@@ -50,10 +46,31 @@ def common(
         typer.Option(
             "--test",
             "-t",
-            callback=is_test_callback,
-            is_flag=True,
             help="Enables testing mode.  Database will be created in memory and will not affect the "
             "applications persistent database.",
+        ),
+    ] = False,
+    verbose: Annotated[
+        bool,
+        typer.Option(
+            "--verbose",
+            "-v",
+            help="Enable additional diagnostic output in the terminal. Sets console log level to INFO.",
+        ),
+    ] = False,
+    debug: Annotated[
+        bool,
+        typer.Option(
+            "--debug",
+            "-d",
+            help="Enable full diagnostic output in the terminal. Sets console log level to DEBUG.",
+        ),
+    ] = False,
+    file_logs: Annotated[
+        bool | None,
+        typer.Option(
+            "--file-logs/--no-file-logs",
+            help="Enable/disables writing diagnostic logs to a file. Defaults to settings.",
         ),
     ] = None,
     version: Annotated[
@@ -67,7 +84,27 @@ def common(
         ),
     ] = None,
 ) -> None:
+    if test:
+        get_db(testing=True)
+
+    settings = container.get_settings()
+
+    log_config = build_log_config(
+        settings=settings, verbose=verbose, debug=debug, file_logs=file_logs
+    )
+    configure_logging(log_config)
+
+    log = get_logger()
+    log.debug(
+        f"startup: test={test}, verbose={verbose}, debug={debug}, file_logs={file_logs}"
+    )
+    log.debug(f"file_logging={log_config.file_enabled} path={log_config.file_path}")
+
     ensure_schema()
+
+    if test:
+        console = container.get_console()
+        console.info("Testing mode is active, database is in memory.")
 
 
 def main() -> None:
