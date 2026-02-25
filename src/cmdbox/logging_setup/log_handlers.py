@@ -64,8 +64,8 @@ def configure_logging(config: LogConfig, run_id: str) -> None:
         logger.removeHandler(h)
 
     formatter = logging.Formatter(
-        fmt="%(asctime)s | %(levelname)s | %(run_id)s | %(name)s: %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
+        fmt="%(asctime)s.%(msecs)03d | %(levelname)s | %(run_id)s | %(name)s: %(message)s",
+        datefmt="%Y-%m-%d, %H:%M:%S",
     )
 
     secret_redaction_filter = SecretRedactionFilter()
