@@ -1,4 +1,5 @@
 from typing import Annotated
+import logging
 
 import typer
 
@@ -16,6 +17,8 @@ from cmdbox.cli.handlers import command_handlers
 app = typer.Typer(no_args_is_help=True)
 
 cli_guard = make_cli_guard(container.get_console)
+
+log = logging.getLogger("cmdbox")
 
 
 @app.command("add")
@@ -55,6 +58,7 @@ def add(
     can be created in interactive if no options are provided or the `--interactive`
     flag is used.
     """
+    log.debug("cmd.add called. alias=%s, interactive=%s", alias, interactive)
     add_cmd_args = command_handlers.AddCommandArgs(
         alias=alias,
         template=template,
@@ -84,6 +88,7 @@ def get(
     """
     Retrieves and displays a saved command stored under the provided alias.
     """
+    log.debug("cmd.get called. alias=%s", alias)
     command_handlers.run_get_command(
         alias=alias,
         get_cmd_services=container.get_command_services,
@@ -137,6 +142,17 @@ def update(
     individually or in bulk using the `--set` option. Using the `--edit` option enables
     editing the already stored values in an interactive mode.
     """
+    log.debug(
+        "cmd.update called. alias=%s template_provided=%s description_provided=%s new_alias_provided=%s "
+        "set_used=%s, edit_mode=%s, edit_fields=%s",
+        alias,
+        template is None,
+        description is None,
+        new_alias is None,
+        set_ is None,
+        edit_mode,
+        edit_fields,
+    )
     command_handlers.run_update_command(
         alias=alias,
         template=template,
@@ -193,6 +209,13 @@ def list_cmds(
     Displays all stored commands in a list format. The number of results can be limited
     with the `--limit` option. The output fields can be customized with the `--field` option.
     """
+    log.debug(
+        "cmd.list called. order=%s, tags=%s, limit=%s, fields=%s",
+        order,
+        tags,
+        limit,
+        fields,
+    )
     command_handlers.run_list_command(
         limit=limit,
         order=order,
@@ -239,6 +262,13 @@ def search(
     can be customized with the `--in` option. The output fields can be customized with the
     `--field` option.
     """
+    log.debug(
+        "cmd.search called. term=%s, limit=%s, search_fields=%s, fields=%s",
+        term,
+        limit,
+        search_fields,
+        fields,
+    )
     command_handlers.run_search_command(
         term=term,
         limit=limit,
@@ -269,6 +299,7 @@ def delete(
     """
     Deletes the command stored under the provided alias.
     """
+    log.debug("cmd.delete called. alias=%s", alias)
     command_handlers.run_delete_command(
         alias=alias,
         get_cmd_services=container.get_command_services,
@@ -303,6 +334,7 @@ def add_tags(
     Adds the provided tags to the command stored under the provided alias. Tags must
     be existing.
     """
+    log.debug("cmd.tag.add called. alias=%s, tags=%s", alias, tags)
     command_handlers.run_attach_tags(
         alias=alias,
         tag_names=tags,
@@ -333,6 +365,7 @@ def remove_tags(
     """
     Removes the provided tags from the command stored under the provided alias.
     """
+    log.debug("cmd.tag.remove called. alias=%s, tags=%s", alias, tags)
     command_handlers.run_detach_tags(
         alias=alias,
         tag_names=tags,
