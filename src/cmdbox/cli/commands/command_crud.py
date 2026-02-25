@@ -18,7 +18,7 @@ app = typer.Typer(no_args_is_help=True)
 
 cli_guard = make_cli_guard(container.get_console)
 
-log = logging.getLogger("cmdbox")
+log = logging.getLogger(__name__)
 
 
 @app.command("add")
