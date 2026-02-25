@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 import typer
@@ -12,6 +13,8 @@ from cmdbox.cli.handlers import tag_handlers
 app = typer.Typer(no_args_is_help=True)
 
 cli_guard = make_cli_guard(container.get_console)
+
+log = logging.getLogger(__name__)
 
 
 @app.command("add")
@@ -39,6 +42,12 @@ def add(
     interactive if no options are provided or the `--interactive` flag is
     used.
     """
+    log.debug(
+        "tag.add called. name=%s, description=%s, interactive=%s",
+        name,
+        description,
+        interactive,
+    )
     add_tag_args = tag_handlers.AddTagArgs(
         name=name, description=description, interactive=interactive
     )
@@ -62,6 +71,7 @@ def get(
     """
     Gets and displays a saved tag under the provided name.
     """
+    log.debug("tag.get called. name=%s", name)
     tag_handlers.run_get_tag(
         name=name,
         get_tag_services=container.get_tag_services,
@@ -113,6 +123,15 @@ def update(
     individually or in bulk using the `--set` option. Using the `--edit` option enables
     editing the already stored values in an interactive mode.
     """
+    log.debug(
+        "tag.update called. name=%s, description=%s, new_name=%s, set_pairs=%s, edit_mode=%s, edit_fields=%s",
+        name,
+        description,
+        new_name,
+        set_,
+        edit_mode,
+        edit_fields,
+    )
     tag_handlers.run_update_tag(
         name=name,
         description=description,
@@ -159,6 +178,7 @@ def list_tags(
     Displays all stored tags in a list format. The number of results can be limited
     with the `--limit` option. The output fields can be customized with the `--field` option.
     """
+    log.debug("tag.list called. order=%s, limit=%s, fields=%s", order, limit, fields)
     tag_handlers.run_list_tags(
         limit=limit,
         fields=fields,
@@ -209,6 +229,13 @@ def search(
     can be customized with the `--in` option. The output fields can be customized with the
     `--field` option.
     """
+    log.debug(
+        "tag.search called. term=%s, limit=%s, search_fields=%s, fields=%s",
+        term,
+        limit,
+        search_fields,
+        fields,
+    )
     tag_handlers.run_search_tags(
         term=term,
         limit=limit,
@@ -238,6 +265,7 @@ def delete(
     """
     Deletes the tag stored under the provided name.
     """
+    log.debug("tag.delete called. name=%s", name)
     tag_handlers.run_delete_tag(
         name=name,
         get_tag_services=container.get_tag_services,
