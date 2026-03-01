@@ -146,10 +146,10 @@ def update(
         "cmd.update called. alias=%s template_provided=%s description_provided=%s new_alias_provided=%s "
         "set_used=%s, edit_mode=%s, edit_fields=%s",
         alias,
-        template is None,
-        description is None,
-        new_alias is None,
-        set_ is None,
+        template is not None,
+        description is not None,
+        new_alias is not None,
+        set_ is not None,
         edit_mode,
         edit_fields,
     )
