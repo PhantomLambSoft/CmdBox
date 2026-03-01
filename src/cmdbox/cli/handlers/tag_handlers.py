@@ -24,6 +24,7 @@ from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.tag_services import TagServices
 from cmdbox.settings.models import Settings
+from cmdbox.logging_setup.log_decorators import log_action
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class AddTagArgs:
     interactive: bool = False
 
 
+@log_action(__name__, "run_add_tag")
 def run_add_tag(
     *,
     args: AddTagArgs,
@@ -54,6 +56,7 @@ def run_add_tag(
     console.print(render_tag_created(tag))
 
 
+@log_action(__name__, "run_get_tag")
 def run_get_tag(
     *,
     name: str,
@@ -66,6 +69,7 @@ def run_get_tag(
     console.print(render_tag(tag))
 
 
+@log_action(__name__, "run_update_tag")
 def run_update_tag(
     *,
     name: str,
@@ -143,6 +147,7 @@ def run_update_tag(
     console.print(render_tag_updated(updated_tag))
 
 
+@log_action(__name__, "run_list_tags")
 def run_list_tags(
     *,
     limit: int,
@@ -167,6 +172,7 @@ def run_list_tags(
     console.print(render_tag_list(tags, title="Tags", fields=fields))
 
 
+@log_action(__name__, "run_search_tags")
 def run_search_tags(
     *,
     term: str,
@@ -198,6 +204,7 @@ def run_search_tags(
     console.print(render_tag_list(tags, title="Search Results", fields=output_fields))
 
 
+@log_action(__name__, "run_delete_tag")
 def run_delete_tag(
     *,
     name: str,

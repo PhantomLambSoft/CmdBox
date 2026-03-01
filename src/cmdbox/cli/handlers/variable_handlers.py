@@ -30,6 +30,7 @@ from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.services.tag_services import TagServices
 from cmdbox.settings.models import Settings
+from cmdbox.logging_setup.log_decorators import log_action
 
 
 @dataclass(frozen=True)
@@ -40,6 +41,7 @@ class AddVariableArgs:
     interactive: bool = False
 
 
+@log_action(__name__, "run_add_variable")
 def run_add_variable(
     *,
     args: AddVariableArgs,
@@ -68,6 +70,7 @@ def run_add_variable(
     console.print(render_variable_created(var))
 
 
+@log_action(__name__, "run_get_variable")
 def run_get_variable(
     *,
     name: str,
@@ -81,6 +84,7 @@ def run_get_variable(
     console.print(rendered_var)
 
 
+@log_action(__name__, "run_update_variable")
 def run_update_variable(
     *,
     name: str,
@@ -154,6 +158,7 @@ def run_update_variable(
     console.print(render_variable_updated(updated_var))
 
 
+@log_action(__name__, "run_list_variables")
 def run_list_variables(
     *,
     limit: int,
@@ -179,6 +184,7 @@ def run_list_variables(
     console.print(render_variable_list(vars_, title="Variables", fields=fields))
 
 
+@log_action(__name__, "run_search_variables")
 def run_search_variables(
     *,
     term: str,
@@ -212,6 +218,7 @@ def run_search_variables(
     )
 
 
+@log_action(__name__, "run_delete_variable")
 def run_delete_variable(
     *,
     name: str,
@@ -227,6 +234,7 @@ def run_delete_variable(
         console.error(f"Failed to delete variable '{name}'.")
 
 
+@log_action(__name__, "run_attach_tags")
 def run_attach_tags(
     *,
     name: str | None = None,
@@ -245,6 +253,7 @@ def run_attach_tags(
     console.print(render_tag_attach_result(result))
 
 
+@log_action(__name__, "run_detach_tags")
 def run_detach_tags(
     *,
     name: str | None = None,
