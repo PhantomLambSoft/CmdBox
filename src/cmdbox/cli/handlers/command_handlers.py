@@ -35,9 +35,6 @@ from cmdbox.settings.models import Settings
 from cmdbox.logging_setup.log_decorators import log_action
 
 
-logger = logging.getLogger(__name__)
-
-
 @dataclass(frozen=True)
 class AddCommandArgs:
     alias: Optional[str]
