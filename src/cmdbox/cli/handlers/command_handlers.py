@@ -1,8 +1,8 @@
 from dataclasses import dataclass
 from typing import Optional, Callable, Any, Sequence
+import logging
 
 import typer
-from more_itertools.more import set_partitions
 
 from cmdbox.cli.common.update_fields import (
     merge_fields,
@@ -32,6 +32,10 @@ from cmdbox.services.command_services import CommandServices
 from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.tag_services import TagServices
 from cmdbox.settings.models import Settings
+from cmdbox.logging_setup.log_decorators import log_action
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -43,6 +47,7 @@ class AddCommandArgs:
     interactive: bool = False
 
 
+@log_action(__name__, "run_add_command")
 def run_add_command(
     *,
     args: AddCommandArgs,
@@ -80,6 +85,7 @@ def run_add_command(
     console.print(render_command_created(cmd))
 
 
+@log_action(__name__, "run_get_command")
 def run_get_command(
     *,
     alias: str,
@@ -93,6 +99,7 @@ def run_get_command(
     console.print(rendered_cmd)
 
 
+@log_action(__name__, "run_update_command")
 def run_update_command(
     *,
     alias: str,
@@ -178,6 +185,7 @@ def run_update_command(
     console.print(render_command_updated(updated_cmd))
 
 
+@log_action(__name__, "run_list_command")
 def run_list_command(
     *,
     limit: int,
@@ -206,6 +214,7 @@ def run_list_command(
     console.print(rendered_cmd_list)
 
 
+@log_action(__name__, "run_search_command")
 def run_search_command(
     *,
     term: str,
@@ -240,6 +249,7 @@ def run_search_command(
     console.print(rendered_cmd_list)
 
 
+@log_action(__name__, "run_delete_command")
 def run_delete_command(
     *,
     alias: str,
@@ -255,6 +265,7 @@ def run_delete_command(
         console.error(f"Failed to delete command '{alias}'.")
 
 
+@log_action(__name__, "run_attach_tag_command")
 def run_attach_tags(
     *,
     alias: str | None = None,
@@ -273,6 +284,7 @@ def run_attach_tags(
     console.print(render_tag_attach_result(result))
 
 
+@log_action(__name__, "run_detach_tag_command")
 def run_detach_tags(
     *,
     alias: str | None = None,
