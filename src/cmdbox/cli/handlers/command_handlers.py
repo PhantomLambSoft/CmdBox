@@ -262,7 +262,7 @@ def run_delete_command(
         console.error(f"Failed to delete command '{alias}'.")
 
 
-@log_action(__name__, "run_attach_tag_command")
+@log_action(__name__, "run_attach_tags")
 def run_attach_tags(
     *,
     alias: str | None = None,
@@ -281,7 +281,7 @@ def run_attach_tags(
     console.print(render_tag_attach_result(result))
 
 
-@log_action(__name__, "run_detach_tag_command")
+@log_action(__name__, "run_detach_tags")
 def run_detach_tags(
     *,
     alias: str | None = None,
