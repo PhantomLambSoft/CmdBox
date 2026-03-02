@@ -1,7 +1,6 @@
 import logging
 import time
 from functools import wraps
-from typing import Callable, Any
 
 
 def log_action(
