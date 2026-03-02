@@ -3,10 +3,12 @@ from typing import Annotated
 import typer
 
 from cmdbox import container
-from cmdbox.cli.commands.command_crud import cli_guard
+from cmdbox.cli.common.errors import make_cli_guard
 from cmdbox.cli.handlers.init_handler import run_detect_shell, run_init_command
 
 app = typer.Typer(no_args_is_help=False)
+
+cli_guard = make_cli_guard(container.get_console)
 
 
 @app.command()
