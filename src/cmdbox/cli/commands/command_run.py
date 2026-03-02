@@ -3,7 +3,7 @@ from typing import Annotated, Optional
 import typer
 
 from cmdbox import container
-from cmdbox.cli.commands.command_crud import cli_guard
+from cmdbox.cli.common.errors import make_cli_guard
 from cmdbox.cli.completions.commands import complete_command_aliases
 from cmdbox.cli.handlers.run_handler import (
     run_preview_command,
@@ -13,6 +13,8 @@ from cmdbox.cli.handlers.run_handler import (
 
 
 app = typer.Typer(no_args_is_help=True)
+
+cli_guard = make_cli_guard(container.get_console)
 
 
 @app.command()
