@@ -3,6 +3,7 @@ import shutil
 from pathlib import Path
 from importlib import resources
 
+from cmdbox.logging_setup.log_decorators import log_action
 
 START_MARK = "# >>> cmdbox shell integration >>>"
 END_MARK = "# <<< cmdbox shell integration <<<"
@@ -29,6 +30,7 @@ def load_integration_text(filename: str) -> str:
     )
 
 
+@log_action(__name__, "upsert_marked_block")
 def upsert_marked_block(profile_path: Path, block_text: str) -> None:
     """
     Updates or inserts a marked text block into a given file at the specified path.
