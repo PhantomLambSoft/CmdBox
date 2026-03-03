@@ -2,7 +2,10 @@ import os
 import tempfile
 from pathlib import Path
 
+from cmdbox.logging_setup.log_decorators import log_action
 
+
+@log_action(__name__, "atomic_write_text")
 def atomic_write_text(dest: Path, text: str, encoding: str = "utf-8") -> None:
     """
     Performs an atomic write operation to a text file. This ensures that the file content is written
