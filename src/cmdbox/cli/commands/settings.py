@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated
 
 import typer
@@ -9,6 +10,8 @@ from cmdbox.cli.handlers import settings_handler
 app = typer.Typer(no_args_is_help=True)
 
 cli_guard = make_cli_guard(container.get_console)
+
+log = logging.getLogger(__name__)
 
 
 @app.command("edit")
@@ -28,6 +31,7 @@ def edit(
     opened in the default text editor. Otherwise, the settings will be edited interactively
     in the terminal.
     """
+    log.debug("settings.edit called. external=%s", external)
     settings_handler.run_edit_settings(
         external,
         get_settings_service=container.get_settings_service,
