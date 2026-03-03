@@ -2,9 +2,6 @@ from typing import Sequence, Generic, TypeVar, Type
 
 from peewee import Model, fn, IntegrityError, Node
 
-from .errors import UnknownTagError
-from cmdbox.models import Tag
-
 M = TypeVar("M", bound=Model)
 
 
