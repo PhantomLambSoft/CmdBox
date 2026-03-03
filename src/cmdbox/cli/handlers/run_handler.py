@@ -1,3 +1,4 @@
+import logging
 from typing import Callable
 from dataclasses import dataclass
 
@@ -11,6 +12,10 @@ from cmdbox.cli.ui.presenters.result_presenter import (
 from cmdbox.runtime.executor import RunContext
 from cmdbox.services.run_service import RunService
 from cmdbox.settings.models import Settings
+from cmdbox.logging_setup.log_decorators import log_action
+
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=False)
@@ -31,6 +36,7 @@ class RawRunContext:
     verbose: bool | None = False
 
 
+@log_action(__name__, "run_run_command")
 def run_run_command(
     *,
     alias: str,
@@ -50,6 +56,7 @@ def run_run_command(
         console.print(render_execution_result(ex_result))
 
 
+@log_action(__name__, "run_preview_command")
 def run_preview_command(
     *,
     alias: str,
@@ -129,10 +136,12 @@ def parse_env(env: list[str] | str | None) -> dict[str, str] | None:
 
     def split_pair(pair: str) -> tuple[str, str]:
         if "=" not in pair:
+            log.error(f"Invalid environment variable format: {pair}")
             raise typer.BadParameter(
                 "Invalid environment variable format. Each env must be in the format of key=value."
             )
         k, v = pair.split("=", maxsplit=1)
+        log.debug(f"Parsed env: {k}={v}")
         return k, v
 
     for pair in env:
@@ -143,4 +152,5 @@ def parse_env(env: list[str] | str | None) -> dict[str, str] | None:
             k, v = split_pair(pair)
             ret[k] = v
 
+    log.debug(f"Parsed env: {ret}")
     return ret
