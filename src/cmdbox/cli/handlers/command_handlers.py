@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from typing import Optional, Callable, Any, Sequence
-import logging
 
 import typer
 
