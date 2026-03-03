@@ -13,8 +13,10 @@ from cmdbox.cli.ui.presenters.init_presenter import (
 from cmdbox.init.detect import detect_shell
 from cmdbox.init.io import load_integration_text, upsert_marked_block
 from cmdbox.init.specs import SHELLS
+from cmdbox.logging_setup.log_decorators import log_action
 
 
+@log_action(__name__, "run_init_command")
 def run_init_command(
     *,
     shell: str = None,
@@ -106,6 +108,7 @@ def run_init_command(
         return
 
 
+@log_action(__name__, "run_detect_shell")
 def run_detect_shell(*, get_console: Callable[[], ConsoleUI]) -> None:
     """
     Detects the current shell being used and prints it to the console.
