@@ -1,4 +1,5 @@
 from typing import Annotated, Optional
+import logging
 
 import typer
 
@@ -15,6 +16,8 @@ from cmdbox.cli.handlers.run_handler import (
 app = typer.Typer(no_args_is_help=True)
 
 cli_guard = make_cli_guard(container.get_console)
+
+log = logging.getLogger(__name__)
 
 
 @app.command()
@@ -78,6 +81,17 @@ def run(
     """
     Run stored commands by using their alias.
     """
+    log.debug(
+        "run.run called. alias=%s, preview=%s, cwd_used=%s, env=%s, capture=%s, shell=%s, emit=%s, verbose=%s",
+        alias,
+        preview_cmd,
+        cwd,
+        env,
+        capture,
+        shell,
+        emit,
+        verbose,
+    )
     if preview_cmd:
         preview(
             alias=alias, cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose
@@ -141,6 +155,15 @@ def preview(
     """
     Output the command that will be executed without actually running it.
     """
+    log.debug(
+        "run.preview called. alias=%s, cwd=%s, env=%s, capture=%s, shell=%s, verbose=%s",
+        alias,
+        cwd,
+        env,
+        capture,
+        shell,
+        verbose,
+    )
     ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose)
     run_preview_command(
         alias=alias,
