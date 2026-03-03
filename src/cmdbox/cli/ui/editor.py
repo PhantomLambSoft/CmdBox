@@ -1,3 +1,4 @@
+import logging
 import os
 import shlex
 import shutil
@@ -10,6 +11,9 @@ from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.layout import Layout
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import TextArea, Frame
+
+
+log = logging.getLogger(__name__)
 
 
 class EditCanceled(Exception):
@@ -33,6 +37,11 @@ def edit_text_fullscreen(initial_text: str, title: str = "Edit") -> str:
     Returns:
         str: The edited text after the user saves and exits the editor.
     """
+    log.info(
+        "Editing text in fullscreen editor for '%s'. text_length=%s",
+        title,
+        len(initial_text),
+    )
     kb = KeyBindings()
 
     text_area = TextArea(
@@ -82,7 +91,9 @@ def edit_text_in_editor(
     Raises:
         RuntimeError: If the editor cannot be found or launched properly.
     """
+    log.info("Opening text editor for '%s'", title_hint)
     editor_cmd = resolve_editor()
+    log.debug("Using editor: %s", editor_cmd)
 
     with tempfile.TemporaryDirectory(prefix="cb_edit_") as td:
         path = Path(td) / f"edit{suffix}"
@@ -96,6 +107,7 @@ def edit_text_in_editor(
         try:
             subprocess.run(cmd, check=False, env=env)
         except FileNotFoundError as e:
+            log.error("Unable to find editor %s", editor_cmd)
             raise RuntimeError(f"Unable to find editor: {editor_cmd}") from e
 
         return path.read_text(encoding="utf-8")
