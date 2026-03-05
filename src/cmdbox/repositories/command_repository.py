@@ -8,7 +8,6 @@ from .errors import (
     ValidationError,
     AliasConflictError,
     UnknownAliasError,
-    UnknownTagError,
     TagAttachError,
     TagDetachError,
     UpdateError,
@@ -20,6 +19,7 @@ from cmdbox.models import Command, Tag, CommandTag
 
 
 class CommandRepository(BaseRepository[Command]):
+
     model = Command
 
     def __init__(self, validator: CommandValidator | None = None):
