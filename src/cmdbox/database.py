@@ -1,7 +1,12 @@
+import logging
 import os
 from peewee import SqliteDatabase
 
 from cmdbox.core.paths import get_app_data_dir
+
+
+log = logging.getLogger(__name__)
+
 
 DB_PATH = get_app_data_dir() / "cmdbox.db"
 DB_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -38,6 +43,7 @@ def init_database(testing: bool = False) -> None:
         db_path = str(DB_PATH)
     db.init(db_path)
     _db_initialized = True
+    log.debug("Database initialized %s", db_path, "in testing mode" if testing else "")
 
 
 def get_db(testing: bool = False) -> SqliteDatabase:
