@@ -4,6 +4,7 @@ from typing import Annotated
 import typer
 
 from cmdbox import container
+from cmdbox.cli.commands.alias_fallback import AliasFallbackGroup
 from cmdbox.cli.ui.presenters.app_presenter import render_version
 from cmdbox.logging_setup.log_handlers import configure_logging
 from cmdbox.logging_setup.log_config import build_log_config, get_logger
@@ -19,6 +20,7 @@ from .commands.settings import app as settings_app
 
 app = typer.Typer(
     name="cb",
+    cls=AliasFallbackGroup,
     help="CmdBox is a CLI tool for storing and recalling commands with many helpful quality of life features.",
     no_args_is_help=True,
 )
