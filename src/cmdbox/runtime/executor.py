@@ -1,3 +1,4 @@
+import logging
 import os
 import sys
 import subprocess
@@ -9,6 +10,10 @@ import typer
 
 from cmdbox.runtime.results import ExecutionResult
 from cmdbox.runtime.shell import build_shell_command
+from cmdbox.logging_setup.log_decorators import log_action
+
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -49,6 +54,7 @@ class RunContext:
 
 class Executor:
 
+    @log_action(__name__, "run_executor_run")
     def run(self, command: str, ctx: RunContext = RunContext()) -> ExecutionResult:
         """
         Executes a shell command in a subprocess, capturing the output and exit code.
@@ -69,6 +75,17 @@ class Executor:
             ExecutionResult: An object containing the executed command, the exit code,
                 and the captured standard output and error streams.
         """
+        log.info(
+            "Executing command: mode=%s, multiline=%s, capture=%s, shell=%s, cmd_len=%s, cwd_set=%s, env_override=%s",
+            "emit" if ctx.emit else "subprocess",
+            self.is_multiline(command),
+            ctx.capture,
+            ctx.shell,
+            len(command),
+            ctx.cwd is not None,
+            ctx.env is not None,
+        )
+
         if ctx.emit:
             self.emit_command(command)
             return None  # Just a safeguard, this should not return if emit is True
@@ -88,6 +105,9 @@ class Executor:
             env=env,
             capture_output=ctx.capture,
         )
+
+        log.info("Command completed with exit code: %s", completed.returncode)
+
         return ExecutionResult(
             command=command,
             exit_code=completed.returncode,
@@ -131,6 +151,7 @@ class Executor:
         """
         return "\n" in command.strip("\n")
 
+    @log_action(__name__, "run_executor_run_multiline_as_script")
     def run_multiline_as_script(
         self, command: str, ctx: RunContext, env: dict[str, str]
     ) -> ExecutionResult:
@@ -155,6 +176,11 @@ class Executor:
         suffix = self.script_suffix_for_shell(shell)
         script_path = None
 
+        if shell == "default":
+            log.debug("exec multiline as default shell, suffix=%s", suffix)
+        else:
+            log.debug("exec multiline as shell=%s, suffix=%s", shell, suffix)
+
         # Normalize newlines so contents is consistent across platforms
         script_body = command.replace("\r\n", "\n").rstrip("\n") + "\n"
 
@@ -172,6 +198,9 @@ class Executor:
                 file.write(script_body)
 
             popen_args = self.build_script_exec_args(script_path, shell=shell)
+            log.debug(
+                "exec multiline args_count=%s header=%s", len(popen_args), bool(header)
+            )
 
             completed = subprocess.run(
                 popen_args,
@@ -180,6 +209,9 @@ class Executor:
                 env=env,
                 capture_output=ctx.capture,
             )
+
+            log.info("Command completed with exit code: %s", completed.returncode)
+
             return ExecutionResult(
                 command=command,
                 exit_code=completed.returncode,
