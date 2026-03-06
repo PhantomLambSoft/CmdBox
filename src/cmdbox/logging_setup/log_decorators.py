@@ -29,7 +29,7 @@ def log_action(
                 result = func(*args, **kwargs)
                 return result
             except Exception:
-                log.exception("%s failed", action_name)
+                log.error("%s failed", action_name)
                 raise
             finally:
                 elapsed_ms = (time.perf_counter() - start_time) * 1000
