@@ -42,7 +42,7 @@ def make_cli_guard(
                 log.debug("Exiting CLI. Typer exit raised.")
                 raise
             except Exception as exc:
-                log.critical(f"Unexpected error.", exc_info=exc)
+                log.critical(f"Unexpected error.", exc_info=True)
                 console = get_console()
                 console.error(f"{exc}")
                 raise typer.Exit(code=1)

@@ -37,6 +37,6 @@ def run_edit_settings(
         console.info("Settings not saved.")
         raise typer.Exit(code=0)
     except Exception as exc:
-        log.error("Error saving settings.", exc_info=exc)
+        log.error("Error saving settings.", exc_info=True)
         console.error(f"Error saving settings: {exc}")
         raise typer.Exit(code=1)
