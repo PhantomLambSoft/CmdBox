@@ -43,7 +43,7 @@ def init_database(testing: bool = False) -> None:
         db_path = str(DB_PATH)
     db.init(db_path)
     _db_initialized = True
-    log.debug("Database initialized %s", db_path, "in testing mode" if testing else "")
+    log.debug("Database initialized %s", "in testing mode" if testing else "")
 
 
 def get_db(testing: bool = False) -> SqliteDatabase:
