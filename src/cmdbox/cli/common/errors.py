@@ -5,7 +5,7 @@ from typing import Callable
 import typer
 
 from cmdbox.cli.ui.console import ConsoleUI
-
+from cmdbox.exceptions import CmdboxError
 
 log = logging.getLogger(__name__)
 
@@ -41,10 +41,16 @@ def make_cli_guard(
             except typer.Exit:
                 log.debug("Exiting CLI. Typer exit raised.")
                 raise
-            except Exception as exc:
-                log.critical(f"Unexpected error.", exc_info=True)
+            except CmdboxError as exc:
+                log.error(exc)
                 console = get_console()
-                console.error(f"{exc}")
+                console.error(str(exc))
+                raise typer.Exit(code=1)
+            except Exception as exc:
+                message = f"An unexpected error occurred: {exc}"
+                log.critical(message, exc_info=True)
+                console = get_console()
+                console.error(message)
                 raise typer.Exit(code=1)
 
         return wrapper
