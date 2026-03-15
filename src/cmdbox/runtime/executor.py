@@ -172,7 +172,7 @@ class Executor:
             ExecutionResult: An object containing the executed command, its exit code, and captured
             standard output and error streams.
         """
-        shell = (ctx.shell or "").lower()
+        shell = (ctx.shell or "default").lower()
         suffix = self.script_suffix_for_shell(shell)
         script_path = None
 
@@ -239,6 +239,8 @@ class Executor:
         Returns:
             str: The appropriate script file suffix for the given shell.
         """
+        if shell == "default":
+            return ".cmd" if sys.platform == "win32" else ".sh"
         if "cmd" in shell or shell == "cmd.exe":
             return ".cmd"
         if "powershell" in shell or shell == "pwsh":
@@ -291,6 +293,11 @@ class Executor:
         Returns:
             list[str]: A list of arguments that, when executed, run the specified script in the given shell.
         """
+        if shell == "default":
+            if sys.platform == "win32":
+                return ["cmd.exe", "/d", "/s", "/c", script_path]
+            return ["sh", script_path]
+
         if "cmd" in shell or shell == "cmd.exe":
             return ["cmd.exe", "/d", "/s", "/c", script_path]
 
