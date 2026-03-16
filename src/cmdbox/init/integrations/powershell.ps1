@@ -10,5 +10,5 @@ function cbe
     {
         return
     }
-    Invoke-Expression $out
+    Invoke-Expression ($out -join "`n")
 }
