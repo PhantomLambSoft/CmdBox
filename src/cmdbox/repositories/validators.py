@@ -187,7 +187,7 @@ class VariableValidator:
 
 
 @dataclass(frozen=True)
-class VariableValidatorConfig:
+class TagValidatorConfig:
     """Configuration for variable validation rules."""
 
     reserved_names: frozenset[str] = frozenset(
@@ -207,8 +207,8 @@ class VariableValidatorConfig:
 
 class TagValidator:
 
-    def __init__(self, config: VariableValidatorConfig | None = None):
-        self.config = config or VariableValidatorConfig()
+    def __init__(self, config: TagValidatorConfig | None = None):
+        self.config = config or TagValidatorConfig()
 
     def validate_create(self, name: str, description: str | None) -> None:
         self.validate_name(name)
