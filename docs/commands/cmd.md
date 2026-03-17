@@ -18,15 +18,24 @@ Some of these subcommands also have aliases available. These will be discussed i
 
 The `add` subcommand is how you add new commands to your CmdBox database.
 
-The fields of a command that you can edit are:
-- `alias` - The name you use to recall your command.
-- `template` - The part of the command that actually runs in the shell.
-- `description` - A description of what the command does.
-- `tags` - A list of tags that you can use to categorize your commands.
+When creating a command, you can provide an alias, template, and description in one line. Alias and template are arguments,
 
-Each stored command also has additional metadata fields that are stored/updated by CmdBox, and are not editable. These 
-are meant to provide you with extra information about the command that you may find useful. They are:
-- `date_created`
-- `last_updated`
-- `used`
-- `last_used`
+```console
+> cb cmd add my-command "echo Hello World!" --description "This is a command that prints 'Hello World!' to the console."
+```
+
+Alias and template do not a leading name. Description does.
+
+The field that can be entered when creating a command are:
+- Alias
+- Template
+- Description
+- Tags
+
+Any of these fields can be left blank, and you will be prompted for them. If you do not wish to provide them, you can 
+simply leave them blank, and press enter.
+
+```console
+> cb add
+```
+
