@@ -40,10 +40,14 @@ class AliasFallbackGroup(TyperGroup):
         forwarded_params = [p for p in run_cmd.params if p.name != "alias"]
 
         @click.command(
-            cmd_name, params=forwarded_params, help=f"Run stored command '{cmd_name}'."
+            cmd_name,
+            params=forwarded_params,
+            help=f"Run stored command '{cmd_name}'.",
+            context_settings=run_cmd.context_settings,
         )
         @click.pass_context
         def _alias_cmd(inner_ctx: click.Context, **kwargs):
+            inner_ctx.meta["_extra_args"] = inner_ctx.args[:]
             inner_ctx.invoke(run_cmd, alias=cmd_name, **kwargs)
 
         return _alias_cmd

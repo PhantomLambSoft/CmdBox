@@ -105,7 +105,10 @@ def run(
             ctx=ctx,
         )
         return
-    runtime_vars = parse_runtime_vars(ctx.args)
+
+    extra_args = ctx.args if ctx.args else ctx.meta.get("_extra_args", [])
+    runtime_vars = parse_runtime_vars(extra_args)
+
     ctx = RawRunContext(
         cwd=cwd, env=env, capture=capture, shell=shell, emit=emit, verbose=verbose
     )
