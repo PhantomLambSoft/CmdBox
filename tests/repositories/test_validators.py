@@ -3,8 +3,9 @@ import unittest
 from cmdbox.repositories.validators import (
     CommandValidator,
     CommandValidatorConfig,
-    VariableValidator,
     VariableValidatorConfig,
+    VariableValidator,
+    TagValidatorConfig,
     TagValidator,
 )
 from cmdbox.repositories.errors import ValidationError
@@ -200,7 +201,7 @@ class TestTagValidator(unittest.TestCase):
     def setUp(self):
         # Note: TagValidator currently reuses a VariableValidatorConfig with an extra
         # max_description_length field.
-        self.config = VariableValidatorConfig(
+        self.config = TagValidatorConfig(
             reserved_names=frozenset({"help", "init", "rm"}),
             max_name_length=5,
             max_description_length=8,
