@@ -166,6 +166,11 @@ cb --help
 | pip | `pip uninstall cmd-box` |
 | Source | Deactivate the virtual environment and delete the cloned folder |
 
+> **Note:** uninstalling CmdBox will **not** remove any of the commands, variables, tags, or settings that it created. That data
+is stored separately and will remain on your system. To remove this data, delete the CmdBox data folder from your system.
+
+[comment]: # (TODO: provide link to dat folder doc)
+
 ---
 
 ## Need Help?
