@@ -135,6 +135,14 @@ class VariableValidatorConfig:
             "add",
             "rm",
             "delete",
+            # Reserved because they are options to the run command and can conflict when dynamically called
+            "preview",
+            "cwd",
+            "env",
+            "capture",
+            "shell",
+            "emit",
+            "verbose",
         }
     )
     max_name_length: int = 100
