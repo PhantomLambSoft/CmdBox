@@ -13,6 +13,9 @@ It is designed for power-users, developers, sysadmins, and anyone who wants a be
 Many terminal users struggle with remember complex commands, relying on shell history, notes, or online searches to recall
 various commands along with all of their options and flags. As workflows grow, this becomes inefficient and fragile.
 
+Most users have commands that they use frequently. Sometimes these commands can be long and complex, with many options and flags.
+CmdBox gives you a shortcut to quickly recall and execute these commands without having to enter the full command text every time.
+
 CmdBox gives you:
 - Named commands
 - Parameterized templates
@@ -78,5 +81,5 @@ Or install from source:
 ```bash
 git clone https://github.com/MalloyDelacroix/cmdbox.git
 cd cmdbox
-pip install -e .
+pip install .
 ```
