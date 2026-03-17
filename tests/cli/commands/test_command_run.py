@@ -210,3 +210,54 @@ class TestCommandRun(unittest.TestCase):
         args, kwargs = mock_run_run_command.call_args
         self.assertEqual(kwargs["alias"], alias)
         self.assertEqual(kwargs["runtime_vars"], {"name": "Homer"})
+
+    def test_parse_runtime_vars_empty(self):
+        self.assertEqual(command_run.parse_runtime_vars([]), {})
+
+    def test_parse_runtime_vars_single(self):
+        self.assertEqual(
+            command_run.parse_runtime_vars(["--key", "value"]), {"key": "value"}
+        )
+
+    def test_parse_runtime_vars_multiple(self):
+        args = ["--key1", "value1", "--key2", "value2"]
+        self.assertEqual(
+            command_run.parse_runtime_vars(args), {"key1": "value1", "key2": "value2"}
+        )
+
+    def test_parse_runtime_vars_no_value(self):
+        # Key without value at the end
+        self.assertEqual(command_run.parse_runtime_vars(["--key"]), {})
+        # Key followed by another key
+        self.assertEqual(
+            command_run.parse_runtime_vars(["--key1", "--key2", "value2"]),
+            {"key2": "value2"},
+        )
+
+    def test_parse_runtime_vars_ignore_non_prefixed(self):
+        self.assertEqual(
+            command_run.parse_runtime_vars(["pos1", "--key", "value", "pos2"]),
+            {"key": "value"},
+        )
+
+    def test_parse_runtime_vars_triple_dash(self):
+        # lstrip("-") will remove all leading dashes
+        self.assertEqual(
+            command_run.parse_runtime_vars(["---key", "value"]), {"key": "value"}
+        )
+
+    def test_preview_runtime_var_parsing(self):
+        # Verify that preview also calls parse_runtime_vars
+        with patch(
+            "cmdbox.cli.commands.command_run.run_preview_command"
+        ) as mock_run_preview_command:
+            with patch("cmdbox.cli.commands.command_run.container") as mock_container:
+                alias = "test-alias"
+                command_run.preview(
+                    alias=alias, ctx=self.make_mock_ctx(["--name", "Homer"])
+                )
+
+                mock_run_preview_command.assert_called_once()
+                kwargs = mock_run_preview_command.call_args[1]
+                self.assertEqual(kwargs["alias"], alias)
+                self.assertEqual(kwargs["runtime_vars"], {"name": "Homer"})
