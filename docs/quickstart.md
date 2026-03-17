@@ -3,20 +3,25 @@
 This guide gets you from zero to running your first saved commands in under 5 minutes.
 
 ### 1. Save Your First Command
-Pick a command you use regularly. For this example, we'll save a directory listing.
+Pick a command you use regularly. For this example, we'll save a command that send 4 test pings to your own machine 
+to verify that your network is working.
 
 ```console
-cb cmd add list-home "ls -la ~"
+cb cmd add ping-test "ping -n 4 127.0.0.1"
 ```
-You've just saved the command `ls -la ~` under the alias `list-home`.
+>Here, `ping-test` is the alias of your command, and `ping -n 4 127.0.0.1` is the command template. You will also be prompted 
+to enter a description for your command and any tags that you want to associate with it. Both of these options can be left 
+blank. Only an alias and command template are required.
+
+You've just saved the command `ping -n 4 127.0.0.1` under the alias `ping-test`.
 
 ### 2. Run It
 
 ```console
-cb list-home
+cb ping-test
 ```
 
-CmdBox looks up `list-home` and runs the saved command.
+CmdBox looks up `ping-test` and runs the saved command.
 
 ### 3. View Your Saved Commands
 
@@ -27,7 +32,8 @@ cb cmd list
 This lists every command you've saved, along with their alias and description.
 
 ### 4. Save a Command With a Variable
-Variables make commands reusable. Use `<name>` as a placeholder:
+Variables make commands reusable. They can be supplied at runtime, or saved along with commands to be reused in other commands.
+For this example we'll supply the variable at runtime.
 
 ```console
 cb cmd add greet "echo Hello, <name>!"
@@ -41,7 +47,7 @@ Output: `Hello, Max!`
 ### 5. Remove a Command
 
 ```console
-cb cmd remove list-home
+cb cmd remove ping-test
 ```
 
 That's the core loop. From here, explore:
