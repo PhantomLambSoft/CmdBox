@@ -12,7 +12,6 @@ from prompt_toolkit.layout import Layout
 from prompt_toolkit.styles import Style
 from prompt_toolkit.widgets import TextArea, Frame
 
-
 log = logging.getLogger(__name__)
 
 

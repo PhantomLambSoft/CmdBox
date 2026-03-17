@@ -10,7 +10,6 @@ from cmdbox.cli.ui.primitives import (
 )
 from cmdbox.models import Variable
 
-
 VARIABLE_COLUMNS: dict[str, tuple[str, dict, Callable[[Variable], object]]] = {
     "name": (
         "Name",

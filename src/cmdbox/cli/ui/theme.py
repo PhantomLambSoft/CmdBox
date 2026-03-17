@@ -1,6 +1,5 @@
 from rich.theme import Theme
 
-
 CMDBOX_THEME = Theme(
     {
         # Core text

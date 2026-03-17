@@ -17,7 +17,6 @@ from .commands.tag_crud import app as tag_crud_app
 from .commands.init import app as init_app
 from .commands.settings import app as settings_app
 
-
 app = typer.Typer(
     name="cb",
     cls=AliasFallbackGroup,

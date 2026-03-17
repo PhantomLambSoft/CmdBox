@@ -9,7 +9,6 @@ from cmdbox.cli.completions.fields import tag_editable_field_options, tag_field_
 from cmdbox.cli.completions.tags import complete_tag_names
 from cmdbox.cli.handlers import tag_handlers
 
-
 app = typer.Typer(no_args_is_help=True)
 
 cli_guard = make_cli_guard(container.get_console)

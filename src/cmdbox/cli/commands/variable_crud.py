@@ -10,7 +10,6 @@ from cmdbox.cli.completions.variables import complete_variable_names
 from cmdbox.cli.completions.tags import complete_tag_names
 from cmdbox.cli.handlers import variable_handlers
 
-
 app = typer.Typer(no_args_is_help=True)
 
 cli_guard = make_cli_guard(container.get_console)

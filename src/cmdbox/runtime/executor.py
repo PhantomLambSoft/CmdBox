@@ -12,7 +12,6 @@ from cmdbox.runtime.results import ExecutionResult
 from cmdbox.runtime.shell import build_shell_command
 from cmdbox.logging_setup.log_decorators import log_action
 
-
 log = logging.getLogger(__name__)
 
 

@@ -12,7 +12,6 @@ from cmdbox.cli.handlers.run_handler import (
     run_run_command,
 )
 
-
 app = typer.Typer(no_args_is_help=True)
 
 cli_guard = make_cli_guard(container.get_console)

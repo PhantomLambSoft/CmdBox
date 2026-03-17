@@ -14,7 +14,6 @@ from cmdbox.services.run_service import RunService
 from cmdbox.settings.models import Settings
 from cmdbox.logging_setup.log_decorators import log_action
 
-
 log = logging.getLogger(__name__)
 
 

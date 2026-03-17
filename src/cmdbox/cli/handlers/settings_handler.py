@@ -8,7 +8,6 @@ from cmdbox.cli.ui.editor import edit_text_fullscreen, EditCanceled, edit_text_i
 from cmdbox.logging_setup.log_decorators import log_action
 from cmdbox.settings.settings_service import SettingsService
 
-
 log = logging.getLogger(__name__)
 
 
