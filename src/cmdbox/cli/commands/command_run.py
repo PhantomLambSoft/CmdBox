@@ -19,7 +19,9 @@ cli_guard = make_cli_guard(container.get_console)
 log = logging.getLogger(__name__)
 
 
-@app.command()
+@app.command(
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
+)
 @cli_guard
 def run(
     alias: Annotated[
@@ -76,6 +78,7 @@ def run(
             help="Outputs additional information alongside the command output.",
         ),
     ] = None,
+    ctx: typer.Context,
 ) -> None:
     """
     Run stored commands by using their alias.
@@ -93,14 +96,22 @@ def run(
     )
     if preview_cmd:
         preview(
-            alias=alias, cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose
+            alias=alias,
+            cwd=cwd,
+            env=env,
+            capture=capture,
+            shell=shell,
+            verbose=verbose,
+            ctx=ctx,
         )
         return
+    runtime_vars = parse_runtime_vars(ctx.args)
     ctx = RawRunContext(
         cwd=cwd, env=env, capture=capture, shell=shell, emit=emit, verbose=verbose
     )
     run_run_command(
         alias=alias,
+        runtime_vars=runtime_vars,
         run_ctx=ctx,
         get_run_service=container.get_run_service,
         get_settings=container.get_settings,
@@ -108,7 +119,10 @@ def run(
     )
 
 
-@app.command("preview")
+@app.command(
+    "preview",
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)
 @cli_guard
 def preview(
     alias: Annotated[
@@ -150,6 +164,7 @@ def preview(
             help="Outputs additional information alongside the command output.",
         ),
     ] = None,
+    ctx: typer.Context,
 ) -> None:
     """
     Output the command that will be executed without actually running it.
@@ -163,11 +178,48 @@ def preview(
         shell,
         verbose,
     )
+    runtime_vars = parse_runtime_vars(ctx.args)
     ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose)
     run_preview_command(
         alias=alias,
+        runtime_vars=runtime_vars,
         run_ctx=ctx,
         get_run_service=container.get_run_service,
         get_settings=container.get_settings,
         get_console=container.get_console,
     )
+
+
+def parse_runtime_vars(args: list[str]) -> dict[str, str]:
+    """
+    Parses a list of runtime arguments into a dictionary of key-value pairs.
+
+    This function processes a list of command-line arguments, extracting argument
+    keys prefixed with `--` and their corresponding values. Arguments without
+    values will not be included in the resulting dictionary. Unrecognized or
+    improperly formatted tokens are ignored.
+
+    Args:
+        args (list[str]): A list of strings, where each string represents a
+            command-line argument. Keys should be prefixed with `--` and may
+            optionally be followed by a value.
+
+    Returns:
+        dict[str, str]: A dictionary where keys are argument names (without the
+            `--` prefix) and values are their associated arguments. Only valid
+            key-value pairs are included.
+    """
+    result = {}
+    x = 0
+    while x < len(args):
+        token = args[x]
+        if token.startswith("--"):
+            key = token.lstrip("-")
+            if x + 1 < len(args) and not args[x + 1].startswith("--"):
+                result[key] = args[x + 1]
+                x += 2
+            else:
+                x += 1
+        else:
+            x += 1
+    return result

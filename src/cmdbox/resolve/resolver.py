@@ -30,7 +30,12 @@ class Resolver:
         self._strict = strict
         self._max_depth = max_depth
 
-    def resolve(self, template: str, root_label: str = "<input>") -> ResolveResult:
+    def resolve(
+        self,
+        template: str,
+        root_label: str = "<input>",
+        runtime_vars: dict[str, str] | None = None,
+    ) -> ResolveResult:
         """
         Resolves a given template string by iterating through its elements and performing
         text and stack manipulations until a final result is obtained. This method employs
@@ -41,6 +46,8 @@ class Resolver:
             template (str): The template string to resolve.
             root_label (str): The initial label to use as the root for resolution. Defaults
                 to "<input>".
+            runtime_vars (dict[str, str] | None): Variables supplied by the user at runtime
+                to be used during resolution. Defaults to None.
 
         Returns:
             ResolveResult: The result of the resolution, including the resolved text
@@ -48,7 +55,13 @@ class Resolver:
         """
         trace: list[TraceStep] = []
         stack: list[str] = [root_label]
-        text = self._resolve_inner(template, stack=stack, depth=0, trace=trace)
+        text = self._resolve_inner(
+            template,
+            stack=stack,
+            depth=0,
+            trace=trace,
+            runtime_vars=runtime_vars or {},
+        )
         return ResolveResult(text=text, trace=trace)
 
     def _resolve_inner(
@@ -58,6 +71,7 @@ class Resolver:
         stack: list[str],
         depth: int,
         trace: list[TraceStep],
+        runtime_vars: dict[str, str] = None,
     ) -> str:
         """
         Resolves the given template string with nested tokens, handling escapes and
@@ -106,6 +120,7 @@ class Resolver:
                     stack=stack,
                     depth=depth,
                     trace=trace,
+                    runtime_vars=runtime_vars,
                 )
                 out.append(replacement)
                 i = next_i
@@ -164,6 +179,7 @@ class Resolver:
         stack: list[str],
         depth: int,
         trace: list[TraceStep],
+        runtime_vars: dict[str, str] | None = None,
     ) -> str:
         """
         Expands a token enclosed within angular brackets (<...>) into its resolved value
@@ -188,45 +204,55 @@ class Resolver:
             return raw_token
         kind, key = self._parse_kind_and_key(token_inner)
 
-        if kind == RefKind.COMMAND:
-            rec = self._lookup.get_command(key)
+        if kind == RefKind.VARIABLE:
+
+            # Runtime vars override DB vars, check for them first
+            if runtime_vars and key in runtime_vars:
+                value = runtime_vars[key]
+                trace.append(
+                    TraceStep(kind=RefKind.VARIABLE, key=key, expanded_to=value)
+                )
+                return value
+
+            rec = self._lookup.get_variable(key)
             if rec is None:
                 if self._strict:
-                    raise UnknownReference("command", key)
+                    raise UnknownReference("variable", key)
                 return raw_token
 
-            label = f"cmd:{rec.alias}"
+            label = f"var:{rec.name}"
             self._check_cycle(label, stack)
             stack.append(label)
             try:
                 expanded = self._resolve_inner(
-                    rec.template, stack=stack, depth=depth + 1, trace=trace
+                    rec.value, stack=stack, depth=depth + 1, trace=trace
                 )
             finally:
                 stack.pop()
+
             trace.append(
-                TraceStep(kind=RefKind.COMMAND, key=rec.alias, expanded_to=expanded)
+                TraceStep(kind=RefKind.VARIABLE, key=rec.name, expanded_to=expanded)
             )
             return expanded
 
-        rec = self._lookup.get_variable(key)
+        # Fallback to command lookup
+        rec = self._lookup.get_command(key)
         if rec is None:
             if self._strict:
-                raise UnknownReference("variable", key)
+                raise UnknownReference("command", key)
             return raw_token
 
-        label = f"var:{rec.name}"
+        label = f"cmd:{rec.alias}"
         self._check_cycle(label, stack)
         stack.append(label)
         try:
             expanded = self._resolve_inner(
-                rec.value, stack=stack, depth=depth + 1, trace=trace
+                rec.template, stack=stack, depth=depth + 1, trace=trace
             )
         finally:
             stack.pop()
-
         trace.append(
-            TraceStep(kind=RefKind.VARIABLE, key=rec.name, expanded_to=expanded)
+            TraceStep(kind=RefKind.COMMAND, key=rec.alias, expanded_to=expanded)
         )
         return expanded
 

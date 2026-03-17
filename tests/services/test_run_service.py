@@ -45,7 +45,7 @@ class TestRunService(unittest.TestCase):
         # Assert
         self.assertEqual(result, execution_result)
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
-        self.mock_resolver.resolve.assert_called_once_with(template)
+        self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_called_once_with(resolved_text, ctx=None)
 
     def test_preview_success(self):
@@ -69,7 +69,7 @@ class TestRunService(unittest.TestCase):
         # Assert
         self.assertEqual(result, resolve_result)
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
-        self.mock_resolver.resolve.assert_called_once_with(template)
+        self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_not_called()
 
     def test_run_command_not_found(self):
@@ -116,7 +116,7 @@ class TestRunService(unittest.TestCase):
 
         self.assertEqual(str(context.exception), "Cycle detected")
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
-        self.mock_resolver.resolve.assert_called_once_with(template)
+        self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_not_called()
 
     def test_preview_resolution_failure(self):
@@ -136,4 +136,4 @@ class TestRunService(unittest.TestCase):
 
         self.assertEqual(str(context.exception), "Cycle detected")
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
-        self.mock_resolver.resolve.assert_called_once_with(template)
+        self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)

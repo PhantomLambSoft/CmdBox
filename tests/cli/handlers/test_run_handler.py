@@ -81,6 +81,7 @@ class TestRunHandler(unittest.TestCase):
 
         run_run_command(
             alias="test-alias",
+            runtime_vars=None,
             run_ctx=RawRunContext(verbose=True),
             get_run_service=lambda: mock_run_service,
             get_settings=lambda: mock_settings,
@@ -88,7 +89,7 @@ class TestRunHandler(unittest.TestCase):
         )
 
         mock_run_service.run.assert_called_once_with(
-            "test-alias", ctx=RunContext(verbose=True)
+            "test-alias", runtime_vars=None, ctx=RunContext(verbose=True)
         )
         mock_render.assert_called_once_with(mock_ex_result)
         mock_console.print.assert_called_once_with("rendered_result")
@@ -105,6 +106,7 @@ class TestRunHandler(unittest.TestCase):
 
         run_run_command(
             alias="test-alias",
+            runtime_vars=None,
             run_ctx=RawRunContext(verbose=False),
             get_run_service=lambda: mock_run_service,
             get_settings=lambda: mock_settings,
@@ -112,7 +114,7 @@ class TestRunHandler(unittest.TestCase):
         )
 
         mock_run_service.run.assert_called_once_with(
-            "test-alias", ctx=RunContext(verbose=False)
+            "test-alias", runtime_vars=None, ctx=RunContext(verbose=False)
         )
         mock_render.assert_not_called()
         mock_console.print.assert_not_called()
@@ -130,6 +132,7 @@ class TestRunHandler(unittest.TestCase):
 
         run_run_command(
             alias="test-alias",
+            runtime_vars=None,
             run_ctx=RawRunContext(verbose=None),
             get_run_service=lambda: mock_run_service,
             get_settings=lambda: mock_settings,
@@ -137,7 +140,7 @@ class TestRunHandler(unittest.TestCase):
         )
 
         mock_run_service.run.assert_called_once_with(
-            "test-alias", ctx=RunContext(verbose=True)
+            "test-alias", runtime_vars=None, ctx=RunContext(verbose=True)
         )
         mock_render.assert_called_once_with(mock_ex_result)
         mock_console.print.assert_called_once_with("rendered_result")
@@ -176,6 +179,7 @@ class TestRunHandler(unittest.TestCase):
 
         run_run_command(
             alias="test-alias",
+            runtime_vars=None,
             run_ctx=raw_ctx,
             get_run_service=lambda: mock_run_service,
             get_settings=lambda: mock_settings,
@@ -183,7 +187,32 @@ class TestRunHandler(unittest.TestCase):
         )
 
         mock_run_service.run.assert_called_once_with(
-            "test-alias", ctx=RunContext(cwd="/tmp")
+            "test-alias", runtime_vars=None, ctx=RunContext(cwd="/tmp")
+        )
+
+    def test_run_run_command_with_runtime_vars(self):
+        mock_run_service = MagicMock()
+        mock_settings = MagicMock()
+        mock_console = MagicMock()
+        mock_ex_result = ExecutionResult(
+            command="echo hello", exit_code=0, stdout="hello", stderr=""
+        )
+        mock_run_service.run.return_value = mock_ex_result
+        raw_ctx = RawRunContext(cwd="/tmp")
+
+        vars = {"VAR1": "value1", "VAR2": "value2"}
+
+        run_run_command(
+            alias="test-alias",
+            runtime_vars=vars,
+            run_ctx=raw_ctx,
+            get_run_service=lambda: mock_run_service,
+            get_settings=lambda: mock_settings,
+            get_console=lambda: mock_console,
+        )
+
+        mock_run_service.run.assert_called_once_with(
+            "test-alias", runtime_vars=vars, ctx=RunContext(cwd="/tmp")
         )
 
     @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
@@ -201,9 +230,12 @@ class TestRunHandler(unittest.TestCase):
             get_run_service=lambda: mock_run_service,
             get_settings=lambda: mock_settings,
             get_console=lambda: mock_console,
+            runtime_vars=None,
         )
 
-        mock_run_service.preview.assert_called_once_with("test-alias")
+        mock_run_service.preview.assert_called_once_with(
+            "test-alias", runtime_vars=None
+        )
         mock_render.assert_called_once_with(mock_resolve_result, ctx=RunContext())
         mock_console.print.assert_called_once_with("rendered_preview")
 
@@ -220,12 +252,15 @@ class TestRunHandler(unittest.TestCase):
         run_preview_command(
             alias="test-alias",
             run_ctx=raw_ctx,
+            runtime_vars=None,
             get_run_service=lambda: mock_run_service,
             get_settings=lambda: mock_settings,
             get_console=lambda: mock_console,
         )
 
-        mock_run_service.preview.assert_called_once_with("test-alias")
+        mock_run_service.preview.assert_called_once_with(
+            "test-alias", runtime_vars=None
+        )
         mock_render.assert_called_once_with(
             mock_resolve_result, ctx=RunContext(cwd="/tmp")
         )

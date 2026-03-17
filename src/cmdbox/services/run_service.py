@@ -33,7 +33,12 @@ class RunService:
         self._resolver = resolver
         self._executor = executor
 
-    def run(self, command_alias: str, ctx: RunContext | None = None) -> ExecutionResult:
+    def run(
+        self,
+        command_alias: str,
+        ctx: RunContext | None = None,
+        runtime_vars: dict[str, str] | None = None,
+    ) -> ExecutionResult:
         """
         Executes a command based on the given alias.
 
@@ -43,15 +48,18 @@ class RunService:
         Args:
             command_alias (str): The alias for the command to be executed.
             ctx (RunContext | None): The context for running the command.
+            runtime_vars (dict[str, str] | None): Runtime variables to be used during command execution.
 
         Returns:
             ExecutionResult: The result of executing the command.
         """
         cmd = self._repo.get_by_alias(command_alias)
-        resolved_cmd = self._resolver.resolve(cmd.template)
+        resolved_cmd = self._resolver.resolve(cmd.template, runtime_vars=runtime_vars)
         return self._executor.run(resolved_cmd.text, ctx=ctx)
 
-    def preview(self, command_alias: str) -> ResolveResult:
+    def preview(
+        self, command_alias: str, runtime_vars: dict[str, str] | None = None
+    ) -> ResolveResult:
         """
         Retrieves and resolves a command template based on its alias.
 
@@ -61,9 +69,10 @@ class RunService:
 
         Args:
             command_alias (str): The alias of the command to be resolved.
+            runtime_vars (dict[str, str] | None): Runtime variables to be used during command resolution.
 
         Returns:
             ResolveResult: The resolved result of the command template.
         """
         cmd = self._repo.get_by_alias(command_alias)
-        return self._resolver.resolve(cmd.template)
+        return self._resolver.resolve(cmd.template, runtime_vars=runtime_vars)
