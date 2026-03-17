@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from cmdbox.services.run_service import RunService
 from cmdbox.models import Command
-from cmdbox.resolve.types import ResolveResult
+from cmdbox.resolve.type_defs import ResolveResult
 from cmdbox.runtime.results import ExecutionResult
 from cmdbox.repositories.errors import UnknownAliasError
 from cmdbox.resolve.errors import ResolutionError

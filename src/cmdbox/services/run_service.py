@@ -1,6 +1,6 @@
 from cmdbox.repositories.command_repository import CommandRepository
 from cmdbox.resolve.resolver import Resolver
-from cmdbox.resolve.types import ResolveResult
+from cmdbox.resolve.type_defs import ResolveResult
 from cmdbox.runtime.executor import Executor, RunContext
 from cmdbox.runtime.results import ExecutionResult
 

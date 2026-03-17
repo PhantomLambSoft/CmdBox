@@ -2,7 +2,7 @@ from typing import Optional
 
 from .errors import MaxDepthExceeded, UnknownReference, CycleDetectionError
 from .lookup import ResolverLookup
-from .types import ResolveResult, TraceStep, RefKind
+from .type_defs import ResolveResult, TraceStep, RefKind
 
 
 class Resolver:

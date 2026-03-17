@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 from cmdbox.resolve.lookup import MemoizedLookup, ResolverLookup
-from cmdbox.resolve.types import CommandRecord, VariableRecord
+from cmdbox.resolve.type_defs import CommandRecord, VariableRecord
 
 
 class TestLookup(unittest.TestCase):

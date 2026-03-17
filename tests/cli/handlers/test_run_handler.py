@@ -10,7 +10,7 @@ from cmdbox.cli.handlers.run_handler import (
 )
 from cmdbox.runtime.executor import RunContext
 from cmdbox.runtime.results import ExecutionResult
-from cmdbox.resolve.types import ResolveResult
+from cmdbox.resolve.type_defs import ResolveResult
 
 
 class TestRunHandler(unittest.TestCase):

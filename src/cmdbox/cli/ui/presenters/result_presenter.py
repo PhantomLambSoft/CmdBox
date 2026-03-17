@@ -11,7 +11,7 @@ from cmdbox.cli.ui.primitives import (
     col,
 )
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
-from cmdbox.resolve.types import ResolveResult
+from cmdbox.resolve.type_defs import ResolveResult
 from cmdbox.runtime.executor import RunContext
 from cmdbox.runtime.results import ExecutionResult
 

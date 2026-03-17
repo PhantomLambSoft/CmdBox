@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from cmdbox.resolve.resolver import Resolver
 from cmdbox.resolve.lookup import ResolverLookup
-from cmdbox.resolve.types import CommandRecord, VariableRecord, RefKind, TraceStep
+from cmdbox.resolve.type_defs import CommandRecord, VariableRecord, RefKind, TraceStep
 from cmdbox.resolve.errors import (
     MaxDepthExceeded,
     UnknownReference,

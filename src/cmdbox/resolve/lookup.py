@@ -1,6 +1,6 @@
 from typing import Protocol, Optional
 
-from .types import CommandRecord, VariableRecord
+from .type_defs import CommandRecord, VariableRecord
 from ..repositories.command_repository import CommandRepository
 from ..repositories.variable_repository import VariableRepository
 
