@@ -122,7 +122,7 @@ which fields to update by using the `--edit-fields` (or `-ef`) flag.
 !!! tip "Aliases"
     `list` can also be called as `ls`.
 
-The `list` command displays all the commands you have stored in your database.
+The `list` command displays all commands you have stored in your database.
 
 ```console
 > cb cmd list
@@ -130,7 +130,7 @@ The `list` command displays all the commands you have stored in your database.
 ![Command get output](../assets/list-output.svg)
 
 By default, only the alias, template, and description of each command are displayed, and the default order is by alias.
-The default fields and ordering can be adjusted in your settings, or by supplying additonal subcommands to the `list` command.
+The default fields and ordering can be adjusted in your settings, or by supplying additonal options to the `list` command.
 
 To change the order, use the `--order` flag and specify the field you want to order by.
 
@@ -138,7 +138,7 @@ To change the order, use the `--order` flag and specify the field you want to or
 > cb cmd list --order description
 ```
 
-![Command get output](../assets/list-output-order-by-description.svg)
+![Command get output](../assets/list-output-order-by-description-output.svg)
 
 To change the displayed fields, use the `--fields` flag and specify the fields you want to display.
 
@@ -147,3 +147,95 @@ To change the displayed fields, use the `--fields` flag and specify the fields y
 ```
 
 ![Command get output](../assets/list-output-alias-template-only.svg)
+
+If you have a large database of commands, you may only want to list some of them. For this, you can use the `--limit` flag.
+
+```console
+> cb cmd list --limit 10
+```
+
+List can also be limited to only commands that feature a specific tag.
+
+```console
+> cb cmd list --tag dev
+```
+
+The `--tag` flag can be used multiple times to list commands that feature multiple tags.
+
+```console
+> cb cmd list --tag dev --tag docker --tag production
+```
+
+!!! tip
+    When using multiple `--tag` flags, commands that feature any of those tags will be displayed.
+
+
+## `search`
+
+!!! tip "Aliases"
+    `search` can also be called as `find`.
+
+While `list` lets you filter your commands by tag, search lets you filter your commands by any of the available fields.
+By default, search is limited to the alias and template fields.
+
+```console
+> cb cmd search pip
+```
+
+![Command get output](../assets/search-output-default.svg)
+
+Using the `--in` flag, you can limit your search to only the fields you want to search in.
+
+```console
+> cb cmd search listening --in description
+```
+
+![Command get output](../assets/search-output-in-description.svg)
+
+And if you only want to see certain fields in the results output, you can use the `--field` flag.
+
+```console
+> cb cmd search listening --in description --field alias
+```
+
+![Command get output](../assets/search-output-field-alias.svg)
+
+As will the list command, you can also limit the number of results returned by using the `--limit` flag.
+
+```console
+> cb search pip --limit 3
+```
+
+## `delete`
+
+!!! tip "Aliases"
+    `delete` can also be called as `rm`, `del`, or `remove`.
+
+The `delete` command is used to remove a command from your database. This is a pretty simple one, it only takes the alias
+of the command you want to remove.
+
+```console
+> cb delete prune-docker
+```
+
+## `tag`
+
+The `tag` command is used to add tags to a command.
+
+To add a tag, supply the command with the alias of the command you want to tag, followed by the name of the tag.
+
+```console
+> cb cmd tag pip-outdated dev
+```
+
+!!! tip "Autocomplete"
+    Autocomplete is available for tags.
+
+
+## `untag`
+
+Untag works the same as `tag`.
+
+```console
+> cb cmd untag pip-outdated dev
+```
