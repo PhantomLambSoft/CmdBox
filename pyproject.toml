@@ -26,6 +26,7 @@ dependencies = [
 dev = [
     "black>=25.0.0",
     "isort>=5.13.0",
+    "mkdocs>=1.6.1",
     "ruff>=0.14.0",
     "mypy>=1.10.0",
     "pytest>=8.0.0",
