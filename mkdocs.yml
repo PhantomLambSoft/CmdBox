@@ -1,1 +1,59 @@
 site_name: CmdBox
+site_description: Store, organize, and run your commands with ease.
+site_url: https://MalloyDelacroix.github.io/cmdbox
+repo_url: https://github.com/MalloyDelacroix/cmdbox
+repo_name: cmdbox
+edit_uri: edit/main/docs/
+
+theme:
+    name: material
+    palette:
+        - scheme: default
+          primary: indigo
+          accent: indigo
+          toggle:
+              icon: material/brightness-7
+              name: Switch to dark mode
+
+        - scheme: slate
+          primary: indigo
+          accent: indigo
+          toggle:
+              icon: material/brightness-4
+              name: Switch to light mode
+
+    features:
+        - navigation.tabs
+        - navigation.sections
+        - navigation.top
+        - search.highlight
+        - search.suggest
+        - content.action.edit
+        - content.code.copy
+
+markdown_extensions:
+    - admonition
+    - pymdownx.details
+    - pymdownx.superfences
+    - pymdownx.highlight:
+        anchor_linenums: true
+    - pymdownx.inlinehilite
+    - pymdownx.tabbed:
+        alternate_style: true
+    - tables
+    - toc:
+          permalink: true
+
+nav:
+    - Home: index.md
+    - Getting Started:
+        - Installation: installation.md
+        - Quick Start: quickstart.md
+    - Commands:
+        - Overview: commands/index.md
+        - cmd: commands/cmd.md
+        - var: commands/var.md
+        - tag: commands/tag.md
+        - run: commands/run.md
+        - settings: commands/settings.md
+    - Concepts: concepts.md
