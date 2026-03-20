@@ -1,6 +1,6 @@
 # cmd
 
-The `cmd` command is the core of CmdBox. Use it to add, remove, edit, list, and inspect your saved commands.
+The `cmd` subcommand is the core of CmdBox. Use it to add, remove, edit, list, and inspect your saved commands.
 
 The available subcommands for the `cmd` module are:
 
@@ -75,7 +75,7 @@ The `update` command is used to make changes to a command you already have store
 You can change only a specific field by specifying that field along with the new value you want it to have.
 
 ```console
-$ cb cmd update prune-docker --template "Removes all stopped containers, dangling images, and unused networks."
+$ cb cmd update prune-docker --description "Removes all stopped containers, dangling images, and unused networks."
 ```
 
 !!! warning
@@ -108,7 +108,7 @@ If you know you only want to update a specific field, and you don't want to iter
 which fields to update by using the `--edit-fields` (or `-ef`) flag.
 
 ```console
-$ cb cmd update prune-docker --edit-fields description
+$ cb cmd update prune-docker --edit --edit-fields description
 
 ? Enter description: Removes all stopped containers, dangling images, and unused networks.
 ```
@@ -203,7 +203,7 @@ $ cb cmd search listening --in description --field alias
 As will the list command, you can also limit the number of results returned by using the `--limit` flag.
 
 ```console
-$ cb search pip --limit 3
+$ cb cmd search pip --limit 3
 ```
 
 ## `delete`
@@ -215,7 +215,7 @@ The `delete` command is used to remove a command from your database. This is a p
 of the command you want to remove.
 
 ```console
-$ cb delete prune-docker
+$ cb cmd delete prune-docker
 ```
 
 ## `tag`
