@@ -86,7 +86,7 @@ This updates only the description of the stored `prune-docker` command.
 Multiple fields can be updated at once by using the `--set` flag and using key value pairs like: `key=value`.
 
 ```console
-$ cb cmd update prune-docker --set template="docker system prune" description="Removes all stopped containers, asking for confirmation"
+$ cb cmd update prune-docker --set template="docker system prune" --set description="Removes all stopped containers, asking for confirmation"
 ```
 
 !!! tip "Autocomplete"
