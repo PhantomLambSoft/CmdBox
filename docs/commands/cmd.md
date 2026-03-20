@@ -22,7 +22,7 @@ The `add` subcommand adds new commands to your CmdBox database.
 When creating a command, you only have to provide an alias. You will be prompted for the rest of the fields.
 
 ```console
-> cb cmd add prune-docker
+$ cb cmd add prune-docker
 
 ? Enter template: docker system prune -f
 ? Enter description: Removes all stopped containers.
@@ -32,7 +32,7 @@ When creating a command, you only have to provide an alias. You will be prompted
 This same command can be entered in one line.
 
 ```console
-> cb cmd add prune-docker "docker system prune -f" --description "Removes all stopped containers."
+$ cb cmd add prune-docker "docker system prune -f" --description "Removes all stopped containers."
 ```
 Notice in this example that alias and template are provided without a flag. They are not optional fields. Description
 is an optional field, so it must be prefaced with a `--description` flag.
@@ -44,7 +44,7 @@ You will always be prompted for tags.
 If you want to be prompted for every input, you can use the `--interactive` (or `-i`) flag.
 
 ```console
-> cb cmd add --interactive
+$ cb cmd add --interactive
 
 ? Enter alias: prune-docker
 ? Enter template: docker system prune -f
@@ -57,7 +57,7 @@ If you want to be prompted for every input, you can use the `--interactive` (or 
 The `get` command is a simple command that retrives a command and displays all of it's available fields along it's tags.
 
 ```console
-> cb cmd get upgrade-pip
+$ cb cmd get upgrade-pip
 ```
 !!! note
     All outputs are stylized. Some of the more stylized outputs will be displayed here in a different format, as shown below:
@@ -75,7 +75,7 @@ The `update` command is used to make changes to a command you already have store
 You can change only a specific field by specifying that field along with the new value you want it to have.
 
 ```console
-> cb cmd update prune-docker --template "Removes all stopped containers, dangling images, and unused networks."
+$ cb cmd update prune-docker --template "Removes all stopped containers, dangling images, and unused networks."
 ```
 
 !!! warning
@@ -86,7 +86,7 @@ This updates only the description of the stored `prune-docker` command.
 Multiple fields can be updated at once by using the `--set` flag and using key value pairs like: `key=value`.
 
 ```console
-> cb cmd update prune-docker --set template="docker system prune" description="Removes all stopped containers, asking for confirmation"
+$ cb cmd update prune-docker --set template="docker system prune" description="Removes all stopped containers, asking for confirmation"
 ```
 
 !!! tip "Autocomplete"
@@ -97,7 +97,7 @@ If you want to update the current value of any field, without supplying a comple
 value.
 
 ```console
-> cb cmd update prune-docker --edit
+$ cb cmd update prune-docker --edit
 
 ? Enter alias: prune-docker
 ? Enter template: docker system prune
@@ -108,7 +108,7 @@ If you know you only want to update a specific field, and you don't want to iter
 which fields to update by using the `--edit-fields` (or `-ef`) flag.
 
 ```console
-> cb cmd update prune-docker --edit-fields description
+$ cb cmd update prune-docker --edit-fields description
 
 ? Enter description: Removes all stopped containers, dangling images, and unused networks.
 ```
@@ -125,7 +125,7 @@ which fields to update by using the `--edit-fields` (or `-ef`) flag.
 The `list` command displays all commands you have stored in your database.
 
 ```console
-> cb cmd list
+$ cb cmd list
 ```
 ![Command get output](../assets/cmd/list-output.svg)
 
@@ -135,7 +135,7 @@ The default fields and ordering can be adjusted in your settings, or by supplyin
 To change the order, use the `--order` flag and specify the field you want to order by.
 
 ```console
-> cb cmd list --order description
+$ cb cmd list --order description
 ```
 
 ![Command get output](../assets/cmd/list-output-order-by-description-output.svg)
@@ -143,7 +143,7 @@ To change the order, use the `--order` flag and specify the field you want to or
 To change the displayed fields, use the `--fields` flag and specify the fields you want to display.
 
 ```console
-> cb cmd list --field alias --field template
+$ cb cmd list --field alias --field template
 ```
 
 ![Command get output](../assets/cmd/list-output-alias-template-only.svg)
@@ -151,19 +151,19 @@ To change the displayed fields, use the `--fields` flag and specify the fields y
 If you have a large database of commands, you may only want to list some of them. For this, you can use the `--limit` flag.
 
 ```console
-> cb cmd list --limit 10
+$ cb cmd list --limit 10
 ```
 
 List can also be limited to only commands that feature a specific tag.
 
 ```console
-> cb cmd list --tag dev
+$ cb cmd list --tag dev
 ```
 
 The `--tag` flag can be used multiple times to list commands that feature multiple tags.
 
 ```console
-> cb cmd list --tag dev --tag docker --tag production
+$ cb cmd list --tag dev --tag docker --tag production
 ```
 
 !!! tip
@@ -179,7 +179,7 @@ While `list` lets you filter your commands by tag, search lets you filter your c
 By default, search is limited to the alias and template fields.
 
 ```console
-> cb cmd search pip
+$ cb cmd search pip
 ```
 
 ![Command get output](../assets/cmd/search-output-default.svg)
@@ -187,7 +187,7 @@ By default, search is limited to the alias and template fields.
 Using the `--in` flag, you can limit your search to only the fields you want to search in.
 
 ```console
-> cb cmd search listening --in description
+$ cb cmd search listening --in description
 ```
 
 ![Command get output](../assets/cmd/search-output-in-description.svg)
@@ -195,7 +195,7 @@ Using the `--in` flag, you can limit your search to only the fields you want to 
 And if you only want to see certain fields in the results output, you can use the `--field` flag.
 
 ```console
-> cb cmd search listening --in description --field alias
+$ cb cmd search listening --in description --field alias
 ```
 
 ![Command get output](../assets/cmd/search-output-field-alias.svg)
@@ -203,7 +203,7 @@ And if you only want to see certain fields in the results output, you can use th
 As will the list command, you can also limit the number of results returned by using the `--limit` flag.
 
 ```console
-> cb search pip --limit 3
+$ cb search pip --limit 3
 ```
 
 ## `delete`
@@ -215,7 +215,7 @@ The `delete` command is used to remove a command from your database. This is a p
 of the command you want to remove.
 
 ```console
-> cb delete prune-docker
+$ cb delete prune-docker
 ```
 
 ## `tag`
@@ -225,7 +225,7 @@ The `tag` command is used to add tags to a command.
 To add a tag, supply the command with the alias of the command you want to tag, followed by the name of the tag.
 
 ```console
-> cb cmd tag pip-outdated dev
+$ cb cmd tag pip-outdated dev
 ```
 
 !!! tip "Autocomplete"
@@ -237,5 +237,5 @@ To add a tag, supply the command with the alias of the command you want to tag, 
 Untag works the same as `tag`.
 
 ```console
-> cb cmd untag pip-outdated dev
+$ cb cmd untag pip-outdated dev
 ```
