@@ -37,3 +37,26 @@ def edit(
         get_settings_service=container.get_settings_service,
         get_console=container.get_console,
     )
+
+
+@app.command("show")
+@cli_guard
+def show(
+    fields: Annotated[
+        str | None,
+        typer.Option(
+            "--fields",
+            "-f",
+            help="List of fields to show separated by comma. If not provided, all fields will be shown.",
+        ),
+    ] = None,
+) -> None:
+    """
+    Outputs the current settings in a stylized table view.
+    """
+    log.debug("settings.show called. fields=%s", fields)
+    settings_handler.run_show_settings(
+        fields=fields,
+        get_settings_service=container.get_settings_service,
+        get_console=container.get_console,
+    )
