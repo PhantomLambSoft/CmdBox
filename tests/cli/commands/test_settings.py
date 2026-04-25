@@ -5,6 +5,7 @@ from cmdbox.cli.commands.settings import app
 
 
 class TestSettingsCommand(unittest.TestCase):
+
     def setUp(self):
         self.runner = CliRunner()
 
@@ -14,7 +15,7 @@ class TestSettingsCommand(unittest.TestCase):
     def test_settings_edit_default(
         self, mock_run_edit, mock_get_console, mock_get_settings
     ):
-        result = self.runner.invoke(app, [])
+        result = self.runner.invoke(app, ["edit"])
 
         self.assertEqual(0, result.exit_code)
         mock_run_edit.assert_called_once()
@@ -29,7 +30,7 @@ class TestSettingsCommand(unittest.TestCase):
     def test_settings_edit_external(
         self, mock_run_edit, mock_get_console, mock_get_settings
     ):
-        result = self.runner.invoke(app, ["--external"])
+        result = self.runner.invoke(app, ["edit", "--external"])
 
         self.assertEqual(0, result.exit_code)
         mock_run_edit.assert_called_once()
@@ -42,7 +43,7 @@ class TestSettingsCommand(unittest.TestCase):
     def test_settings_edit_external_short(
         self, mock_run_edit, mock_get_console, mock_get_settings
     ):
-        result = self.runner.invoke(app, ["-e"])
+        result = self.runner.invoke(app, ["edit", "-e"])
 
         self.assertEqual(0, result.exit_code)
         mock_run_edit.assert_called_once()
