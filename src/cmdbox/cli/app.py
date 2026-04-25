@@ -24,7 +24,11 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-app.add_typer(command_crud_app, name="cmd", help="CRUD operations for commands.")
+app.add_typer(
+    command_crud_app,
+    name="cmd",
+    help="CRUD (Create, Read, Update, Delete) operations for commands.",
+)
 app.add_typer(variable_crud_app, name="var", help="CRUD operations for variables.")
 app.add_typer(tag_crud_app, name="tag", help="CRUD operations for tags.")
 app.add_typer(command_run_app)
