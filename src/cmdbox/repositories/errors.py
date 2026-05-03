@@ -104,3 +104,17 @@ class ValidationError(CmdboxError):
     """
 
     pass
+
+
+class UnknownHistoryEntryError(CmdboxError):
+
+    def __init__(self, ref: str):
+        super().__init__(f"No history entry found matching '{ref}'.")
+
+
+class AmbiguousHistoryIdEntryError(CmdboxError):
+
+    def __init__(self, prefix: str):
+        super().__init__(
+            f"ID prefix '{prefix}' matches multiple history entries. Use more ID characters."
+        )
