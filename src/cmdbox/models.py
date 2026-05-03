@@ -135,4 +135,22 @@ class VariableTag(BaseModel):
         indexes = ((("variable", "tag"), True),)
 
 
-ALL_MODELS = [Command, Variable, Tag, CommandTag, VariableTag]
+class CommandHistory(BaseModel):
+
+    id = TextField(primary_key=True)  # uuid4().hex - 32 char, no dashes
+    alias = CharField()  # alias as invoked, not a FK
+    template = TextField()  # raw template at time of run
+    resolved = TextField()  # fully resolved command string
+    variables_used = TextField(null=True)  # JSON: {"name": "Homer"} or null
+    exit_code = IntegerField(null=True)
+    run_at = DateTimeField(default=datetime.now)
+
+    class Meta:
+        table_name = "command_history"
+        indexes = (
+            (("alias",), False),
+            (("run_at",), False),
+        )
+
+
+ALL_MODELS = [Command, Variable, Tag, CommandTag, VariableTag, CommandHistory]
