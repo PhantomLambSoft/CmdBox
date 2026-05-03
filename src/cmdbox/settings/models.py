@@ -114,9 +114,16 @@ class LoggingSettings:
 
 
 @dataclass(frozen=True)
+class HistorySettings:
+    enabled: bool = True
+    max_entries: int = 100  # 0 = unlimited
+
+
+@dataclass(frozen=True)
 class Settings:
     ui: UiSettings = UiSettings()
     execution_settings: ExecutionSettings = ExecutionSettings()
     default_fields: DefaultFields = DefaultFields()
     field_aliases: FieldAliases = FieldAliases()
     logging: LoggingSettings = LoggingSettings()
+    history: HistorySettings = HistorySettings()
