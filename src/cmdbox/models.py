@@ -143,7 +143,7 @@ class CommandHistory(BaseModel):
     resolved = TextField()  # fully resolved command string
     variables_used = TextField(null=True)  # JSON: {"name": "Homer"} or null
     exit_code = IntegerField(null=True)
-    run_at = DateTimeField(default=datetime.now)
+    ran_at = DateTimeField(default=datetime.now)
 
     class Meta:
         table_name = "command_history"

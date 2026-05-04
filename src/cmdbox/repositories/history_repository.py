@@ -106,7 +106,7 @@ class HistoryRepository:
             list[CommandHistory]: A list of `CommandHistory` objects representing the
             queried command history records.
         """
-        query = CommandHistory.select().order_by(CommandHistory.run_at.desc())
+        query = CommandHistory.select().order_by(CommandHistory.ran_at.desc())
         if alias:
             query = query.where(CommandHistory.alias == alias)
         if limit > 0:
@@ -141,7 +141,7 @@ class HistoryRepository:
             row.id
             for row in CommandHistory.select(CommandHistory.id)
             .where(CommandHistory.alias == alias)
-            .order_by(CommandHistory.run_at.desc())
+            .order_by(CommandHistory.ran_at.desc())
             .limit(limit)
         ]
         if len(keep_ids) >= limit:
