@@ -10,7 +10,9 @@ from cmdbox.core.fields import (
     TAG_DISPLAY_FIELDS,
     TAG_SEARCH_FIELDS,
 )
+from cmdbox.repositories.history_repository import HistoryRepository
 from cmdbox.services.field_selection import FieldSelectionResolver
+from cmdbox.services.history_service import HistoryService
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.settings.models import Settings
 from cmdbox.settings.settings_repository import SettingsRepository
@@ -63,6 +65,12 @@ def get_tag_repo() -> TagRepository:
 
 
 @lru_cache(maxsize=1)
+def get_history_repo() -> HistoryRepository:
+    get_db()
+    return HistoryRepository()
+
+
+@lru_cache(maxsize=1)
 def get_resolver(strict: bool = False) -> Resolver:
     get_db()
     command_repo = get_command_repo()
@@ -78,7 +86,13 @@ def get_run_service() -> RunService:
     cmd_repo = get_command_repo()
     resolver = get_resolver()
     executor = Executor()
-    return RunService(cmd_repo, resolver, executor)
+    return RunService(
+        cmd_repo,
+        resolver,
+        executor,
+        history_repo=get_history_repo(),
+        get_settings=get_settings,
+    )
 
 
 @lru_cache(maxsize=1)
@@ -102,6 +116,14 @@ def get_tag_services() -> TagServices:
     get_db()
     tag_repo = get_tag_repo()
     return TagServices(tag_repository=tag_repo)
+
+
+@lru_cache(maxsize=1)
+def get_history_service() -> HistoryService:
+    return HistoryService(
+        repo=get_history_repo(),
+        get_settings=get_settings,
+    )
 
 
 @lru_cache(maxsize=1)
