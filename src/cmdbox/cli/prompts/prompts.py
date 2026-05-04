@@ -9,6 +9,14 @@ from cmdbox.cli.prompts.validators import (
 )
 
 
+def prompt_for_confirm(message: str, default: bool = False) -> bool:
+    suffix = " [Y/n]: " if default else " [y/N]: "
+    result = prompt(message + suffix).strip().lower()
+    if result == "":
+        return default
+    return result in ["y", "yes"]
+
+
 def prompt_for_alias(validator: AliasValidator, default: str = "") -> str:
     alias = prompt("Enter alias: ", validator=validator, default=default)
     return alias
