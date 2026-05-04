@@ -149,7 +149,7 @@ class CommandHistory(BaseModel):
         table_name = "command_history"
         indexes = (
             (("alias",), False),
-            (("run_at",), False),
+            (("ran_at",), False),
         )
 
 

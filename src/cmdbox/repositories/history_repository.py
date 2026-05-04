@@ -51,7 +51,7 @@ class HistoryRepository:
             resolved=resolved,
             variables_used=json.dumps(variables_used) if variables_used else None,
             exit_code=exit_code,
-            run_at=datetime.now(),
+            ran_at=datetime.now(),
         )
         self._apply_retention(alias, limit)
         return entry
@@ -91,7 +91,7 @@ class HistoryRepository:
         Fetches the most recent command history records, optionally filtered by alias and limited
         to a specified number of entries.
 
-        This method queries the CommandHistory records in descending order of their `run_at`
+        This method queries the CommandHistory records in descending order of their `ran_at`
         timestamps, which represent the time the commands were executed. If the `alias` parameter
         is provided, the results are filtered to include only those records where the alias matches
         the provided value. The number of returned records can be limited by the `limit` parameter.
