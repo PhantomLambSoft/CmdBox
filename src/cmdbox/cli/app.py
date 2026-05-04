@@ -16,6 +16,7 @@ from .commands.variable_crud import app as variable_crud_app
 from .commands.tag_crud import app as tag_crud_app
 from .commands.init import app as init_app
 from .commands.settings import app as settings_app
+from .commands.history import app as history_app
 
 app = typer.Typer(
     name="cb",
@@ -34,6 +35,9 @@ app.add_typer(tag_crud_app, name="tag", help="CRUD operations for tags.")
 app.add_typer(command_run_app)
 app.add_typer(init_app)
 app.add_typer(settings_app, name="settings", help="Manage CmdBox settings.")
+app.add_typer(
+    history_app, name="history", help="View and re-run command execution history."
+)
 
 
 def version_callback(value: bool):
