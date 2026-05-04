@@ -14,7 +14,6 @@ from cmdbox.services.run_service import RunService
 from cmdbox.settings.models import Settings
 from cmdbox.logging_setup.log_decorators import log_action
 
-
 log = logging.getLogger(__name__)
 
 
@@ -40,6 +39,7 @@ class RawRunContext:
 def run_run_command(
     *,
     alias: str,
+    runtime_vars: dict[str, str] | None = None,
     run_ctx: RawRunContext | None = None,
     get_run_service: Callable[[], RunService],
     get_settings: Callable[[], Settings],
@@ -50,7 +50,7 @@ def run_run_command(
         run_ctx.verbose = settings.execution_settings.default_verbose
     run_service = get_run_service()
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
-    ex_result = run_service.run(alias, ctx=run_ctx)
+    ex_result = run_service.run(alias, ctx=run_ctx, runtime_vars=runtime_vars)
     if run_ctx.verbose and not run_ctx.emit:
         console = get_console()
         console.print(render_execution_result(ex_result))
@@ -60,6 +60,7 @@ def run_run_command(
 def run_preview_command(
     *,
     alias: str,
+    runtime_vars: dict[str, str] | None = None,
     run_ctx: RawRunContext | None = None,
     get_run_service: Callable[[], RunService],
     get_settings: Callable[[], Settings],
@@ -70,7 +71,7 @@ def run_preview_command(
         run_ctx.verbose = settings.execution_settings.default_verbose
     run_service = get_run_service()
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
-    prev_result = run_service.preview(alias)
+    prev_result = run_service.preview(alias, runtime_vars=runtime_vars)
     rendered_result = render_preview_result(prev_result, ctx=run_ctx)
     console = get_console()
     console.print(rendered_result)

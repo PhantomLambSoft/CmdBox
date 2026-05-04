@@ -5,9 +5,9 @@ import typer
 
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.cli.ui.editor import edit_text_fullscreen, EditCanceled, edit_text_in_editor
+from cmdbox.cli.ui.presenters.settings_presenter import render_settings_show
 from cmdbox.logging_setup.log_decorators import log_action
 from cmdbox.settings.settings_service import SettingsService
-
 
 log = logging.getLogger(__name__)
 
@@ -40,3 +40,20 @@ def run_edit_settings(
         log.error("Error saving settings.", exc_info=True)
         console.error(f"Error saving settings: {exc}")
         raise typer.Exit(code=1)
+
+
+@log_action(__name__, "run_show_settings")
+def run_show_settings(
+    fields: str | None = None,
+    *,
+    get_settings_service: Callable[[], SettingsService],
+    get_console: Callable[[], ConsoleUI],
+):
+    parsed_fields = fields.split(",") if fields else None
+
+    settings_service = get_settings_service()
+    console = get_console()
+
+    settings = settings_service.get()
+    output = render_settings_show(settings, parsed_fields)
+    console.print(output)

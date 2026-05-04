@@ -1,6 +1,6 @@
 from typing import Protocol, Optional
 
-from .types import CommandRecord, VariableRecord
+from .type_defs import CommandRecord, VariableRecord
 from ..repositories.command_repository import CommandRepository
 from ..repositories.variable_repository import VariableRepository
 
@@ -46,6 +46,7 @@ class RepoLookup(ResolverLookup):
         cmd_repo (CommandRepository): Repository for storing and retrieving command records.
         var_repo (VariableRepository): Repository for managing and accessing variable records.
     """
+
     def __init__(self, cmd_repo: CommandRepository, var_repo: VariableRepository):
         self._cmd_repo = cmd_repo
         self._var_repo = var_repo
@@ -81,6 +82,7 @@ class MemoizedLookup(ResolverLookup):
         var_cache (dict): A dictionary used to cache VariableRecord results
             for quick retrieval based on their names.
     """
+
     def __init__(self, inner: ResolverLookup):
         self._inner = inner
         self._cmd_cache: dict[str, Optional[CommandRecord]] = {}

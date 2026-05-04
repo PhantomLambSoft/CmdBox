@@ -61,7 +61,7 @@ def to_text(value: Any, *, style: str | None = None) -> Text:
     """
     if value is None:
         t = Text("null")
-    if isinstance(value, Text):
+    elif isinstance(value, Text):
         if style:
             value.stylize(style)
         return value

@@ -4,7 +4,6 @@ from pathlib import Path
 
 from cmdbox.core.paths import get_log_file_path
 
-
 LOGGER_NAME = "cmdbox"
 
 
@@ -23,7 +22,9 @@ def _level(level_str: str) -> int:
     return getattr(logging, s, logging.INFO)
 
 
-def build_log_config(settings, *, verbose: bool, debug: bool, file_logs: bool | None) -> LogConfig:
+def build_log_config(
+    settings, *, verbose: bool, debug: bool, file_logs: bool | None
+) -> LogConfig:
     """
     Builds and returns a LogConfig instance based on the provided settings and flags.
 
@@ -59,6 +60,7 @@ def build_log_config(settings, *, verbose: bool, debug: bool, file_logs: bool | 
         max_bytes=settings.logging.file.max_bytes,
         backups=settings.logging.file.backups,
     )
+
 
 def get_console_level(settings, *, verbose: bool, debug: bool) -> int:
     """

@@ -1,7 +1,6 @@
 import os
 from pathlib import Path
 
-
 """
 Instructions for installing the snippet into the user's shell configuration file.
 """

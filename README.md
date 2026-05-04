@@ -30,6 +30,9 @@ cb add deploy "git push origin main && fly deploy"
 # Recall and run that command
 cb run deploy
 
+# The default command is run, so you can just type the alias of the command you want to run
+cb deploy
+
 # List available commands
 cb list
 
@@ -70,5 +73,5 @@ Or install from source:
 ```bash
 git clone https://github.com/MalloyDelacroix/cmdbox.git
 cd cmdbox
-pip install -e .
+pip install .
 ```

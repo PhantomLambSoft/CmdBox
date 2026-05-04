@@ -1,5 +1,5 @@
 import unittest
-from cmdbox.resolve.types import (
+from cmdbox.resolve.type_defs import (
     CommandRecord,
     VariableRecord,
     RefKind,

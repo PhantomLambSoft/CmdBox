@@ -2,7 +2,7 @@ import unittest
 from unittest.mock import MagicMock
 from cmdbox.resolve.resolver import Resolver
 from cmdbox.resolve.lookup import ResolverLookup
-from cmdbox.resolve.types import CommandRecord, VariableRecord, RefKind, TraceStep
+from cmdbox.resolve.type_defs import CommandRecord, VariableRecord, RefKind, TraceStep
 from cmdbox.resolve.errors import (
     MaxDepthExceeded,
     UnknownReference,
@@ -60,6 +60,44 @@ class TestResolver(unittest.TestCase):
         self.assertEqual(result.trace[0].key, "first")
         self.assertEqual(result.trace[1].key, "last")
         self.assertEqual(result.trace[2].key, "full")
+
+    def test_variable_resolution_with_runtime_vars(self):
+        self.mock_lookup.get_variable.return_value = None
+        result = self.resolver.resolve(
+            template="hello <name>", runtime_vars={"name": "Colonel Homer"}
+        )
+        self.assertEqual(result.text, "hello Colonel Homer")
+
+    def test_runtime_vars_overrides_stored_vars(self):
+        self.mock_lookup.get_variable.return_value = VariableRecord("name", "world")
+        result = self.resolver.resolve(
+            template="hello <name>", runtime_vars={"name": "Colonel Homer"}
+        )
+        self.assertEqual(result.text, "hello Colonel Homer")
+
+    def test_runtime_vars_of_different_name_do_not_affect_resolution(self):
+        self.mock_lookup.get_variable.return_value = VariableRecord("name", "world")
+        result = self.resolver.resolve(
+            template="hello <name>", runtime_vars={"tulip": "Colonel Homer"}
+        )
+        self.assertEqual(result.text, "hello world")
+
+    def test_mix_of_stored_and_runtime_vars(self):
+        self.mock_lookup.get_variable.return_value = VariableRecord(
+            "name", "Colonel Homer"
+        )
+        result = self.resolver.resolve(
+            template="hello <name>, have you met <name_two>?",
+            runtime_vars={"name_two": "Lurleen"},
+        )
+        self.assertEqual(result.text, "hello Colonel Homer, have you met Lurleen?")
+
+    def test_unknown_runtime_vars_do_not_affect_resolution(self):
+        self.mock_lookup.get_variable.return_value = VariableRecord("name", "world")
+        result = self.resolver.resolve(
+            template="hello <name>", runtime_vars={"song": "Bagged Me A Homer"}
+        )
+        self.assertEqual(result.text, "hello world")
 
     def test_escape_characters(self):
         result = self.resolver.resolve("escaped \\<bracket\\>")

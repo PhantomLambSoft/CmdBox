@@ -4,7 +4,6 @@ from peewee import SqliteDatabase
 
 from cmdbox.core.paths import get_app_data_dir
 
-
 log = logging.getLogger(__name__)
 
 
