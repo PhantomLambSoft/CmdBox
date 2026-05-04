@@ -23,6 +23,7 @@ class AliasFallbackGroup(TyperGroup):
         "cmds": "cmd",
         "vars": "var",
         "tags": "tag",
+        "hist": "history",
     }
 
     def get_command(self, ctx: click.Context, cmd_name: str):
