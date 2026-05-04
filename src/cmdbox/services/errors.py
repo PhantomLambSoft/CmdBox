@@ -29,3 +29,9 @@ class EmptyFieldSelectionError(FieldSelectionError):
         if context:
             msg += f" ({context})"
         super().__init__(msg)
+
+
+class HistoryIndexError(CmdboxError):
+
+    def __init__(self, index: int):
+        super().__init__(f"No history entry at index {index}.")
