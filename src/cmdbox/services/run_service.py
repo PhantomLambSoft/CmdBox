@@ -1,8 +1,12 @@
+from typing import Callable
+
 from cmdbox.repositories.command_repository import CommandRepository
+from cmdbox.repositories.history_repository import HistoryRepository
 from cmdbox.resolve.resolver import Resolver
 from cmdbox.resolve.type_defs import ResolveResult
 from cmdbox.runtime.executor import Executor, RunContext
 from cmdbox.runtime.results import ExecutionResult
+from cmdbox.settings.models import Settings
 
 
 class RunService:
@@ -28,10 +32,14 @@ class RunService:
         repo: CommandRepository,
         resolver: Resolver,
         executor: Executor,
+        history_repo: HistoryRepository | None = None,
+        get_settings: Callable[[], Settings] | None = None,
     ) -> None:
         self._repo = repo
         self._resolver = resolver
         self._executor = executor
+        self._history_repo = history_repo
+        self._get_settings = get_settings
 
     def run(
         self,
@@ -55,7 +63,15 @@ class RunService:
         """
         cmd = self._repo.get_by_alias(command_alias)
         resolved_cmd = self._resolver.resolve(cmd.template, runtime_vars=runtime_vars)
-        return self._executor.run(resolved_cmd.text, ctx=ctx)
+        result = self._executor.run(resolved_cmd.text, ctx=ctx)
+        self.record_history(
+            alias=command_alias,
+            template=cmd.template,
+            resolved=resolved_cmd.text,
+            runtime_vars=runtime_vars,
+            exit_code=result.exit_code,
+        )
+        return result
 
     def preview(
         self, command_alias: str, runtime_vars: dict[str, str] | None = None
@@ -76,3 +92,41 @@ class RunService:
         """
         cmd = self._repo.get_by_alias(command_alias)
         return self._resolver.resolve(cmd.template, runtime_vars=runtime_vars)
+
+    def record_history(
+        self,
+        *,
+        alias: str,
+        template: str,
+        resolved: str,
+        runtime_vars: dict[str, str] | None = None,
+        exit_code: int | None = None,
+    ) -> None:
+        """
+        Records command execution history if the history feature is enabled and
+        properly configured. This function interacts with an underlying
+        repository to store details about the executed command including alias,
+        template, resolved string, runtime variables, and exit code.
+
+        Args:
+            alias (str): The alias or the name of the command executed.
+            template (str): The template string representing the command.
+            resolved (str): The fully resolved string of the executed command.
+            runtime_vars (dict[str, str] | None): Runtime variables used during
+                the execution of the command. Defaults to None.
+            exit_code (int | None): Exit code that indicates the result of the
+                command execution. Defaults to None.
+        """
+        if not self._history_repo or not self._get_settings:
+            return
+        settings = self._get_settings()
+        if not settings.history.enabled:
+            return
+        self._history_repo.record(
+            alias=alias,
+            template=template,
+            resolved=resolved,
+            variables_used=runtime_vars or None,
+            exit_code=exit_code,
+            limit=settings.history.limit_per_command,
+        )
