@@ -116,7 +116,7 @@ class LoggingSettings:
 @dataclass(frozen=True)
 class HistorySettings:
     enabled: bool = True
-    max_entries: int = 100  # 0 = unlimited
+    limit_per_command: int = 100  # 0 = unlimited
 
 
 @dataclass(frozen=True)
