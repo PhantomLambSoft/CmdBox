@@ -76,7 +76,7 @@ class HistoryRepository:
                 prefix, making the reference ambiguous.
         """
         matches = list(
-            CommandHistory.select().where(CommandHistory.id % (ref + "%")).limit(2)
+            CommandHistory.select().where(CommandHistory.id.startswith(ref)).limit(2)
         )
         if not matches:
             raise UnknownHistoryEntryError(ref=ref)
@@ -135,7 +135,7 @@ class HistoryRepository:
             limit (int | None): The maximum number of recent entries to retain. If
                 the limit is less than or equal to zero, no action is performed.
         """
-        if limit <= 0:
+        if limit is None or limit <= 0:
             return
         keep_ids = [
             row.id
