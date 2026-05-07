@@ -1,7 +1,5 @@
 from typing import Callable
 
-import typer
-
 from cmdbox.cli.prompts.prompts import prompt_for_confirm
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.cli.ui.presenters.history_presenter import (
@@ -90,7 +88,7 @@ def run_rerun_last(
     entries = service.get_recent(limit=1)
     if not entries:
         get_console().info("No command history found")
-        raise typer.Exit(1)
+        return
     entry = entries[0]
     variables = service.get_variables(entry)
     get_run_service().run(entry.alias, runtime_vars=variables)
