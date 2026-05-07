@@ -9,6 +9,7 @@ from cmdbox.cli.handlers.history_handlers import (
     run_history_show,
     run_history_rerun,
     run_history_clear,
+    run_rerun_last,
 )
 from cmdbox.cli.common.errors import make_cli_guard
 
@@ -92,6 +93,17 @@ def history_clear(
     run_history_clear(
         alias=alias,
         yes=yes,
+        get_history_service=container.get_history_service,
+        get_console=container.get_console,
+    )
+
+
+@app.command("last")
+@cli_guard
+def rerun_last() -> None:
+    """Re-executes the last command run."""
+    run_rerun_last(
+        get_run_service=container.get_run_service,
         get_history_service=container.get_history_service,
         get_console=container.get_console,
     )

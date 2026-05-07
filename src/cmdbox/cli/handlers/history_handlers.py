@@ -1,5 +1,7 @@
 from typing import Callable
 
+import typer
+
 from cmdbox.cli.prompts.prompts import prompt_for_confirm
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.cli.ui.presenters.history_presenter import (
@@ -75,3 +77,20 @@ def run_history_clear(
     service = get_history_service()
     count = service.clear(alias=alias)
     console.print(render_history_cleared(count, alias))
+
+
+@log_action(__name__, "run_return_last")
+def run_rerun_last(
+    *,
+    get_history_service: Callable[[], HistoryService],
+    get_run_service: Callable[[], RunService],
+    get_console: Callable[[], ConsoleUI],
+) -> None:
+    service = get_history_service()
+    entries = service.get_recent(limit=1)
+    if not entries:
+        get_console().info("No command history found")
+        raise typer.Exit(1)
+    entry = entries[0]
+    variables = service.get_variables(entry)
+    get_run_service().run(entry.alias, runtime_vars=variables)
