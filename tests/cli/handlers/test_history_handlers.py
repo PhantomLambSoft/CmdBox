@@ -6,6 +6,7 @@ from cmdbox.cli.handlers.history_handlers import (
     run_history_show,
     run_history_rerun,
     run_history_clear,
+    run_rerun_last,
 )
 from cmdbox.runtime.executor import RunContext
 
@@ -168,3 +169,39 @@ class TestHistoryHandlers(unittest.TestCase):
         mock_service.clear.assert_not_called()
         mock_console.print.assert_not_called()
         mock_render_history_cleared.assert_not_called()
+
+    def test_run_history_rerun_last_no_entries(self):
+        mock_service = MagicMock()
+        mock_service.get_recent.return_value = []
+        mock_run_service = MagicMock()
+        mock_console = MagicMock()
+
+        run_rerun_last(
+            get_history_service=lambda: mock_service,
+            get_run_service=lambda: mock_run_service,
+            get_console=lambda: mock_console,
+        )
+
+        mock_console.info.assert_called_once_with("No command history found")
+        mock_run_service.run.assert_not_called()
+        mock_service.get_recent.assert_called_once_with(limit=1)
+
+    def test_run_history_rerun_last_with_entries(self):
+        entry = MagicMock()
+        entry.alias = "deploy"
+        variables = {"ENV": "prod"}
+        mock_service = MagicMock()
+        mock_run_service = MagicMock()
+        mock_console = MagicMock()
+        mock_service.get_recent.return_value = [entry]
+        mock_service.get_variables.return_value = variables
+
+        run_rerun_last(
+            get_run_service=lambda: mock_run_service,
+            get_history_service=lambda: mock_service,
+            get_console=lambda: mock_console,
+        )
+
+        mock_run_service.run.assert_called_once_with("deploy", runtime_vars=variables)
+        mock_service.get_recent.assert_called_once_with(limit=1)
+        mock_service.get_variables.assert_called_once_with(entry)
