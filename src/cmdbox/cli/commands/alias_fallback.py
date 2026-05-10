@@ -26,6 +26,13 @@ class AliasFallbackGroup(TyperGroup):
         "hist": "history",
     }
 
+    """
+    The second item in the list is the name of the command as configured by
+    `@app.command("command_name")`, not the method name. Further items in the list
+    will be supplied to that sub-command as args.
+    """
+    _shortcut_commands: dict[str, list[str]] = {"!!": ["history", "last"]}
+
     def get_command(self, ctx: click.Context, cmd_name: str):
         """
         Retrieves a command based on the command name, creating an alias command if
@@ -69,3 +76,27 @@ class AliasFallbackGroup(TyperGroup):
             inner_ctx.invoke(run_cmd, alias=cmd_name, **kwargs)
 
         return _alias_cmd
+
+    def resolve_command(self, ctx: click.Context, args: list):
+        """
+        Resolves the command by expanding shortcut commands if applicable.
+
+        This method checks whether the provided command arguments include a shortcut
+        command. If a shortcut command is detected, it is expanded into its full form
+        and the resulting extended argument list is passed to the parent class's
+        `resolve_command` method. If no shortcut is found, the original argument list
+        is passed directly.
+
+        Args:
+            ctx (click.Context): The Click context containing information about the
+                execution of the command.
+            args (list): A list of command-line arguments passed to the command.
+
+        Returns:
+            tuple: A tuple containing the command name, the command object, and a list
+            of remaining arguments.
+        """
+        if args and args[0] in self._shortcut_commands:
+            expanded = self._shortcut_commands[args[0]]
+            return super().resolve_command(ctx, expanded + list(args[1:]))
+        return super().resolve_command(ctx, args)
