@@ -163,7 +163,7 @@ def run_list_variables(
     *,
     limit: int,
     order_by: str,
-    tags: list[str],
+    tags: list[str] | None,
     fields: list[str] | None = None,
     get_var_services: Callable[[], VariableServices],
     get_settings: Callable[[], Settings],
