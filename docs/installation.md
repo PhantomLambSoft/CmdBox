@@ -1,6 +1,6 @@
 # Installing CmdBox
 
-Installing CmdBox can be done in one of two ways. Pick the section that fits you:
+Installing CmdBox can be done in one of two ways:
 
 - **[I just want to install it (pip)](#option-1:-install-with-pip-recommended)**
 - **[I want to install it from source](#option-2:-install-from-source)**
