@@ -153,7 +153,7 @@ lets you compose complex workflows from simpler saved commands without duplicati
 logic.
 
 !!! tip
-Command references and variables can be used together in the same template.
+    Command references and variables can be used together in the same template.
 
 ---
 
