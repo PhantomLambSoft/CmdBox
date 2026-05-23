@@ -33,7 +33,7 @@ class RawRunContext:
     capture: bool = False
     shell: str | None = None
     emit: bool = False
-    verbose: bool | None = False
+    verbose: bool = False
 
 
 @log_action(__name__, "run_run_command")
