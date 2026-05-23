@@ -41,13 +41,13 @@ def run(
         ),
     ] = False,
     cwd: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--cwd", "-d", help="The working directory for the command execution."
         ),
     ] = None,
     env: Annotated[
-        list[str],
+        list[str] | None,
         typer.Option("--env", help="The environment variables to set for the command."),
     ] = None,
     capture: Annotated[
@@ -55,7 +55,7 @@ def run(
         typer.Option("--capture", "-c", help="Capture the command output."),
     ] = False,
     shell: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--shell", "-s", help="The shell to use for the command execution."
         ),
@@ -137,13 +137,13 @@ def preview(
     ],
     *,
     cwd: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--cwd", "-d", help="The working directory for the command execution."
         ),
     ] = None,
     env: Annotated[
-        list[str],
+        list[str] | None,
         typer.Option(
             "--env", "-e", help="The environment variables to set for the command."
         ),
@@ -155,7 +155,7 @@ def preview(
         ),
     ] = False,
     shell: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--shell", "-s", help="The shell to use for the command execution."
         ),
