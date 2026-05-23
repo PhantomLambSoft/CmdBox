@@ -6,7 +6,6 @@ from .base_repository import BaseRepository
 from .errors import (
     ValidationError,
     NameConflictError,
-    UnknownNameError,
     UnknownTagError,
     TagAttachError,
     TagDetachError,
