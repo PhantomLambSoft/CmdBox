@@ -50,28 +50,22 @@ class VariableRepository(BaseRepository[Variable]):
                 raise NameConflictError(name=name) from exc
             raise
 
-    def get_by_name(self, name: str) -> Variable:
+    def get_by_name(self, name: str) -> Variable | None:
         """
         Retrieves a variable instance by its name.
 
         Converts the provided name to lowercase, searches for a variable with the
-        matching name in the database, and retrieves it. This function raises an error
+        matching name in the database, and retrieves it. This function returns None
         if no variable with the specified name is found.
 
         Args:
             name (str): The name of the variable to retrieve.
 
         Returns:
-            Variable: The variable object if found.
-
-        Raises:
-            UnknownNameError: If no variable with the specified name exists.
+            Variable | None: The variable object if found, otherwise None.
         """
         name = name.lower()
-        var = Variable.get_or_none(Variable.name == name)
-        if var is None:
-            raise UnknownNameError(name=name)
-        return var
+        return Variable.get_or_none(Variable.name == name)
 
     def get_by_id(self, var_id: int) -> Variable:
         var = Variable.get_or_none(Variable.id == var_id)
