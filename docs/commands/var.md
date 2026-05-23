@@ -67,7 +67,7 @@ The `get` subcommand retrieves a variable and displays all of its available fiel
 > cb var get host
 ```
 
-![var get output](../assets/var/get-output.svg)
+![var get output](../assets/var/var-get-output.svg)
  
 ---
 
@@ -137,7 +137,7 @@ The `list` subcommand displays all variables stored in your database.
 > cb var list
 ```
 
-![var list output](../assets/var/list-output.svg)
+![var list output](../assets/var/var-list-output.svg)
 
 By default, only the name, value, and tags of each variable are displayed, and the default order is by name.
 The default fields and ordering can be adjusted in your settings, or by supplying additional options to the `list`
@@ -187,26 +187,26 @@ While `list` lets you filter variables by tag, `search` lets you filter by the c
 By default, search looks in the name and value fields.
 
 ```console
-> cb var search 192
+> cb var search host
 ```
 
-![var search output](../assets/var/search-output-default.svg)
+![var search output](../assets/var/var-search-output.svg)
 
 Using the `--in` flag, you can limit your search to specific fields.
 
 ```console
-> cb var search work --in tags
+> cb var search host --in value
 ```
 
-![var search output](../assets/var/search-output-in-tags.svg)
+![var search output](../assets/var/var-search-in-output.svg)
 
 To control which fields appear in the results, use the `--field` flag.
 
 ```console
-> cb var search 192 --field name
+> cb var search host --field value
 ```
 
-![var search output](../assets/var/search-output-field-name.svg)
+![var search output](../assets/var/var-search-fields-in-output.svg)
 
 As with `list`, you can limit the number of results using the `--limit` flag.
 
