@@ -57,3 +57,4 @@ nav:
         - run: commands/run.md
         - settings: commands/settings.md
     - Concepts: concepts.md
+    - FAQ: faq.md
