@@ -102,7 +102,7 @@ class Resolver:
         stack: list[str],
         depth: int,
         trace: list[TraceStep],
-        runtime_vars: dict[str, str] = None,
+        runtime_vars: dict[str, str] | None = None,
     ) -> str:
         """
         Resolves the given template string with nested tokens, handling escapes and
