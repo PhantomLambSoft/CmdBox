@@ -2,76 +2,93 @@
 
 Understanding these core ideas makes everything else in CmdBox click.
 
-## Command
+---
 
-The command object is the heart of CmdBox. It holds the information about the commands you will be executing, as well
-as the aliases that will be used to execute them. 
+## Commands
 
-A command has several fields, some of which are editable, and some of which are stored/updated by CmdBox.
+A saved command is the heart of CmdBox. It holds the alias you use to recall, the template
+that gets executed, and any additional information you want to store alongside it.
 
-The fields of a command that you can edit are:
+A command has several fields. Some are editable, and some are maintained automatically by CmdBox.
 
-- `alias` - The name you use to recall your command.
-- `template` - The part of the command that actually runs in the shell.
-- `description` - A description of what the command does.
-- `tags` - A list of tags that you can use to categorize your commands.
+**Fields you can edit:**
 
-Some additional fields are metadata fields that are stored/updated by CmdBox, and are not editable. These
-are meant to provide you with extra information about the command that you may find useful. They are:
+| Field | Description |
+|---|---|
+| `alias` | The name you use to run the command. |
+| `template` | The shell instruction that gets executed. |
+| `description` | A short description of what the command does. |
+| `tags` | A list of tags used to categorize the command. |
 
-- `date_created` - The datetime the command was first created.
-- `last_updated` - The datetime the command was last updated.
-- `used` - A count of how many times the command has been executed.
-- `last_used` - The datetime the command was last executed.
+**Fields maintained by CmdBox:**
 
-Other fields may be accessed in subcommands like `list` or `search` to give you more information about the command or
-help narrow your search. You can find more information about these subcommands in the [`cmd` subsetion](commands/cmd.md)
+| Field | Description |
+|---|---|
+| `date_created` | The date and time the command was first saved. |
+| `last_updated` | The date and time the command was last edited. |
+| `used` | A count of how many times the command has been executed. |
+| `last_used` | The date and time the command was last executed. |
+
+These metadata fields are read-only. They can be displayed in `list` and `search` results or
+used for sorting. See the [`cmd` reference](commands/cmd.md) for more information.
 
 ### Alias
 
-An alias is the short name you give a saved command. When you type `cb deploy`, CmdBox looks up the alias `deploy` and 
-runs whatever command is stored under it.
+An alias is the short name you give a saved command. When you type `cb deploy`, CmdBox looks
+up the alias `deploy` and runs whatever command is stored under it.
 
 Aliases should be:
-- **Short** - These are what you're going to be typing to recall commands.
-- **Descriptive** - `deploy-prod` beats `dp`, especially if you're searching.
-- **Lowercase with hyphens** - This is the conventional style. But aliases can have any characters except white space.
+
+- **Short:** these are what you type to recall commands, so brevity matters.
+- **Descriptive:** `deploy-prod` beats `dp`, especially when searching.
+- **Lowercase with hyphens:** this is the conventional style, though aliases support any
+  characters except whitespace.
 
 ### Template
 
-A command template is the actual shell instructions stored under an alias. It can be anything you would normally type 
-in a terminal: a single program, a pipeline, a long string of flags, or even a multi-line script.
+A template is the actual shell instruction stored under an alias. It can be anything you would
+normally type in a terminal: a single program, a pipeline, a long string of flags, or a
+multi-line script.
 
-```console
-alias: git-graph-log
+```
+alias:    git-graph
 template: git log --oneline --graph --decorate --all
 ```
 
-Multi-line templates are supported and are executed like a script. In fact, behind the scenes, multi-line templates are 
-saved to a temp file and executed as a script. See [`cmd` subsetion](commands/cmd.md) for more information about multi-line 
-templates.
+Multi-line templates are supported and are executed as a script. Behind the scenes, CmdBox
+writes the template to a temporary file, executes it, then removes the file. See the
+[`cmd` reference](commands/cmd.md) for more information about multi-line templates.
+
+---
 
 ## Variables
 
-Variables help make the commands you save more versatile and usable. A variable is defined in a command template by putting 
-the variable name inside angle brackets `<var-name>`. This will be replaced when a command is executed.
+Variables make saved commands flexible and reusable. A variable is defined in a template by
+placing the variable name inside angle brackets: `<variable-name>`. When the command runs,
+CmdBox replaces each placeholder with a real value before executing.
 
-Variables can be supplied at runtime, for dynamic usage where some portion of a long command may change depending on the situation.
+Consider this template:
 
-Consider the template: 
+```
+ssh <user>@<host> -p <port>
+```
 
-`ssh <user>@<host> -p <port>`.
+The same base template can connect to any server depending on the values supplied.
 
-This base template can be used with different variables to connect to different servers.
+### Supplying variables at runtime
+
+Pass variable values as flags when running the command:
 
 ```console
-> cb ssh-server --user admin --host 192.168.1.1 --port 22
+> cb ssh-connect --user admin --host 192.168.1.1 --port 22
 
 ssh admin@192.168.1.1 -p 22
 ```
 
-Variables can also be stored in the database so they don't have to be entered each time, and they can be used in multiple 
-commands.
+### Saving variable values
+
+Variables can be saved to the database so they fill in automatically without being typed
+each time:
 
 ```console
 > cb var add user admin
@@ -79,45 +96,89 @@ commands.
 > cb var add port 22
 ```
 
-Then when we run the same command as above:
+Now the same command runs without any flags:
 
 ```console
-> cb ssh-server
+> cb ssh-connect
 
 ssh admin@192.168.1.1 -p 22
 ```
 
-Even if a variable is stored in the database, supplying it at runtime will take precedence. Variables can be mixed and matched
-this way:
+### Mixing saved and runtime values
+
+A runtime flag always takes precedence over a saved value. This lets you override specific
+variables on the fly while the rest fill in from saved values:
 
 ```console
-> cb ssh-server --host 10.0.0.5 --port 2222
+> cb ssh-connect --host 10.0.0.5 --port 2222
 
 ssh admin@10.0.0.5 -p 2222
 ```
 
-Variables have less metadata than commands, but there are two more fields created by CmdBox that can be used to sort 
-variables or just display more information about them.
+### Variable resolution order
 
-- `date_created` - The datetime the variable was first created.
-- `last_updated` - The datetime the variable was last updated.
+When a command runs, CmdBox resolves each variable in this order:
+
+1. **Runtime flag** — a value passed directly with `--variable-name` always wins.
+2. **Saved value** — a value stored via `cb var add` is used if no runtime flag is provided.
+3. **Prompted** — if no value is found by either of the above, CmdBox will ask you to enter
+   one before the command executes.
+
+### Variable fields
+
+Like commands, variables have metadata fields maintained by CmdBox:
+
+| Field | Description |
+|---|---|
+| `date_created` | The date and time the variable was first saved. |
+| `last_updated` | The date and time the variable was last updated. |
+
+See the [`var` reference](commands/var.md) for full details on managing variables.
+
+---
+
+## Command References
+
+A template can reference another saved command using the `<cmd:alias>` syntax. When the
+command runs, CmdBox looks up the referenced alias and substitutes its template inline before
+executing.
+
+```
+alias:    full-deploy
+template: <cmd:git-pull> && <cmd:build> && <cmd:deploy>
+```
+
+Running `cb full-deploy` resolves each reference and executes the resulting command. This
+lets you compose complex workflows from simpler saved commands without duplicating template
+logic.
+
+!!! tip
+Command references and variables can be used together in the same template.
+
+---
 
 ## Tags
 
-Tags are labels you attach to commands or variables for organization. A command or variable can have multiple tags. Lists
-of commands and variables can be filtered by tag, or searched for by tag:
+Tags are labels you attach to commands or variables for organization. A command or variable
+can have multiple tags, and lists can be filtered by tag at any time.
 
 ```console
-cb cmd add deploy "..." --tags work,aws,production
+> cb cmd add deploy "git push origin main && fly deploy" --tags work,production
 ```
 
-You can then filter your command list by tag:
+Filter your command list by tag:
 
 ```console
-cb cmd list --tag aws
+> cb cmd list --tag work
 ```
+
+Tags themselves can be searched and managed via the [`tag` reference](commands/tag.md).
+
+---
 
 ## Settings
 
-CmdBox behavior and appearance has a lot of customization available through settings. Use the 
-[`settings` subcommand](commands/settings.md) to view and change them.
+CmdBox behavior and appearance can be customized through settings. This includes defaults for
+display fields, sort order, result limits, and more. Use the
+[`settings` reference](commands/settings.md) to view your current configuration and make
+changes.
