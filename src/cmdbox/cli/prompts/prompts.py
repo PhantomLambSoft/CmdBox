@@ -58,3 +58,9 @@ def prompt_for_tags(
     if not tags:
         return None
     return tags.split(",")
+
+
+def prompt_for_missing_var(var_name: str) -> str:
+    return prompt(
+        f"Enter value for <{var_name}>: ",
+    )
