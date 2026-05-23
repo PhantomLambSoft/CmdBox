@@ -19,7 +19,7 @@ The `show` subcommand displays your current settings in a table.
 > cb settings show
 ```
 
-![settings show output](../assets/settings/show-output.svg)
+![settings show output](../assets/settings/settings-show-output.svg)
 
 To display only specific settings, use the `--fields` flag with a comma-separated list of
 field names.
