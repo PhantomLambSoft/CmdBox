@@ -57,7 +57,7 @@ The `get` subcommand retrieves a tag and displays all of its available fields.
 > cb tag get docker
 ```
 
-![tag get output](../assets/tag/get-output.svg)
+![tag get output](../assets/tag/tag-get-output.svg)
  
 ---
 
@@ -129,7 +129,7 @@ The `list` subcommand displays all tags stored in your database.
 > cb tag list
 ```
 
-![tag list output](../assets/tag/list-output.svg)
+![tag list output](../assets/tag/tag-list-output.svg)
 
 By default, only the name and description of each tag are displayed, and the default order
 is by name. The default fields and ordering can be adjusted in your settings, or by supplying
@@ -165,26 +165,26 @@ While `list` shows all of your tags, `search` lets you filter by the content of 
 field. By default, search looks across all fields.
 
 ```console
-> cb tag search docker
+> cb tag search network
 ```
 
-![tag search output](../assets/tag/search-output-default.svg)
+![tag search output](../assets/tag/tag-search-output.svg)
 
 Using the `--in` flag, you can limit your search to specific fields.
 
 ```console
-> cb tag search container --in description
+> cb tag search network --in name
 ```
 
-![tag search output](../assets/tag/search-output-in-description.svg)
+![tag search output](../assets/tag/tag-search-in-output.svg)
 
 To control which fields appear in the results, use the `--field` flag.
 
 ```console
-> cb tag search docker --field name
+> cb tag search network --field name
 ```
 
-![tag search output](../assets/tag/search-output-field-name.svg)
+![tag search output](../assets/tag/tag-search-field-in-output.svg)
 
 As with `list`, you can limit the number of results using the `--limit` flag.
 
