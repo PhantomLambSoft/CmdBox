@@ -23,7 +23,7 @@ The `list` subcommand displays your most recent command executions.
 > cb history list
 ```
 
-![history list output](../assets/history/list-output.svg)
+![history list output](../assets/history/history-list-output.svg)
 
 By default, the 25 most recent entries are shown. Use the `--limit` flag to show more or fewer.
 
@@ -53,7 +53,7 @@ Provide either the index number from `history list` or the beginning of the entr
 > cb history show 3
 ```
 
-![history show output](../assets/history/show-output.svg)
+![history show output](../assets/history/history-show-output.svg)
 
 ---
 
