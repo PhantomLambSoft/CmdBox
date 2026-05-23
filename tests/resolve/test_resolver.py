@@ -158,3 +158,67 @@ class TestResolver(unittest.TestCase):
     def test_empty_bracket(self):
         result = self.resolver.resolve("<>")
         self.assertEqual(result.text, "")
+
+    def test_collect_missing_vars_returns_empty_for_plain_text(self):
+        missing = self.resolver.collect_missing_vars("hello world")
+        self.assertEqual([], missing)
+
+    def test_collect_missing_vars_collects_direct_missing_variable(self):
+        self.mock_lookup.get_variable.return_value = None
+        missing = self.resolver.collect_missing_vars("hello <name>")
+        self.assertEqual(["name"], missing)
+
+    def test_collect_missing_vars_runtime_var_satisfies_variable(self):
+        self.mock_lookup.get_variable.return_value = None
+        missing = self.resolver.collect_missing_vars(
+            "hello <name>", runtime_vars={"name": "Colonel Homer"}
+        )
+        self.assertEqual([], missing)
+
+    def test_collect_missing_vars_recurse_into_stored_variable(self):
+        def lookup_var(name):
+            data = {
+                "welcome": "hello <first> <last>",
+                "first": "Colonel",
+            }
+            if name in data:
+                return VariableRecord(name, data[name])
+            return None
+
+        self.mock_lookup.get_variable.side_effect = lookup_var
+        missing = self.resolver.collect_missing_vars("<welcome>")
+        self.assertEqual(["last"], missing)
+
+    def test_collect_missing_vars_recurse_into_stored_command_template(self):
+        self.mock_lookup.get_command.side_effect = lambda name: (
+            CommandRecord("greet", "echo <target>") if name == "greet" else None
+        )
+        self.mock_lookup.get_variable.return_value = None
+
+        missing = self.resolver.collect_missing_vars("<cmd:greet>")
+        self.assertEqual(["target"], missing)
+
+    def test_collect_missing_vars_deduplicates_missing_names(self):
+        self.mock_lookup.get_variable.return_value = None
+        missing = self.resolver.collect_missing_vars("<name> and again <name>")
+        self.assertEqual(["name"], missing)
+
+    def test_collect_missing_vars_handles_escaped_and_unclosed_tokens(self):
+        self.mock_lookup.get_variable.return_value = None
+        missing = self.resolver.collect_missing_vars(
+            r"escaped \\<name> and open <missing"
+        )
+        self.assertEqual(["name"], missing)
+
+    def test_collect_missing_vars_respects_max_depth(self):
+        resolver = Resolver(self.mock_lookup, max_depth=0)
+
+        def lookup_var(name):
+            data = {"outer": "<inner>"}
+            if name in data:
+                return VariableRecord(name, data[name])
+            return None
+
+        self.mock_lookup.get_variable.side_effect = lookup_var
+        missing = resolver.collect_missing_vars("<outer>")
+        self.assertEqual([], missing)

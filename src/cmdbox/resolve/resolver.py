@@ -64,6 +64,37 @@ class Resolver:
         )
         return ResolveResult(text=text, trace=trace)
 
+    def collect_missing_vars(
+        self, template: str, runtime_vars: dict[str, str] | None = None
+    ) -> list[str]:
+        """
+        Collects missing variables from the given template.
+
+        This function analyzes the provided template and checks for any placeholders
+        or variables that are not present in the runtime variables provided. It
+        returns a list of all such missing variables that need to be defined or
+        replaced in the template.
+
+        Args:
+            template (str): The template string containing placeholder variables
+                to be checked.
+            runtime_vars (dict[str, str] | None): A dictionary of available
+                runtime variables where keys are variable names and values are
+                their corresponding values. Defaults to None if not provided.
+
+        Returns:
+            list[str]: A list of variable names that are missing in the provided
+                runtime variables.
+        """
+        missing: list[str] = []
+        self._collect_missing_inner(
+            template,
+            runtime_vars=runtime_vars or {},
+            missing=missing,
+            seen=set(),
+        )
+        return missing
+
     def _resolve_inner(
         self,
         template: str,
@@ -129,6 +160,76 @@ class Resolver:
             i += 1
 
         return "".join(out)
+
+    def _collect_missing_inner(
+        self,
+        template: str,
+        *,
+        runtime_vars: dict[str, str],
+        missing: list[str],
+        seen: set[str],
+        depth: int = 0,
+    ) -> None:
+        """
+        Recursively collects missing variables and commands in the template by analyzing
+        placeholders and their references. It ensures that variable and command dependencies
+        are resolved to either runtime variables or previously defined variables or commands.
+        If a placeholder cannot be resolved within the specified depth, it is added to the
+        missing list for further processing.
+
+        Args:
+            template: The template string containing placeholders to analyze.
+            runtime_vars: A dictionary mapping variable names to their values. Runtime
+                variables are used to satisfy some of the placeholders in the template.
+            missing: A list used to collect the names of unresolved variable placeholders.
+            seen: A set used to track the names of variables and commands that have already
+                been processed, avoiding circular dependencies during recursion.
+            depth: The current recursion depth. Defaults to 0. If the recursion depth exceeds
+                the allowed maximum (self._max_depth), a MaxDepthExceeded exception is raised.
+        """
+        if depth > self._max_depth:
+            return
+        i = 0
+        while i < len(template):
+            if template[i] == "\\":
+                i += 2
+                continue
+            if template[i] == "<":
+                token_inner, _, next_i = self._read_angle_token(template, i)
+                if token_inner:
+                    kind, key = self._parse_kind_and_key(token_inner)
+                    if kind == RefKind.VARIABLE:
+                        if runtime_vars and key in runtime_vars:
+                            pass  # satisfied
+                        elif self._lookup.get_variable(key) is None:
+                            if key not in missing:
+                                missing.append(key)
+                        else:
+                            # Recurse into stored variable's value
+                            rec = self._lookup.get_variable(key)
+                            if rec and rec.name not in seen:
+                                seen.add(rec.name)
+                                self._collect_missing_inner(
+                                    rec.value,
+                                    runtime_vars=runtime_vars,
+                                    missing=missing,
+                                    seen=seen,
+                                    depth=depth + 1,
+                                )
+                    else:  # COMMAND ref
+                        rec = self._lookup.get_command(key)
+                        if rec and rec.alias not in seen:
+                            seen.add(rec.alias)
+                            self._collect_missing_inner(
+                                rec.template,
+                                runtime_vars=runtime_vars,
+                                missing=missing,
+                                seen=seen,
+                                depth=depth + 1,
+                            )
+                i = next_i
+            else:
+                i += 1
 
     def _read_angle_token(self, s: str, start_i: int) -> tuple[Optional[str], str, int]:
         """
