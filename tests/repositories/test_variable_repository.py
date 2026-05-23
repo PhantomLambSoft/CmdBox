@@ -93,13 +93,13 @@ class TestVariableRepository(unittest.TestCase):
         self.repo.create(name="test2", value="test_value")
 
     def test_all_symbols_are_allowed_in_variable_name(self):
-        self.repo.create(name="test-1!@#$%^&*()_+-=[]\;/.,<>?:{}|", value="test_value")
+        self.repo.create(name="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|", value="test_value")
 
     def test_unicode_characters_are_allowed_in_variable_name(self):
         self.repo.create(name="git-✨", value="test_value")
 
     def test_all_symbols_are_allowed_in_variable_value(self):
-        self.repo.create(name="test", value="test-1!@#$%^&*()_+-=[]\;/.,<>?:{}|")
+        self.repo.create(name="test", value="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|")
 
     def test_unicode_characters_are_allowed_in_variable_value(self):
         self.repo.create(name="test", value="git-✨")
@@ -113,8 +113,8 @@ class TestVariableRepository(unittest.TestCase):
         self.assertEqual("test", Variable.get(Variable.name == "test").name)
 
     def test_get_unknown_variable_raises_exception(self):
-        with self.assertRaises(UnknownNameError):
-            self.repo.get_by_name("invalid_name")
+        var = self.repo.get_by_name("invalid_name")
+        self.assertIsNone(var)
 
     def test_variable_name_capitalisation_does_not_matter(self):
         variable = Variable.create(name="test", value="test_value")
@@ -131,17 +131,17 @@ class TestVariableRepository(unittest.TestCase):
         self.assertEqual(variable, var)
 
     def test_get_by_blank_field_raises_exception(self):
-        with self.assertRaises(UnknownNameError):
-            self.repo.get_by_name("")
+        var = self.repo.get_by_name("")
+        self.assertIsNone(var)
 
     def test_get_by_other_fields_does_not_work(self):
         Variable.create(name="test", value="test_value")
-        with self.assertRaises(UnknownNameError):
-            self.repo.get_by_name("test_value")
+        var = self.repo.get_by_name("test_value")
+        self.assertIsNone(var)
 
     def test_get_by_all_symbols_is_allowed(self):
-        Variable.create(name="test-1!@#$%^&*()_+-=[]\;/.,<>?:{}|", value="test_value")
-        self.repo.get_by_name("test-1!@#$%^&*()_+-=[]\;/.,<>?:{}|")
+        Variable.create(name="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|", value="test_value")
+        self.repo.get_by_name("test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|")
 
     def test_get_by_unicode_characters_is_allowed(self):
         Variable.create(name="git-✨", value="test_value")
