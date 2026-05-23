@@ -137,3 +137,51 @@ class TestRunService(unittest.TestCase):
         self.assertEqual(str(context.exception), "Cycle detected")
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
+
+    def test_collect_missing_vars_success(self):
+        alias = "test-alias"
+        template = "echo <name> <title>"
+        expected_missing = ["name", "title"]
+
+        command = MagicMock(spec=Command)
+        command.template = template
+        self.mock_repo.get_by_alias.return_value = command
+        self.mock_resolver.collect_missing_vars.return_value = expected_missing
+
+        result = self.service.collect_missing_vars(alias)
+
+        self.assertEqual(expected_missing, result)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_resolver.collect_missing_vars.assert_called_once_with(
+            template, runtime_vars=None
+        )
+
+    def test_collect_missing_vars_with_runtime_vars(self):
+        alias = "test-alias"
+        template = "echo <name> <title>"
+        runtime_vars = {"name": "Willi"}
+        expected_missing = ["title"]
+
+        command = MagicMock(spec=Command)
+        command.template = template
+        self.mock_repo.get_by_alias.return_value = command
+        self.mock_resolver.collect_missing_vars.return_value = expected_missing
+
+        result = self.service.collect_missing_vars(alias, runtime_vars=runtime_vars)
+
+        self.assertEqual(expected_missing, result)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_resolver.collect_missing_vars.assert_called_once_with(
+            template, runtime_vars=runtime_vars
+        )
+
+    def test_collect_missing_vars_command_not_found(self):
+        alias = "non-existent"
+        self.mock_repo.get_by_alias.side_effect = UnknownAliasError(alias)
+
+        with self.assertRaises(UnknownAliasError) as context:
+            self.service.collect_missing_vars(alias)
+
+        self.assertIn(f"Alias '{alias}' not found.", str(context.exception))
+        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_resolver.collect_missing_vars.assert_not_called()

@@ -130,3 +130,12 @@ class RunService:
             exit_code=exit_code,
             limit=settings.history.limit_per_command,
         )
+
+    def collect_missing_vars(
+        self, command_alias: str, runtime_vars: dict[str, str] | None = None
+    ) -> list[str]:
+        cmd = self._repo.get_by_alias(command_alias)
+        missing = self._resolver.collect_missing_vars(
+            cmd.template, runtime_vars=runtime_vars
+        )
+        return missing
