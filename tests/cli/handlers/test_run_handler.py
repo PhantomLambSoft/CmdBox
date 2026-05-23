@@ -77,6 +77,7 @@ class TestRunHandler(unittest.TestCase):
             command="echo hello", exit_code=0, stdout="hello", stderr=""
         )
         mock_run_service.run.return_value = mock_ex_result
+        mock_run_service.collect_missing_vars.return_value = []
         mock_render.return_value = "rendered_result"
 
         run_run_command(
@@ -88,6 +89,9 @@ class TestRunHandler(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=None
+        )
         mock_run_service.run.assert_called_once_with(
             "test-alias", runtime_vars=None, ctx=RunContext(verbose=True)
         )
@@ -103,6 +107,7 @@ class TestRunHandler(unittest.TestCase):
             command="echo hello", exit_code=0, stdout="hello", stderr=""
         )
         mock_run_service.run.return_value = mock_ex_result
+        mock_run_service.collect_missing_vars.return_value = []
 
         run_run_command(
             alias="test-alias",
@@ -113,6 +118,9 @@ class TestRunHandler(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=None
+        )
         mock_run_service.run.assert_called_once_with(
             "test-alias", runtime_vars=None, ctx=RunContext(verbose=False)
         )
@@ -128,6 +136,7 @@ class TestRunHandler(unittest.TestCase):
             command="echo hello", exit_code=0, stdout="hello", stderr=""
         )
         mock_run_service.run.return_value = mock_ex_result
+        mock_run_service.collect_missing_vars.return_value = []
         mock_render.return_value = "rendered_result"
 
         run_run_command(
@@ -139,6 +148,9 @@ class TestRunHandler(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=None
+        )
         mock_run_service.run.assert_called_once_with(
             "test-alias", runtime_vars=None, ctx=RunContext(verbose=True)
         )
@@ -154,6 +166,7 @@ class TestRunHandler(unittest.TestCase):
             command="echo hello", exit_code=1, stdout="", stderr="error occurred"
         )
         mock_run_service.run.return_value = mock_ex_result
+        mock_run_service.collect_missing_vars.return_value = []
         mock_render.return_value = "rendered_error"
 
         run_run_command(
@@ -164,6 +177,9 @@ class TestRunHandler(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=None
+        )
         mock_render.assert_called_once_with(mock_ex_result)
         mock_console.print.assert_called_once_with("rendered_error")
 
@@ -175,6 +191,7 @@ class TestRunHandler(unittest.TestCase):
             command="echo hello", exit_code=0, stdout="hello", stderr=""
         )
         mock_run_service.run.return_value = mock_ex_result
+        mock_run_service.collect_missing_vars.return_value = []
         raw_ctx = RawRunContext(cwd="/tmp")
 
         run_run_command(
@@ -186,6 +203,9 @@ class TestRunHandler(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=None
+        )
         mock_run_service.run.assert_called_once_with(
             "test-alias", runtime_vars=None, ctx=RunContext(cwd="/tmp")
         )
@@ -198,6 +218,7 @@ class TestRunHandler(unittest.TestCase):
             command="echo hello", exit_code=0, stdout="hello", stderr=""
         )
         mock_run_service.run.return_value = mock_ex_result
+        mock_run_service.collect_missing_vars.return_value = []
         raw_ctx = RawRunContext(cwd="/tmp")
 
         vars = {"VAR1": "value1", "VAR2": "value2"}
@@ -211,8 +232,44 @@ class TestRunHandler(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=vars
+        )
         mock_run_service.run.assert_called_once_with(
             "test-alias", runtime_vars=vars, ctx=RunContext(cwd="/tmp")
+        )
+
+    @patch("cmdbox.cli.handlers.run_handler.prompt_for_missing_var")
+    def test_run_run_command_prompts_for_missing_vars(self, mock_prompt):
+        mock_run_service = MagicMock()
+        mock_settings = MagicMock()
+        mock_console = MagicMock()
+        mock_ex_result = ExecutionResult(
+            command="echo hello", exit_code=0, stdout="hello", stderr=""
+        )
+        mock_run_service.collect_missing_vars.return_value = ["name", "title"]
+        mock_run_service.run.return_value = mock_ex_result
+        mock_prompt.side_effect = ["Homer", "Colonel"]
+        runtime_vars = {}
+
+        run_run_command(
+            alias="test-alias",
+            runtime_vars=runtime_vars,
+            run_ctx=RawRunContext(verbose=False),
+            get_run_service=lambda: mock_run_service,
+            get_settings=lambda: mock_settings,
+            get_console=lambda: mock_console,
+        )
+
+        self.assertEqual({"name": "Homer", "title": "Colonel"}, runtime_vars)
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=runtime_vars
+        )
+        mock_prompt.assert_has_calls([call("name"), call("title")])
+        mock_run_service.run.assert_called_once_with(
+            "test-alias",
+            ctx=RunContext(verbose=False),
+            runtime_vars=runtime_vars,
         )
 
     @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
@@ -222,6 +279,7 @@ class TestRunHandler(unittest.TestCase):
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
         mock_run_service.preview.return_value = mock_resolve_result
+        mock_run_service.collect_missing_vars.return_value = []
         mock_render.return_value = "rendered_preview"
 
         run_preview_command(
@@ -233,6 +291,9 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=None,
         )
 
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=None
+        )
         mock_run_service.preview.assert_called_once_with(
             "test-alias", runtime_vars=None
         )
@@ -246,6 +307,7 @@ class TestRunHandler(unittest.TestCase):
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
         mock_run_service.preview.return_value = mock_resolve_result
+        mock_run_service.collect_missing_vars.return_value = []
         raw_ctx = RawRunContext(cwd="/tmp")
         mock_render.return_value = "rendered_preview"
 
@@ -258,10 +320,48 @@ class TestRunHandler(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=None
+        )
         mock_run_service.preview.assert_called_once_with(
             "test-alias", runtime_vars=None
         )
         mock_render.assert_called_once_with(
             mock_resolve_result, ctx=RunContext(cwd="/tmp")
         )
+        mock_console.print.assert_called_once_with("rendered_preview")
+
+    @patch("cmdbox.cli.handlers.run_handler.prompt_for_missing_var")
+    @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
+    def test_run_preview_command_prompts_for_missing_vars(
+        self, mock_render, mock_prompt
+    ):
+        mock_run_service = MagicMock()
+        mock_settings = MagicMock()
+        mock_console = MagicMock()
+        mock_resolve_result = ResolveResult(text="echo hello", trace=[])
+        mock_run_service.collect_missing_vars.return_value = ["name"]
+        mock_run_service.preview.return_value = mock_resolve_result
+        mock_prompt.return_value = "Homer"
+        mock_render.return_value = "rendered_preview"
+        runtime_vars = {}
+
+        run_preview_command(
+            alias="test-alias",
+            run_ctx=None,
+            runtime_vars=runtime_vars,
+            get_run_service=lambda: mock_run_service,
+            get_settings=lambda: mock_settings,
+            get_console=lambda: mock_console,
+        )
+
+        self.assertEqual({"name": "Homer"}, runtime_vars)
+        mock_run_service.collect_missing_vars.assert_called_once_with(
+            "test-alias", runtime_vars=runtime_vars
+        )
+        mock_prompt.assert_called_once_with("name")
+        mock_run_service.preview.assert_called_once_with(
+            "test-alias", runtime_vars=runtime_vars
+        )
+        mock_render.assert_called_once_with(mock_resolve_result, ctx=RunContext())
         mock_console.print.assert_called_once_with("rendered_preview")

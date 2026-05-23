@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 import typer
 
+from cmdbox.cli.prompts.prompts import prompt_for_missing_var
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.cli.ui.presenters.result_presenter import (
     render_execution_result,
@@ -48,7 +49,15 @@ def run_run_command(
     if run_ctx and run_ctx.verbose is None:
         settings = get_settings()
         run_ctx.verbose = settings.execution_settings.default_verbose
+
     run_service = get_run_service()
+
+    missing = run_service.collect_missing_vars(alias, runtime_vars=runtime_vars)
+    if missing:
+        for var_name in missing:
+            value = prompt_for_missing_var(var_name)
+            runtime_vars[var_name] = value
+
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
     ex_result = run_service.run(alias, ctx=run_ctx, runtime_vars=runtime_vars)
     if run_ctx.verbose and not run_ctx.emit:
@@ -69,7 +78,15 @@ def run_preview_command(
     if run_ctx and run_ctx.verbose is None:
         settings = get_settings()
         run_ctx.verbose = settings.execution_settings.default_verbose
+
     run_service = get_run_service()
+
+    missing = run_service.collect_missing_vars(alias, runtime_vars=runtime_vars)
+    if missing:
+        for var_name in missing:
+            value = prompt_for_missing_var(var_name)
+            runtime_vars[var_name] = value
+
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
     prev_result = run_service.preview(alias, runtime_vars=runtime_vars)
     rendered_result = render_preview_result(prev_result, ctx=run_ctx)
