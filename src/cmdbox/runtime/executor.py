@@ -54,7 +54,9 @@ class RunContext:
 class Executor:
 
     @log_action(__name__, "run_executor_run")
-    def run(self, command: str, ctx: RunContext = RunContext()) -> ExecutionResult:
+    def run(
+        self, command: str, ctx: RunContext | None = RunContext()
+    ) -> ExecutionResult:
         """
         Executes a shell command in a subprocess, capturing the output and exit code.
 
