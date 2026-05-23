@@ -1,7 +1,7 @@
 # run
 
 The `run` subcommand executes a saved command by its alias. It also provides options for
-controlling how the command runs — such as setting a working directory, passing environment
+controlling how the command runs, such as setting a working directory, passing environment
 variables, or previewing what will be executed before committing to running it.
 
 The available subcommands for `run` are:
@@ -63,7 +63,7 @@ directory.
 > cb run build --cwd C:\Projects\myapp
 ```
 
- 
+
 ---
 
 **`--env`**
@@ -75,7 +75,7 @@ times to set multiple variables.
 > cb run build --env NODE_ENV=production --env CI=true
 ```
 
- 
+
 ---
 
 **`--capture` / `-c`**
@@ -87,7 +87,7 @@ running CmdBox commands inside scripts.
 > cb run check-ip --capture
 ```
 
- 
+
 ---
 
 **`--shell` / `-s`**
@@ -99,7 +99,7 @@ shell. Use this option to override it for a specific run.
 > cb run my-script --shell powershell
 ```
 
- 
+
 ---
 
 **`--verbose` / `--no-verbose`**
@@ -111,7 +111,7 @@ suppress it if verbose output is on by default in your settings.
 > cb run build --verbose
 ```
 
- 
+
 ---
 
 ## `preview`
@@ -120,10 +120,10 @@ Shows the fully resolved command that would be executed without actually running
 variables are resolved and substituted, so you can verify the final command before committing.
 
 ```console
-> cb run preview ping-test --host google.com
+> cb preview ssh-connect --user maxpowers --port 22
 ```
 
-![run preview output](../assets/run/preview-output.svg)
+![run preview output](../assets/run/run-preview-output.svg)
 
 `preview` accepts the same options as `run` — `--cwd`, `--env`, `--shell`, `--capture`, and
 `--verbose` — so you can preview the command exactly as it would be run under those conditions.
