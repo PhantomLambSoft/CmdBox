@@ -30,7 +30,6 @@ env/
 .env/
 
 # Poetry specific
-poetry.lock
 .poetry/
 
 # Pyenv
@@ -45,7 +44,7 @@ poetry.lock
 htmlcov/
 .tox/
 .nox/
-pytest_cache/
+.pytest_cache/
 .cache/
 
 # Mypy
