@@ -6,6 +6,9 @@ from datetime import datetime
 
 from peewee import SqliteDatabase
 
+from cmdbox.migrations.errors import MigrationError
+
+
 log = logging.getLogger(__name__)
 
 
@@ -20,7 +23,7 @@ def ensure_migrated(db_path: str) -> None:
         db_path: A string representing the path to the SQLite database file.
 
     Raises:
-        RuntimeError: If the database version is greater than the application's
+        MigrationError: If the database version is greater than the application's
             current version, indicating the application is outdated and needs updating.
     """
     db = SqliteDatabase(db_path)
@@ -41,7 +44,7 @@ def ensure_migrated(db_path: str) -> None:
         return
 
     if version > current_version:
-        raise RuntimeError(
+        raise MigrationError(
             f"Database version {version} is ahead of the application (v{current_version}). Please update CmdBox."
         )
 
@@ -67,10 +70,10 @@ def migrate(version: int, path: Path, migrations: dict, timestamp: str) -> None:
         timestamp (str): A timestamp used for creating backups.
 
     Raises:
-        RuntimeError: If no migration function exists for the current version.
+        MigrationError: If no migration function exists for the current version.
     """
     if version not in migrations:
-        raise RuntimeError(
+        raise MigrationError(
             f"No migration found for v{version} to v{version + 1}. The installation may be corrupt."
         )
 

@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
 
 from cmdbox.migrations import runner
+from cmdbox.migrations.errors import MigrationError
 
 
 class TestMigrationRunner(unittest.TestCase):
@@ -79,7 +80,7 @@ class TestMigrationRunner(unittest.TestCase):
         mock_get_user_version.return_value = 8
         mock_get_current_version.return_value = 5
 
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(MigrationError) as context:
             runner.ensure_migrated("db.sqlite")
 
         self.assertEqual(
@@ -143,7 +144,7 @@ class TestMigrationRunner(unittest.TestCase):
         )
 
     def test_migrate_raises_for_missing_migration(self):
-        with self.assertRaises(RuntimeError) as context:
+        with self.assertRaises(MigrationError) as context:
             runner.migrate(
                 5, Path("db.sqlite"), migrations={}, timestamp="20260101_100000"
             )
