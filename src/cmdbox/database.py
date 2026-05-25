@@ -41,6 +41,12 @@ def init_database(testing: bool = False) -> None:
     else:
         db_path = str(DB_PATH)
     db.init(db_path)
+
+    if not testing:
+        from cmdbox.migrations.runner import ensure_migrated
+
+        ensure_migrated(db_path)
+
     _db_initialized = True
     log.debug("Database initialized %s", "in testing mode" if testing else "")
 
