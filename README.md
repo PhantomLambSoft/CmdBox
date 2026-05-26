@@ -81,7 +81,7 @@ pip install cmdbox
 Or install from source:
 
 ```bash
-git clone https://github.com/MalloyDelacroix/CmdBox.git
+git clone https://github.com/PhantomLambSoft/CmdBox.git
 cd cmdbox
 pip install .
 ```
