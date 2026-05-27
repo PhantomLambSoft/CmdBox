@@ -1,6 +1,6 @@
 # CmdBox
 
-**Source Code:** [github.com/phantomlambsoft/CmdBox](https://github.com/phantomlambsoft/CmdBox)
+**Source Code:** [github.com/PhantomLambSoft/CmdBox](https://github.com/PhantomLambSoft/CmdBox)
 
 CmdBox is a fast, structured, and searchable command runner for the terminal.
 
@@ -83,7 +83,7 @@ pip install cmdbox
 Or install from source:
 
 ```bash
-git clone https://github.com/MalloyDelacroix/CmdBox.git
+git clone https://github.com/PhantomLambSoft/CmdBox.git
 cd cmdbox
 pip install .
 ```

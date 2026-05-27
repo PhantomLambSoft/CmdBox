@@ -99,7 +99,7 @@ Use this option if you want to contribute to CmdBox, run unreleased changes, or 
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/MalloyDelacroix/cmdbox.git
+git clone https://github.com/PhantomLambSoft/cmdbox.git
 cd cmdbox
 ```
 
@@ -175,5 +175,5 @@ is stored separately and will remain on your system. To remove this data, delete
 
 ## Need Help?
 
-If something isn't working, [open an issue on github](https://github.com/MalloyDelacroix/cmdbox/issues). Include your
+If something isn't working, [open an issue on github](https://github.com/PhantomLambSoft/cmdbox/issues). Include your
 operating system, the output of `python --version`, and any error messages you receive.
