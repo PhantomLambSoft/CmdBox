@@ -1,6 +1,6 @@
 # CmdBox
 
-**Source Code:** [github.com/MalloyDelacroix/CmdBox](https://github.com/MalloyDelacroix/CmdBox)
+**Source Code:** [github.com/phantomlambsoft/CmdBox](https://github.com/phantomlambsoft/CmdBox)
 
 CmdBox is a fast, structured, and searchable command runner for the terminal.
 
