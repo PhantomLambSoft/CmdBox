@@ -70,8 +70,8 @@ This is useful when you need to repeat a command that used a specific set of var
 without having to supply them again.
 
 !!! tip
-Not sure which entry you want? Run `cb history list` first to find the index, then
-use `cb history show <index>` to confirm it before rerunning.
+    Not sure which entry you want? Run `cb history list` first to find the index, then
+    use `cb history show <index>` to confirm it before rerunning.
 
 ---
 
@@ -87,7 +87,11 @@ variables it was run with.
 This is a quick shorthand for the common case of simply repeating the last thing you ran.
 
 !!! tip
-Use the `!!` shortcut to quickly repeat the last ran command.
+    Use the `!!` shortcut to quickly repeat the last ran command.
+
+    ```console
+    > cb !!
+    ```
 
 ---
 
@@ -120,4 +124,4 @@ The two flags can be combined.
 ```
 
 !!! warning
-Cleared history cannot be recovered.
+    Cleared history cannot be recovered.
