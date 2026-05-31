@@ -62,7 +62,7 @@ $ cb cmd get upgrade-pip
 !!! note
     All outputs are stylized. Some of the more stylized outputs will be displayed here in a different format, as shown below:
 
-![Command get output](../assets/cmd/get-output.svg)
+![Command get output](../assets/cmd/cmd-get-output.svg)
 
 
 ## `update`
@@ -127,7 +127,7 @@ The `list` command displays all commands you have stored in your database.
 ```console
 $ cb cmd list
 ```
-![Command get output](../assets/cmd/list-output.svg)
+![Command get output](../assets/cmd/cmd-list-output.svg)
 
 By default, only the alias, template, and description of each command are displayed, and the default order is by alias.
 The default fields and ordering can be adjusted in your settings, or by supplying additonal options to the `list` command.
@@ -138,7 +138,7 @@ To change the order, use the `--order` flag and specify the field you want to or
 $ cb cmd list --order description
 ```
 
-![Command get output](../assets/cmd/list-output-order-by-description-output.svg)
+![Command get output](../assets/cmd/cmd-list-order-by-description-output.svg)
 
 To change the displayed fields, use the `--fields` flag and specify the fields you want to display.
 
@@ -146,7 +146,7 @@ To change the displayed fields, use the `--fields` flag and specify the fields y
 $ cb cmd list --field alias --field template
 ```
 
-![Command get output](../assets/cmd/list-output-alias-template-only.svg)
+![Command get output](../assets/cmd/cmd-list-alias-template-only-output.svg)
 
 If you have a large database of commands, you may only want to list some of them. For this, you can use the `--limit` flag.
 
@@ -182,7 +182,7 @@ By default, search is limited to the alias and template fields.
 $ cb cmd search pip
 ```
 
-![Command get output](../assets/cmd/search-output-default.svg)
+![Command get output](../assets/cmd/cmd-search-output.svg)
 
 Using the `--in` flag, you can limit your search to only the fields you want to search in.
 
@@ -190,7 +190,7 @@ Using the `--in` flag, you can limit your search to only the fields you want to 
 $ cb cmd search listening --in description
 ```
 
-![Command get output](../assets/cmd/search-output-in-description.svg)
+![Command get output](../assets/cmd/cmd-search-in-description-output.svg)
 
 And if you only want to see certain fields in the results output, you can use the `--field` flag.
 
@@ -198,7 +198,7 @@ And if you only want to see certain fields in the results output, you can use th
 $ cb cmd search listening --in description --field alias
 ```
 
-![Command get output](../assets/cmd/search-output-field-alias.svg)
+![Command get output](../assets/cmd/cmd-search-field-alias-output.svg)
 
 As will the list command, you can also limit the number of results returned by using the `--limit` flag.
 
