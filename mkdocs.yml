@@ -58,7 +58,8 @@ nav:
         - var: commands/var.md
         - tag: commands/tag.md
         - run: commands/run.md
-        - init: commands/init.md
+        - history: commands/history.md
         - settings: commands/settings.md
+        - init: commands/init.md
     - Concepts: concepts.md
     - FAQ: faq.md
