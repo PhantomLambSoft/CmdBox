@@ -64,7 +64,7 @@ The `get` subcommand retrieves a tag and displays all of its available fields.
 ## `update`
 
 !!! tip "Aliases"
-`update` can also be called as `edit`.
+    `update` can also be called as `edit`.
 
 The `update` subcommand makes changes to a tag you already have stored.
 
@@ -89,10 +89,10 @@ by a comma and no white-space.
 ```
 
 !!! tip "Autocomplete"
-Autocomplete is available for field names when using `--set`.
+    Autocomplete is available for field names when using `--set`.
 
 !!! warning
-Be sure to wrap your values in quotes if they contain spaces.
+    Be sure to wrap your values in quotes if they contain spaces.
 
 If you want to update the current value of a field without supplying a completely new value,
 use the `--edit` (or `-e`) flag. You will be prompted for each field, pre-filled with its
@@ -115,14 +115,14 @@ flag to specify which fields to prompt for.
 ```
 
 !!! warning
-`--edit-fields` can only be used in conjunction with the `--edit` flag.
+    `--edit-fields` can only be used in conjunction with the `--edit` flag.
  
 ---
 
 ## `list`
 
 !!! tip "Aliases"
-`list` can also be called as `ls`.
+    `list` can also be called as `ls`.
 
 The `list` subcommand displays all tags stored in your database.
 
@@ -160,7 +160,7 @@ If you have a large number of tags, use the `--limit` flag to cap the number of 
 ## `search`
 
 !!! tip "Aliases"
-`search` can also be called as `find`.
+    `search` can also be called as `find`.
 
 While `list` shows all of your tags, `search` lets you filter by the content of any available
 field. By default, search looks across all fields.
@@ -199,7 +199,7 @@ As with `list`, you can limit the number of results using the `--limit` flag.
 ## `delete`
 
 !!! tip "Aliases"
-`delete` can also be called as `rm`, `del`, or `remove`.
+    `delete` can also be called as `rm`, `del`, or `remove`.
 
 The `delete` subcommand removes a tag from your database. It only requires the name of the
 tag you want to remove.
@@ -209,5 +209,5 @@ tag you want to remove.
 ```
 
 !!! warning
-Deleting a tag removes it from all commands and variables that use it. The commands and
-variables themselves are not affected.
+    Deleting a tag removes it from all commands and variables that use it. The commands and
+    variables themselves are not affected.
