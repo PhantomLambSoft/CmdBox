@@ -182,3 +182,15 @@ CmdBox behavior and appearance can be customized through settings. This includes
 display fields, sort order, result limits, and more. Use the
 [`settings` reference](commands/settings.md) to view your current configuration and make
 changes.
+
+---
+
+## Shell Integration
+
+By default, `cb` runs commands in a background process separate from your current terminal
+session. This works for most commands, but it means commands that need to affect your current
+session, like activating a virtual environment or changing directories, will not work as
+expected.
+
+Shell integration adds the `cbe` command, which runs a saved command directly in your current
+session. Setting it up is a one-time step handled by the [`init` subcommand](commands/init.md).
