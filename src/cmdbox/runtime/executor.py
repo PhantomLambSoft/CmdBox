@@ -54,9 +54,7 @@ class RunContext:
 class Executor:
 
     @log_action(__name__, "run_executor_run")
-    def run(
-        self, command: str, ctx: RunContext | None = RunContext()
-    ) -> ExecutionResult:
+    def run(self, command: str, ctx: RunContext | None = None) -> ExecutionResult:
         """
         Executes a shell command in a subprocess, capturing the output and exit code.
 
@@ -76,6 +74,8 @@ class Executor:
             ExecutionResult: An object containing the executed command, the exit code,
                 and the captured standard output and error streams.
         """
+        if not ctx:
+            ctx = RunContext()
         log.info(
             "Executing command: mode=%s, multiline=%s, capture=%s, shell=%s, cmd_len=%s, cwd_set=%s, env_override=%s",
             "emit" if ctx.emit else "subprocess",
