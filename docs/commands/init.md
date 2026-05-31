@@ -22,6 +22,10 @@ variables work as expected.
 
 `cbe` is only available after shell integration has been set up with `cb init`.
 
+!!! note
+    When using `cbe`, variable prompts are simplified due to stdout being captured by the shell. Features such as prompt
+    history and tab completion are not available in this mode.
+
 ---
 
 ## Supported Shells
