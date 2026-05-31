@@ -846,14 +846,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../init/" class="md-nav__link">
+      <a href="../history/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    init
+    history
   
 
     
@@ -882,6 +882,34 @@
     
   
     settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../init/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    init
   
 
     
@@ -1127,8 +1155,8 @@ work across many different situations.</p>
 <p>You will always be prompted for tags.</p>
 <div class="admonition tip">
 <p class="admonition-title">Autocomplete</p>
-</div>
 <p>Autocomplete is available for stored tags. In the tag prompt, start typing and the available tags will be suggested.</p>
+</div>
 <p>If you want to be prompted for every field, use the <code>--interactive</code> (or <code>-i</code>) flag.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">&gt; cb var add --interactive</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
@@ -1146,8 +1174,8 @@ work across many different situations.</p>
 <h2 id="update"><code>update</code><a class="headerlink" href="#update" title="Permanent link">&para;</a></h2>
 <div class="admonition tip">
 <p class="admonition-title">Aliases</p>
-</div>
 <p><code>update</code> can also be called as <code>edit</code>.</p>
+</div>
 <p>The <code>update</code> subcommand is used to make changes to a variable you already have stored.</p>
 <p>You can update a specific field by providing the appropriate flag and the new value.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">&gt; cb var update host --value 10.0.0.5</span>
@@ -1155,17 +1183,18 @@ work across many different situations.</p>
 <p>To rename a variable, use the <code>--name</code> flag.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="go">&gt; cb var update host --name server-host</span>
 </code></pre></div>
-<p>Multiple fields can be updated at once using the <code>--set</code> flag with <code>key=value</code> pairs.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">&gt; cb var update host --set value=10.0.0.5 name=server-host</span>
+<p>Multiple fields can be updated at once using the <code>--set</code> flag with <code>key=value</code> pairs, with each pair separated by a comma
+and no white-space.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">&gt; cb var update host --set value=10.0.0.5,name=server-host</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Autocomplete</p>
-</div>
 <p>Autocomplete is available for field names when using <code>--set</code>.</p>
+</div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-</div>
 <p>Be sure to wrap your values in quotes if they contain spaces.</p>
+</div>
 <p>If you want to update the current value of a field without supplying a completely new value, use the <code>--edit</code>
 (or <code>-e</code>) flag. You will be prompted for each field, pre-filled with its current value.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="go">&gt; cb var update host --edit</span>
@@ -1181,14 +1210,14 @@ which fields to prompt for.</p>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-</div>
 <p><code>--edit-fields</code> can only be used in conjunction with the <code>--edit</code> flag.</p>
+</div>
 <hr />
 <h2 id="list"><code>list</code><a class="headerlink" href="#list" title="Permanent link">&para;</a></h2>
 <div class="admonition tip">
 <p class="admonition-title">Aliases</p>
-</div>
 <p><code>list</code> can also be called as <code>ls</code>.</p>
+</div>
 <p>The <code>list</code> subcommand displays all variables stored in your database.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="go">&gt; cb var list</span>
 </code></pre></div>
@@ -1213,14 +1242,14 @@ subcommand.</p>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-</div>
 <p>When using multiple <code>--tag</code> flags, variables that feature any of those tags will be displayed.</p>
+</div>
 <hr />
 <h2 id="search"><code>search</code><a class="headerlink" href="#search" title="Permanent link">&para;</a></h2>
 <div class="admonition tip">
 <p class="admonition-title">Aliases</p>
-</div>
 <p><code>search</code> can also be called as <code>find</code>.</p>
+</div>
 <p>While <code>list</code> lets you filter variables by tag, <code>search</code> lets you filter by the content of any available field.
 By default, search looks in the name and value fields.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="go">&gt; cb var search host</span>
@@ -1241,8 +1270,8 @@ By default, search looks in the name and value fields.</p>
 <h2 id="delete"><code>delete</code><a class="headerlink" href="#delete" title="Permanent link">&para;</a></h2>
 <div class="admonition tip">
 <p class="admonition-title">Aliases</p>
-</div>
 <p><code>delete</code> can also be called as <code>rm</code>, <code>del</code>, or <code>remove</code>.</p>
+</div>
 <p>The <code>delete</code> subcommand removes a variable from your database. It only requires the name of the variable
 you want to remove.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="go">&gt; cb var delete host</span>
@@ -1259,8 +1288,8 @@ tag you want to add.</p>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Autocomplete</p>
-</div>
 <p>Autocomplete is available for both variable names and tag names.</p>
+</div>
 <hr />
 <h2 id="untag"><code>untag</code><a class="headerlink" href="#untag" title="Permanent link">&para;</a></h2>
 <p>The <code>untag</code> subcommand removes a tag from a stored variable. It works the same way as <code>tag</code>.</p>

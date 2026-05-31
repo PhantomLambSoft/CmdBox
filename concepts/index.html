@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://PhantomaLambSoft.github.io/cmdbox/concepts/">
       
       
-        <link rel="prev" href="../commands/settings/">
+        <link rel="prev" href="../commands/init/">
       
       
         <link rel="next" href="../faq/">
@@ -706,14 +706,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../commands/init/" class="md-nav__link">
+      <a href="../commands/history/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    init
+    history
   
 
     
@@ -742,6 +742,34 @@
     
   
     settings
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../commands/init/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    init
   
 
     
@@ -972,6 +1000,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#shell-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shell Integration
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1171,6 +1210,17 @@
     <span class="md-ellipsis">
       
         Settings
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#shell-integration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Shell Integration
       
     </span>
   </a>
@@ -1379,6 +1429,14 @@ can have multiple tags, and lists can be filtered by tag at any time.</p>
 display fields, sort order, result limits, and more. Use the
 <a href="../commands/settings/"><code>settings</code> reference</a> to view your current configuration and make
 changes.</p>
+<hr />
+<h2 id="shell-integration">Shell Integration<a class="headerlink" href="#shell-integration" title="Permanent link">&para;</a></h2>
+<p>By default, <code>cb</code> runs commands in a background process separate from your current terminal
+session. This works for most commands, but it means commands that need to affect your current
+session, like activating a virtual environment or changing directories, will not work as
+expected.</p>
+<p>Shell integration adds the <code>cbe</code> command, which runs a saved command directly in your current
+session. Setting it up is a one-time step handled by the <a href="../commands/init/"><code>init</code> subcommand</a>.</p>
 
 
 

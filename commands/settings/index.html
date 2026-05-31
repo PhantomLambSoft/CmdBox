@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://PhantomaLambSoft.github.io/cmdbox/commands/settings/">
       
       
-        <link rel="prev" href="../init/">
+        <link rel="prev" href="../history/">
       
       
-        <link rel="next" href="../../concepts/">
+        <link rel="next" href="../init/">
       
       
         
@@ -711,14 +711,14 @@
   
   
     <li class="md-nav__item">
-      <a href="../init/" class="md-nav__link">
+      <a href="../history/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    init
+    history
   
 
     
@@ -824,6 +824,34 @@
   
 </nav>
       
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../init/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    init
+  
+
+    
+  </span>
+  
+  
+
+      </a>
     </li>
   
 
@@ -991,23 +1019,18 @@ You can edit them directly in the terminal.</p>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-</div>
 <p>When editing settings interactively in the terminal, press <code>Esc</code> to exit edit mode without saving changes, or 
 press <code>Ctrl+S</code> to save the changes and exit edit mode.</p>
+</div>
 <p>If you prefer to edit the settings file directly, use the <code>--external</code> (or <code>-e</code>) flag.
 This opens the settings file in your default text editor.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">&gt; cb settings edit --external</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
-</div>
 <p>When using <code>--external</code>, take care not to change field names or the file structure.
 CmdBox may not start correctly if the settings file is malformed.</p>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
 </div>
-<p>Not sure which editor will open? You can set your preferred editor from within the
-interactive settings editor itself.</p>
 
 
 
