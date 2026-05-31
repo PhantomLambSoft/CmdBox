@@ -1,3 +1,4 @@
+import sys
 from prompt_toolkit import prompt
 
 from cmdbox.cli.prompts.completers import TagCompleter
@@ -61,6 +62,28 @@ def prompt_for_tags(
 
 
 def prompt_for_missing_var(var_name: str) -> str:
-    return prompt(
-        f"Enter value for <{var_name}>: ",
-    )
+    """
+    Prompts the user to input a value for a given variable name.
+
+    This function checks if the standard output is a terminal. If it is, the function
+    uses the `prompt()` mechanism to get the input. If standard output is not a terminal
+    (e.g., the command is being run in cbe emit mode), the function writes the prompt to
+    standard error, flushes the stream, and then reads input directly from the console.
+
+    Args:
+        var_name: A string representing the name of the variable for which a value
+            is being requested.
+
+    Returns:
+        A string containing the value entered by the user for the specified variable.
+    """
+    message = f"Enter value for <{var_name}>: "
+
+    # Normal execution
+    if sys.stdout.isatty():
+        return prompt(message)
+
+    # Stdout is a pipe, not tty (e.g. cbe emit mode) - open console directly
+    sys.stderr.write(message)
+    sys.stderr.flush()
+    return sys.stdin.readline().strip("\n")
