@@ -96,4 +96,4 @@ cb --version
 
 ## Documentation
 
-Full documentation is available at [phantomlambsoft.github.io/cmdbox](https://phantomlambsoft.github.io/cmdbox).
+Full documentation is available at [phantomlambsoft.github.io/CmdBox](https://phantomlambsoft.github.io/CmdBox).
