@@ -16,7 +16,7 @@ The available subcommands for `var` are:
 - [untag](#untag)
 
 
-  Some of these subcommands also have aliases available. These will be discussed in the subcommands section.
+Some of these subcommands also have aliases available. These will be discussed in the subcommands section.
 
 ---
 
@@ -44,7 +44,7 @@ Notice that name and value are provided without a flag. They are not optional fi
 You will always be prompted for tags.
 
 !!! tip "Autocomplete"
-Autocomplete is available for stored tags. In the tag prompt, start typing and the available tags will be suggested.
+    Autocomplete is available for stored tags. In the tag prompt, start typing and the available tags will be suggested.
 
 If you want to be prompted for every field, use the `--interactive` (or `-i`) flag.
 
@@ -74,7 +74,7 @@ The `get` subcommand retrieves a variable and displays all of its available fiel
 ## `update`
 
 !!! tip "Aliases"
-`update` can also be called as `edit`.
+    `update` can also be called as `edit`.
 
 The `update` subcommand is used to make changes to a variable you already have stored.
 
@@ -90,17 +90,18 @@ To rename a variable, use the `--name` flag.
 > cb var update host --name server-host
 ```
 
-Multiple fields can be updated at once using the `--set` flag with `key=value` pairs.
+Multiple fields can be updated at once using the `--set` flag with `key=value` pairs, with each pair separated by a comma
+and no white-space.
 
 ```console
-> cb var update host --set value=10.0.0.5 name=server-host
+> cb var update host --set value=10.0.0.5,name=server-host
 ```
 
 !!! tip "Autocomplete"
-Autocomplete is available for field names when using `--set`.
+    Autocomplete is available for field names when using `--set`.
 
 !!! warning
-Be sure to wrap your values in quotes if they contain spaces.
+    Be sure to wrap your values in quotes if they contain spaces.
 
 If you want to update the current value of a field without supplying a completely new value, use the `--edit`
 (or `-e`) flag. You will be prompted for each field, pre-filled with its current value.
@@ -122,14 +123,14 @@ which fields to prompt for.
 ```
 
 !!! warning
-`--edit-fields` can only be used in conjunction with the `--edit` flag.
+    `--edit-fields` can only be used in conjunction with the `--edit` flag.
  
 ---
 
 ## `list`
 
 !!! tip "Aliases"
-`list` can also be called as `ls`.
+    `list` can also be called as `ls`.
 
 The `list` subcommand displays all variables stored in your database.
 
@@ -174,14 +175,14 @@ The `--tag` flag can be used multiple times to filter by multiple tags.
 ```
 
 !!! tip
-When using multiple `--tag` flags, variables that feature any of those tags will be displayed.
+    When using multiple `--tag` flags, variables that feature any of those tags will be displayed.
  
 ---
 
 ## `search`
 
 !!! tip "Aliases"
-`search` can also be called as `find`.
+    `search` can also be called as `find`.
 
 While `list` lets you filter variables by tag, `search` lets you filter by the content of any available field.
 By default, search looks in the name and value fields.
@@ -220,7 +221,7 @@ As with `list`, you can limit the number of results using the `--limit` flag.
 ## `delete`
 
 !!! tip "Aliases"
-`delete` can also be called as `rm`, `del`, or `remove`.
+    `delete` can also be called as `rm`, `del`, or `remove`.
 
 The `delete` subcommand removes a variable from your database. It only requires the name of the variable
 you want to remove.
@@ -244,7 +245,7 @@ tag you want to add.
 ```
 
 !!! tip "Autocomplete"
-Autocomplete is available for both variable names and tag names.
+    Autocomplete is available for both variable names and tag names.
  
 ---
 
