@@ -83,10 +83,11 @@ $ cb cmd update prune-docker --description "Removes all stopped containers, dang
 
 This updates only the description of the stored `prune-docker` command.
 
-Multiple fields can be updated at once by using the `--set` flag and using key value pairs like: `key=value`.
+Multiple fields can be updated at once by using the `--set` flag and using key value pairs like: `key=value`. Each pair 
+should be separated by a comma and no spaces.
 
 ```console
-$ cb cmd update prune-docker --set template="docker system prune" --set description="Removes all stopped containers, asking for confirmation"
+$ cb cmd update prune-docker --set template="docker system prune",description="Removes all stopped containers, asking for confirmation"
 ```
 
 !!! tip "Autocomplete"
@@ -176,7 +177,7 @@ $ cb cmd list --tag dev --tag docker --tag production
     `search` can also be called as `find`.
 
 While `list` lets you filter your commands by tag, search lets you filter your commands by any of the available fields.
-By default, search is limited to the alias and template fields.
+By default, search is limited to the alias, template, and description fields.
 
 ```console
 $ cb cmd search pip
@@ -200,7 +201,7 @@ $ cb cmd search listening --in description --field alias
 
 ![Command get output](../assets/cmd/cmd-search-field-alias-output.svg)
 
-As will the list command, you can also limit the number of results returned by using the `--limit` flag.
+As with the list command, you can also limit the number of results returned by using the `--limit` flag.
 
 ```console
 $ cb cmd search pip --limit 3
