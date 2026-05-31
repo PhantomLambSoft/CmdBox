@@ -32,7 +32,14 @@ Both are equivalent. The shorthand form is covered in the [Quick Start](../quick
 If your command contains variables, supply their values as flags when running.
 
 ```console
+# Command template:
+> ping <host>
+
+# Run:
 > cb run ping-test --host google.com
+
+# Resolved command template:
+> ping google.com
 ```
 
 Any variable in the command template that is not supplied at runtime and does not have a saved
@@ -129,5 +136,5 @@ variables are resolved and substituted, so you can verify the final command befo
 `--verbose` — so you can preview the command exactly as it would be run under those conditions.
 
 !!! tip
-Use `preview` any time a command contains multiple variables or references other commands
-via `<cmd:command-name>` to make sure everything resolves as expected before running.
+    Use `preview` any time a command contains multiple variables or references other commands
+    via `<cmd:command-name>` to make sure everything resolves as expected before running.
