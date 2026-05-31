@@ -56,12 +56,12 @@ python --version
 </summary>
 Most Linux distributions come with Python pre-installed. To verify this open a terminal and run:
 
-```bash
+```console
 python3 --version
 ```
 If your Linux distrubution does not have Python installed, or the Python version it does have is older than 3.9, run:
 
-```bash
+```console
 # Ubuntu / Debian
 sudo apt update && sudo apt install python3 python3-pip
 
@@ -98,7 +98,7 @@ Use this option if you want to contribute to CmdBox, run unreleased changes, or 
 
 ### 1. Clone the repository
 
-```bash
+```console
 git clone https://github.com/PhantomLambSoft/cmdbox.git
 cd cmdbox
 ```
@@ -109,13 +109,13 @@ A virtual environment keeps CmdBox's dependencies isolated from the rest of your
 recommended way to work on a Python project. However, if you install CmdBox only in the virtutal environment, that 
 environment will have to be active in any terminal in which you wish to use CmdBox.
 
-```bash
+```console
 python -m venv .venv # or a name of your choice
 ```
 
 Activate it:
 
-```bash
+```console
 # macOS and Linux
 source .venv/bin/activate
 
@@ -128,7 +128,7 @@ that the virtual environment is active.
 
 ### 3. Install in editable mode
 
-```bash
+```console
 pip install -e .
 ```
 
@@ -136,14 +136,14 @@ When using the `-e` flag, any changes you make to the source code will be reflec
 
 ### 4. Verify
 
-```bash
+```console
 cb --version
 ```
 
 ### Running tests
 From the project root directory:
 
-```bash
+```console
 python -m unittest discover
 ```
 
