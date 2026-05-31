@@ -2,13 +2,14 @@
 
 CmdBox is organized into six subcommands. Each handles a distinct area of functionality.
 
-| Subcommand | Description |
-|---|---|
-| [`cmd`](cmd.md) | Add, edit, search, and delete saved commands. |
-| [`var`](var.md) | Add, edit, search, and delete saved variables. |
-| [`tag`](tag.md) | Add, edit, search, and delete tags. |
-| [`run`](run.md) | Execute saved commands by alias. |
-| [`history`](history.md) | View and re-run past command executions. |
+| Subcommand                | Description |
+|---------------------------|---|
+| [`cmd`](cmd.md)           | Add, edit, search, and delete saved commands. |
+| [`var`](var.md)           | Add, edit, search, and delete saved variables. |
+| [`tag`](tag.md)           | Add, edit, search, and delete tags. |
+| [`run`](run.md)           | Execute saved commands by alias. |
+| [`init`](init.md)         | Set up shell integration to enable running commands in your current terminal session. |
+| [`history`](history.md)   | View and re-run past command executions. |
 | [`settings`](settings.md) | View and edit your CmdBox configuration. |
 
 ---
