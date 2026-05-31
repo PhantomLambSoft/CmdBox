@@ -81,10 +81,11 @@ variables that use it.
 > cb tag update docker --name containers
 ```
 
-Multiple fields can be updated at once using the `--set` flag with `key=value` pairs.
+Multiple fields can be updated at once using the `--set` flag with `key=value` pairs. Each pair should be separated 
+by a comma and no white-space.
 
 ```console
-> cb tag update docker --set name=containers description="Docker and container-related commands."
+> cb tag update docker --set name=containers,description="Docker and container-related commands."
 ```
 
 !!! tip "Autocomplete"
