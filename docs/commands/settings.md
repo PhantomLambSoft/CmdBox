@@ -41,8 +41,8 @@ You can edit them directly in the terminal.
 ```
 
 !!! tip
-When editing settings interactively in the terminal, press `Esc` to exit edit mode without saving changes, or 
-press `Ctrl+S` to save the changes and exit edit mode.
+    When editing settings interactively in the terminal, press `Esc` to exit edit mode without saving changes, or 
+    press `Ctrl+S` to save the changes and exit edit mode.
 
 If you prefer to edit the settings file directly, use the `--external` (or `-e`) flag.
 This opens the settings file in your default text editor.
@@ -52,9 +52,5 @@ This opens the settings file in your default text editor.
 ```
 
 !!! warning
-When using `--external`, take care not to change field names or the file structure.
-CmdBox may not start correctly if the settings file is malformed.
-
-!!! tip
-Not sure which editor will open? You can set your preferred editor from within the
-interactive settings editor itself.
+    When using `--external`, take care not to change field names or the file structure.
+    CmdBox may not start correctly if the settings file is malformed.
