@@ -25,7 +25,11 @@ def prompt_for_alias(validator: AliasValidator, default: str = "") -> str:
 
 def prompt_for_template(validator: TemplateValidator, default: str = "") -> str:
     template = prompt(
-        "Enter template: ", multiline=True, validator=validator, default=default
+        "Enter template: ",
+        prompt_continuation="            ... ",
+        multiline=True,
+        validator=validator,
+        default=default,
     )
     return template
 
