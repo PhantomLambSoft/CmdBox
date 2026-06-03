@@ -52,6 +52,9 @@ $ cb cmd add --interactive
 ? Enter tags (comma-separated): dev,docker
 ```
 
+!!! tip
+    Template prompts are multi-line by default. To submit a single-line template, press **Escape** and then **Enter** 
+    after typing your template text.
 
 ## `get`
 The `get` command is a simple command that retrives a command and displays all of it's available fields along it's tags.
