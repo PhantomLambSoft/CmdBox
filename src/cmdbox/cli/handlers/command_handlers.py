@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from typing import Optional, Callable, Any, Sequence
 
@@ -13,7 +14,11 @@ from cmdbox.cli.prompts.prompts import (
     prompt_for_alias,
     prompt_for_template,
     prompt_for_description,
+    prompt_for_cwd,
+    prompt_for_shell,
+    prompt_for_timeout,
 )
+
 from cmdbox.cli.prompts.validators import AliasValidator, TemplateValidator
 from cmdbox.cli.ui.console import ConsoleUI
 from cmdbox.cli.ui.presenters.command_presenter import (
@@ -40,6 +45,10 @@ class AddCommandArgs:
     template: Optional[str]
     description: Optional[str]
     tags: Optional[list[str]]
+    cwd: Optional[str] = None
+    shell: Optional[str] = None
+    env: Optional[list[str]] = None
+    timeout: Optional[int] = None
     interactive: bool = False
 
 
@@ -70,12 +79,18 @@ def run_add_command(
     if not tags:
         tags = None
 
+    env = parse_env_pairs(args.env)
+
     cmd_service = get_cmd_services()
     cmd = cmd_service.create_command(
         alias=alias,
         template=template,
         description=description,
         tags=tags,
+        cwd=args.cwd,
+        shell=args.shell,
+        env=env,
+        timeout=args.timeout,
     )
     console = get_console()
     console.print(render_command_created(cmd))
@@ -102,6 +117,10 @@ def run_update_command(
     template: Optional[str],
     description: Optional[str],
     new_alias: Optional[str],
+    cwd: Optional[str],
+    shell: Optional[str],
+    env: Optional[list[str]],
+    timeout: Optional[int],
     set_pairs: Optional[Sequence[str]],
     edit_mode: bool,
     edit_fields: Optional[str],
@@ -109,7 +128,7 @@ def run_update_command(
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
-    allowed = {"alias", "template", "description"}
+    allowed = {"alias", "template", "description", "cwd", "shell", "env", "timeout"}
     fields: dict[str, Any] = {}
 
     cmd_service = get_cmd_services()
@@ -117,7 +136,7 @@ def run_update_command(
     console = get_console()
 
     if edit_mode:
-        if any([template, description, new_alias, set_pairs]):
+        if any([template, description, new_alias, cwd, shell, env, timeout, set_pairs]):
             raise typer.BadParameter(
                 "--edit cannot be combined with field options or --set"
             )
@@ -147,6 +166,14 @@ def run_update_command(
             updated_fields["description"] = prompt_for_description(
                 default=cmd.description
             )
+        if check_field_alias("cwd"):
+            updated_fields["cwd"] = prompt_for_cwd(default=cmd.cwd or "")
+        if check_field_alias("shell"):
+            updated_fields["shell"] = prompt_for_shell(default=cmd.shell or "") or None
+        if check_field_alias("timeout"):
+            updated_fields["timeout"] = prompt_for_timeout(
+                default=str(cmd.timeout) if cmd.timeout else ""
+            )
 
         fields = updated_fields
 
@@ -157,6 +184,14 @@ def run_update_command(
             fields["description"] = description
         if new_alias is not None:
             fields["alias"] = new_alias
+        if cwd is not None:
+            fields["cwd"] = cwd
+        if shell is not None:
+            fields["shell"] = shell
+        if env is not None:
+            fields["env"] = parse_env_pairs(env)
+        if timeout is not None:
+            fields["timeout"] = timeout
 
         fields = merge_fields(fields, parse_set_pairs(set_pairs))
         fields = filter_allowed(fields, allowed)
@@ -164,10 +199,15 @@ def run_update_command(
         if not fields:
             raise typer.BadParameter("No fields specified to update.")
 
+    stored_env = json.loads(cmd.env) if cmd.env else None
     current = {
         "alias": cmd.alias,
         "template": cmd.template,
         "description": cmd.description,
+        "cwd": cmd.cwd,
+        "shell": cmd.shell,
+        "env": stored_env,
+        "timeout": cmd.timeout,
     }
     fields = {key: value for key, value in fields.items() if current.get(key) != value}
 
@@ -297,3 +337,21 @@ def run_detach_tags(
     result = cmd_service.remove_tags(alias=alias, tags=tag_names)
     console = get_console()
     console.print(render_tag_detach_result(result))
+
+
+def parse_env_pairs(env: list[str] | None) -> dict[str, str] | None:
+    if not env:
+        return None
+    result = {}
+    for pair in env:
+        if "=" not in pair:
+            raise typer.BadParameter(
+                f"Invalid env format '{pair}'. Expected key=value."
+            )
+        key, _, value = pair.partition("=")
+        if not key:
+            raise typer.BadParameter(
+                f"Invalid env format '{pair}'. Key cannot be empty."
+            )
+        result[key] = value
+    return result or None

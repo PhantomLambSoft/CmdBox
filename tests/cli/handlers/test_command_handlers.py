@@ -80,7 +80,14 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.create_command.assert_called_with(
-            alias="alias1", template="tmpl1", description="desc1", tags=["tag1"]
+            alias="alias1",
+            template="tmpl1",
+            description="desc1",
+            tags=["tag1"],
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
         )
         mock_render.assert_called_once_with(mock_cmd)
         self.mock_console.print.assert_called_with("rendered_created")
@@ -106,7 +113,14 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.create_command.assert_called_with(
-            alias="alias1", template="tmpl1", description="desc1", tags=["tag1"]
+            alias="alias1",
+            template="tmpl1",
+            description="desc1",
+            tags=["tag1"],
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
         )
         mock_render.assert_called_once_with(mock_cmd)
         self.mock_console.print.assert_called_with("rendered_created")
@@ -129,6 +143,7 @@ class TestCommandHandlers(unittest.TestCase):
     def test_run_update_command_with_fields_supplied(self, mock_render):
         mock_cmd = MagicMock()
         mock_cmd.id = 1
+        mock_cmd.env = None
         self.mock_cmd_services.get_command.return_value = mock_cmd
         mock_updated_cmd = MagicMock()
         self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
@@ -139,6 +154,10 @@ class TestCommandHandlers(unittest.TestCase):
             template="new_tmpl",
             description="new_desc",
             new_alias="new_alias",
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
             set_pairs=None,
             edit_mode=False,
             edit_fields=None,
@@ -160,6 +179,10 @@ class TestCommandHandlers(unittest.TestCase):
                 template=None,
                 description=None,
                 new_alias=None,
+                cwd=None,
+                shell=None,
+                env=None,
+                timeout=None,
                 set_pairs=None,
                 edit_mode=False,
                 edit_fields=None,
@@ -168,6 +191,9 @@ class TestCommandHandlers(unittest.TestCase):
                 get_console=self.get_console,
             )
 
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_timeout")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_shell")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_cwd")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
@@ -178,17 +204,27 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_desc,
         mock_prompt_tmpl,
         mock_prompt_alias,
+        mock_prompt_cwd,
+        mock_prompt_shell,
+        mock_prompt_timeout,
     ):
         mock_render.return_value = "rendered_update"
         mock_prompt_alias.return_value = "new_prompt_alias"
         mock_prompt_tmpl.return_value = "new_prompt_tmpl"
         mock_prompt_desc.return_value = "new_prompt_desc"
+        mock_prompt_cwd.return_value = "new_prompt_cwd"
+        mock_prompt_shell.return_value = "new_prompt_shell"
+        mock_prompt_timeout.return_value = "new_prompt_timeout"
 
         mock_cmd = MagicMock()
         mock_cmd.id = 1
         mock_cmd.template = "old_tmpl"
         mock_cmd.description = "old_desc"
         mock_cmd.alias = "old_alias"
+        mock_cmd.env = None
+        mock_cmd.cwd = None
+        mock_cmd.shell = None
+        mock_cmd.timeout = None
 
         self.mock_cmd_services.get_command.return_value = mock_cmd
         mock_updated_cmd = MagicMock()
@@ -199,6 +235,10 @@ class TestCommandHandlers(unittest.TestCase):
             template=None,
             description=None,
             new_alias=None,
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
             set_pairs=None,
             edit_mode=True,
             edit_fields=None,
@@ -212,13 +252,22 @@ class TestCommandHandlers(unittest.TestCase):
             template="new_prompt_tmpl",
             description="new_prompt_desc",
             alias="new_prompt_alias",
+            cwd="new_prompt_cwd",
+            shell="new_prompt_shell",
+            timeout="new_prompt_timeout",
         )
         mock_render.assert_called_once_with(mock_updated_cmd)
         mock_prompt_desc.assert_called_once_with(default="old_desc")
         mock_prompt_tmpl.assert_called_once_with(ANY, default="old_tmpl")
         mock_prompt_alias.assert_called_once_with(ANY, default="old_alias")
+        mock_prompt_cwd.assert_called_once_with(default="")
+        mock_prompt_shell.assert_called_once_with(default="")
+        mock_prompt_timeout.assert_called_once_with(default="")
         self.mock_console.print.assert_called_with("rendered_update")
 
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_timeout")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_shell")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_cwd")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
@@ -229,17 +278,27 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_desc,
         mock_prompt_tmpl,
         mock_prompt_alias,
+        mock_prompt_cwd,
+        mock_prompt_shell,
+        mock_prompt_timeout,
     ):
         mock_render.return_value = "rendered_update"
         mock_prompt_alias.return_value = "new_prompt_alias"
         mock_prompt_tmpl.return_value = "new_prompt_tmpl"
         mock_prompt_desc.return_value = "new_prompt_desc"
+        mock_prompt_cwd.return_value = "new_prompt_cwd"
+        mock_prompt_shell.return_value = "new_prompt_shell"
+        mock_prompt_timeout.return_value = "new_prompt_timeout"
 
         mock_cmd = MagicMock()
         mock_cmd.id = 1
         mock_cmd.template = "old_tmpl"
         mock_cmd.description = "old_desc"
         mock_cmd.alias = "old_alias"
+        mock_cmd.cwd = None
+        mock_cmd.shell = None
+        mock_cmd.timeout = None
+        mock_cmd.env = None
 
         self.mock_cmd_services.get_command.return_value = mock_cmd
         mock_updated_cmd = MagicMock()
@@ -250,6 +309,10 @@ class TestCommandHandlers(unittest.TestCase):
             template=None,
             description=None,
             new_alias=None,
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
             set_pairs=None,
             edit_mode=True,
             edit_fields="template",
@@ -268,6 +331,9 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_alias.assert_not_called()
         self.mock_console.print.assert_called_with("rendered_update")
 
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_timeout")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_shell")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_cwd")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
@@ -278,17 +344,27 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_desc,
         mock_prompt_tmpl,
         mock_prompt_alias,
+        mock_prompt_cwd,
+        mock_prompt_shell,
+        mock_prompt_timeout,
     ):
         mock_render.return_value = "rendered_update"
         mock_prompt_alias.return_value = "new_prompt_alias"
         mock_prompt_tmpl.return_value = "new_prompt_tmpl"
         mock_prompt_desc.return_value = "new_prompt_desc"
+        mock_prompt_cwd.return_value = "new_prompt_cwd"
+        mock_prompt_shell.return_value = "new_prompt_shell"
+        mock_prompt_timeout.return_value = "new_prompt_timeout"
 
         mock_cmd = MagicMock()
         mock_cmd.id = 1
         mock_cmd.template = "old_tmpl"
         mock_cmd.description = "old_desc"
         mock_cmd.alias = "old_alias"
+        mock_cmd.env = None
+        mock_cmd.cwd = None
+        mock_cmd.shell = None
+        mock_cmd.timeout = None
 
         self.mock_cmd_services.get_command.return_value = mock_cmd
         mock_updated_cmd = MagicMock()
@@ -299,6 +375,10 @@ class TestCommandHandlers(unittest.TestCase):
             template=None,
             description=None,
             new_alias=None,
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
             set_pairs=None,
             edit_mode=True,
             edit_fields="template, description",
@@ -318,6 +398,9 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_alias.assert_not_called()
         self.mock_console.print.assert_called_with("rendered_update")
 
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_timeout")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_shell")
+    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_cwd")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
@@ -328,17 +411,27 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_desc,
         mock_prompt_tmpl,
         mock_prompt_alias,
+        mock_prompt_cwd,
+        mock_prompt_shell,
+        mock_prompt_timeout,
     ):
         mock_render.return_value = "rendered_update"
         mock_prompt_alias.return_value = "new_prompt_alias"
         mock_prompt_tmpl.return_value = "new_prompt_tmpl"
         mock_prompt_desc.return_value = "new_prompt_desc"
+        mock_prompt_cwd.return_value = "new_prompt_cwd"
+        mock_prompt_shell.return_value = "new_prompt_shell"
+        mock_prompt_timeout.return_value = "new_prompt_timeout"
 
         mock_cmd = MagicMock()
         mock_cmd.id = 1
         mock_cmd.template = "old_tmpl"
         mock_cmd.description = "old_desc"
         mock_cmd.alias = "old_alias"
+        mock_cmd.env = None
+        mock_cmd.cwd = None
+        mock_cmd.shell = None
+        mock_cmd.timeout = None
 
         self.mock_cmd_services.get_command.return_value = mock_cmd
         mock_updated_cmd = MagicMock()
@@ -350,6 +443,10 @@ class TestCommandHandlers(unittest.TestCase):
             template=None,
             description=None,
             new_alias=None,
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
             set_pairs=None,
             edit_mode=True,
             edit_fields="tpl",
@@ -375,6 +472,10 @@ class TestCommandHandlers(unittest.TestCase):
                 template="AmarilloByMorning",
                 description=None,
                 new_alias=None,
+                cwd=None,
+                shell=None,
+                env=None,
+                timeout=None,
                 set_pairs=None,
                 edit_mode=True,
                 edit_fields=None,
@@ -392,6 +493,7 @@ class TestCommandHandlers(unittest.TestCase):
         mock_cmd.alias = "alias1"
         mock_cmd.template = "old_tmpl"
         mock_cmd.description = "old_desc"
+        mock_cmd.env = None
         self.mock_cmd_services.get_command.return_value = mock_cmd
         mock_updated_cmd = MagicMock()
         self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
@@ -402,6 +504,10 @@ class TestCommandHandlers(unittest.TestCase):
             template="old_tmpl",
             description="old_desc",
             new_alias="alias1",
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
             set_pairs=None,
             edit_mode=False,
             edit_fields=None,
@@ -421,6 +527,10 @@ class TestCommandHandlers(unittest.TestCase):
                 template="WriteThisDown",
                 description=None,
                 new_alias=None,
+                cwd=None,
+                shell=None,
+                env=None,
+                timeout=None,
                 set_pairs=["template=MarinaDelRey"],
                 edit_mode=False,
                 edit_fields=None,
@@ -436,6 +546,10 @@ class TestCommandHandlers(unittest.TestCase):
                 template=None,
                 description=None,
                 new_alias=None,
+                cwd=None,
+                shell=None,
+                env=None,
+                timeout=None,
                 set_pairs=["description=OceanFrontProperty"],
                 edit_mode=True,
                 edit_fields=None,
