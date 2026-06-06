@@ -39,6 +39,11 @@ class Command(BaseModel):
     Attributes:
         alias (CharField): Unique identifier for the command.
         template (CharField): The associated template string for the command.
+        description (CharField): A description of the command and what it does.
+        cwd (CharField): The current working directory for the command execution.
+        shell (CharField): The shell to use for command execution.
+        env (TextField): Environment variables to set for the command execution.
+        timeout (IntegerField): Number of seconds before the process is killed.
         date_created (DateTimeField): Timestamp indicating when the command was created.
         last_updated (DateTimeField): Timestamp indicating when the command was last updated.
         used (IntegerField): Counter representing how many times the command has been used.
@@ -48,6 +53,10 @@ class Command(BaseModel):
     alias = CharField(unique=True)
     template = TextField()
     description = TextField(null=True, default=None)
+    cwd = CharField(null=True, default=None)
+    shell = CharField(null=True, default=None)
+    env = TextField(null=True, default=None)
+    timeout = IntegerField(null=True, default=None)
     date_created = DateTimeField(default=datetime.now)
     last_updated = DateTimeField(default=datetime.now)
     used = IntegerField(default=0)
