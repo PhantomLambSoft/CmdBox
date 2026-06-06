@@ -47,6 +47,30 @@ def add(
             autocompletion=complete_tag_names,
         ),
     ] = None,
+    cwd: Annotated[
+        str,
+        typer.Option("--cwd", "-c", help="Working directory to run the command from."),
+    ] = None,
+    shell: Annotated[
+        str,
+        typer.Option("--shell", "-s", help="Shell to use when running the command."),
+    ] = None,
+    env: Annotated[
+        list[str],
+        typer.Option(
+            "--env",
+            "-e",
+            help="Environment variable to set when running the command, in KEY=VALUE format.",
+        ),
+    ] = None,
+    timeout: Annotated[
+        int,
+        typer.Option(
+            "--timeout",
+            "-o",
+            help="Maximum number of seconds before the process is killed.",
+        ),
+    ] = None,
     interactive: Annotated[
         bool,
         typer.Option("--interactive", "-i", is_flag=True, help="Interactive mode."),
@@ -63,6 +87,10 @@ def add(
         template=template,
         description=description,
         tags=tags,
+        cwd=cwd,
+        shell=shell,
+        env=env,
+        timeout=timeout,
         interactive=interactive,
     )
     command_handlers.run_add_command(
@@ -114,6 +142,30 @@ def update(
     new_alias: Annotated[
         str, typer.Option("--alias", "-a", help="The new alias.")
     ] = None,
+    cwd: Annotated[
+        str,
+        typer.Option("--cwd", "-c", help="Working directory to run the command from."),
+    ] = None,
+    shell: Annotated[
+        str,
+        typer.Option("--shell", "-s", help="Shell to use when running the command."),
+    ] = None,
+    env: Annotated[
+        list[str],
+        typer.Option(
+            "--env",
+            "-e",
+            help="Environment variable to set when running the command, in KEY=VALUE format.",
+        ),
+    ] = None,
+    timeout: Annotated[
+        int,
+        typer.Option(
+            "--timeout",
+            "-o",
+            help="Maximum number of seconds before the process is killed.",
+        ),
+    ] = None,
     set_: Annotated[
         list[str],
         typer.Option(
@@ -157,6 +209,10 @@ def update(
         template=template,
         description=description,
         new_alias=new_alias,
+        cwd=cwd,
+        shell=shell,
+        env=env,
+        timeout=timeout,
         set_pairs=set_,
         edit_mode=edit_mode,
         edit_fields=edit_fields,
