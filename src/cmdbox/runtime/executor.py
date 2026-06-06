@@ -35,6 +35,8 @@ class RunContext:
             If False, the output streams will inherit those of the parent process.
         shell (str | None): The shell to use for executing the command. If None,
             the system default shell will be used.
+        timeout (int | None): The maximum time in seconds to wait for the command
+            to complete. If None, the command will run indefinitely. Defaults to None.
         emit (bool): Whether to emit the command template.  If True, the command
             template is emitted to the current terminal window to be evaluated
             in the current session.  If False, the command is executed in a
@@ -47,6 +49,7 @@ class RunContext:
     env: Mapping[str, str] | None = None
     capture: bool = False
     shell: str | None = None
+    timeout: int | None = None
     emit: bool = False
     verbose: bool = False
 

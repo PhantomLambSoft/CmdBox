@@ -32,6 +32,7 @@ class RawRunContext:
     env: list[str] | str | None = None
     capture: bool = False
     shell: str | None = None
+    timeout: int | None = None
     emit: bool = False
     verbose: bool = False
 
