@@ -41,7 +41,13 @@ class TestCommandServices(unittest.TestCase):
         # Assert
         self.assertEqual(expected_cmd, result)
         self.mock_repo.create.assert_called_once_with(
-            alias=alias, template=template, description=description
+            alias=alias,
+            template=template,
+            description=description,
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
         )
         self.mock_repo.add_tags.assert_not_called()
         mock_db.atomic.assert_called_once()
@@ -66,7 +72,13 @@ class TestCommandServices(unittest.TestCase):
         self.assertEqual(expected_cmd, result)
         self.assertEqual(self.mock_tag_repo.get_by_name.call_count, 2)
         self.mock_repo.create.assert_called_once_with(
-            alias=alias, template=template, description=None
+            alias=alias,
+            template=template,
+            description=None,
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
         )
         self.mock_repo.add_tags.assert_called_once_with(expected_cmd, tags)
         mock_db.atomic.assert_called_once()
@@ -255,7 +267,13 @@ class TestCommandServices(unittest.TestCase):
         # Assert
         self.assertEqual(expected_cmd, result)
         self.mock_repo.create.assert_called_once_with(
-            alias=alias, template=template, description=None
+            alias=alias,
+            template=template,
+            description=None,
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
         )
         self.mock_repo.add_tags.assert_not_called()
         mock_db.atomic.assert_called_once()

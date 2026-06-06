@@ -33,6 +33,10 @@ class CommandServices:
         template: str,
         description: str | None = None,
         tags: list[str] | None = None,
+        cwd: str | None = None,
+        shell: str | None = None,
+        env: dict[str, str] | None = None,
+        timeout: int | None = None,
     ) -> Command:
         """
         Creates a new command by storing the provided alias, template, and optional description
@@ -45,6 +49,12 @@ class CommandServices:
             description (str | None): An optional description for the command. Defaults to None.
             tags (list[str] | None): An optional list of tags to associate with the command.
                 Defaults to None.
+            cwd (str | None): Optional working directory to run the command from. Defaults to None.
+            shell (str | None): Optional shell to use when running the command. Defaults to None.
+            env (dict[str, str] | None): Optional environment variables to set when running
+                the command. Defaults to None.
+            timeout (int | None): Optional maximum number of seconds before the process is
+                killed. Defaults to None.
 
         Returns:
             Command: The created command record.
@@ -52,7 +62,13 @@ class CommandServices:
         with db.atomic():
             tags = self._get_tags(tags)
             cmd = self._repo.create(
-                alias=alias, template=template, description=description
+                alias=alias,
+                template=template,
+                description=description,
+                cwd=cwd,
+                shell=shell,
+                env=env,
+                timeout=timeout,
             )
             if tags:
                 self._repo.add_tags(cmd, tags)
