@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from cmdbox.services.run_service import RunService
 from cmdbox.models import Command
 from cmdbox.resolve.type_defs import ResolveResult
@@ -20,7 +20,11 @@ class TestRunService(unittest.TestCase):
             executor=self.mock_executor,
         )
 
-    def test_run_success(self):
+    @patch("cmdbox.services.run_service.RunService.build_context")
+    def test_run_success(self, mock_build_context):
+        mock_context = MagicMock()
+        mock_build_context.return_value = mock_context
+
         # Setup
         alias = "test-alias"
         template = "echo <variable:name>"
@@ -28,6 +32,7 @@ class TestRunService(unittest.TestCase):
 
         command = MagicMock(spec=Command)
         command.template = template
+        command.env = None
         self.mock_repo.get_by_alias.return_value = command
 
         resolve_result = MagicMock(spec=ResolveResult)
@@ -46,7 +51,7 @@ class TestRunService(unittest.TestCase):
         self.assertEqual(result, execution_result)
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
-        self.mock_executor.run.assert_called_once_with(resolved_text, ctx=None)
+        self.mock_executor.run.assert_called_once_with(resolved_text, ctx=mock_context)
 
     def test_preview_success(self):
         # Setup
