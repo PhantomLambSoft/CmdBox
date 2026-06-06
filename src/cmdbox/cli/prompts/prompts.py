@@ -39,6 +39,21 @@ def prompt_for_description(default: str = "") -> str:
     return description
 
 
+def prompt_for_cwd(default: str = "") -> str:
+    cwd = prompt("Enter working directory: ", default=default)
+    return cwd
+
+
+def prompt_for_shell(default: str = "") -> str:
+    shell = prompt("Enter shell: ", default=default)
+    return shell
+
+
+def prompt_for_timeout(default: str = "") -> str:
+    timeout = prompt("Enter timeout (in seconds): ", default=default)
+    return timeout
+
+
 def prompt_for_name(
     validator: NameValidator | TagNameValidator, default: str = ""
 ) -> str:
