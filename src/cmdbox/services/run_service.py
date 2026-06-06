@@ -1,5 +1,7 @@
+import json
 from typing import Callable
 
+from cmdbox.models import Command
 from cmdbox.repositories.command_repository import CommandRepository
 from cmdbox.repositories.history_repository import HistoryRepository
 from cmdbox.resolve.resolver import Resolver
@@ -51,7 +53,9 @@ class RunService:
         Executes a command based on the given alias.
 
         This method retrieves a command associated with the provided alias, resolves its
-        template using a resolver, and then executes the resolved command text.
+        template using a resolver, and then executes the resolved command text. Execution
+        context stored on the command (cwd, shell, env, timeout) is merged with any
+        runtime-supplied context, with runtime values taking precedence.
 
         Args:
             command_alias (str): The alias for the command to be executed.
@@ -63,6 +67,7 @@ class RunService:
         """
         cmd = self._repo.get_by_alias(command_alias)
         resolved_cmd = self._resolver.resolve(cmd.template, runtime_vars=runtime_vars)
+        ctx = self.build_context(cmd, ctx)
         result = self._executor.run(resolved_cmd.text, ctx=ctx)
         self.record_history(
             alias=command_alias,
@@ -139,3 +144,58 @@ class RunService:
             cmd.template, runtime_vars=runtime_vars
         )
         return missing
+
+    def build_context(
+        self, cmd: Command, runtime_ctx: RunContext | None
+    ) -> RunContext | None:
+        """
+        Constructs a runtime context by merging command-level settings with runtime-level
+        settings. Resolves priority based on input from `runtime_ctx` when available, or
+        falls back to `cmd` for default values. If no significant configuration changes
+        are detected, returns `None`.
+
+        Args:
+            cmd (Command): The command object containing default execution settings, including
+                environment variables, working directory, shell, timeout, and more.
+            runtime_ctx (RunContext | None): An optional runtime context object that may override
+                specific command-level settings, such as environment variables and capture
+                preferences.
+
+        Returns:
+            RunContext | None: Returns a `RunContext` object with the resulting configuration
+            or `None` if no significant changes are produced by the merge.
+        """
+        stored_env = json.loads(cmd.env) if cmd.env else {}
+        runtime_env = getattr(runtime_ctx, "env", None) or {}
+        merged_env = {**stored_env, **runtime_env} or None
+
+        cwd = (runtime_ctx.cwd if runtime_ctx and runtime_ctx.cwd else None) or cmd.cwd
+        shell = (
+            runtime_ctx.shell if runtime_ctx and runtime_ctx.shell else None
+        ) or cmd.shell
+        timeout = (
+            (
+                runtime_ctx.timeout
+                if runtime_ctx and runtime_ctx.timeout is not None
+                else None
+            )
+            if runtime_ctx
+            else cmd.timeout
+        )
+
+        capture = runtime_ctx.capture if runtime_ctx else False
+        emit = runtime_ctx.emit if runtime_ctx else False
+        verbose = runtime_ctx.verbose if runtime_ctx else False
+
+        if not any([cwd, shell, merged_env, timeout, capture, emit, verbose]):
+            return None
+
+        return RunContext(
+            cwd=cwd,
+            shell=shell,
+            env=merged_env,
+            timeout=timeout,
+            capture=capture,
+            emit=emit,
+            verbose=verbose,
+        )
