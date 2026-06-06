@@ -1,3 +1,4 @@
+import json
 from typing import Sequence
 
 from peewee import IntegrityError
@@ -30,6 +31,10 @@ class CommandRepository(BaseRepository[Command]):
         alias: str,
         template: str,
         description: str | None = None,
+        cwd: str | None = None,
+        shell: str | None = None,
+        env: dict[str, str] | None = None,
+        timeout: int | None = None,
     ) -> Command:
         """
         Validates and creates a new Command object based on provided input parameters.
@@ -38,6 +43,10 @@ class CommandRepository(BaseRepository[Command]):
             alias (str): Unique identifier for the command to be created.
             template (str): Template string associated with the command.
             description (str | None): Optional description of the command.
+            cwd (str | None): Current working directory for command execution.
+            shell (str | None): Shell to use for command execution.
+            env (dict[str, str] | None): Environment variables to set for command execution.
+            timeout (int | None): Number of seconds before the process is killed.
 
         Returns:
             Command: The created Command object.
@@ -56,6 +65,10 @@ class CommandRepository(BaseRepository[Command]):
                 alias=alias,
                 template=template,
                 description=description,
+                cwd=cwd,
+                shell=shell,
+                env=json.dumps(env) if env else None,
+                timeout=timeout,
             )
         except IntegrityError as exc:
             if alias is not None and self._is_unique_alias_violation(exc):
@@ -142,6 +155,10 @@ class CommandRepository(BaseRepository[Command]):
             template=fields.get("template", command.template),
             description=fields.get("description", None),
         )
+
+        if "env" in fields:
+            fields["env"] = json.dumps(fields.get("env")) if fields.get("env") else None
+
         try:
             for key, value in fields.items():
                 if not hasattr(command, key):
