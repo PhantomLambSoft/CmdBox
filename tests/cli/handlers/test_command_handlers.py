@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import MagicMock, patch, ANY
 import typer
@@ -9,6 +10,7 @@ from cmdbox.cli.handlers.command_handlers import (
     run_list_command,
     run_search_command,
     run_delete_command,
+    parse_env_pairs,
 )
 from cmdbox.services.field_selection import FieldSelectionResolver
 
@@ -735,3 +737,303 @@ class TestCommandHandlers(unittest.TestCase):
             get_console=self.get_console,
         )
         self.mock_console.error.assert_called()
+
+    def test_none_input_returns_none(self):
+        self.assertIsNone(parse_env_pairs(None))
+
+    def test_empty_list_returns_none(self):
+        self.assertIsNone(parse_env_pairs([]))
+
+    def test_single_valid_pair(self):
+        result = parse_env_pairs(["FOO=bar"])
+        self.assertEqual({"FOO": "bar"}, result)
+
+    def test_multiple_valid_pairs(self):
+        result = parse_env_pairs(["FOO=bar", "BAZ=qux"])
+        self.assertEqual({"FOO": "bar", "BAZ": "qux"}, result)
+
+    def test_value_can_contain_equals_sign(self):
+        # partition("=") is used, so only the first = splits key from value
+        result = parse_env_pairs(["KEY=a=b"])
+        self.assertEqual({"KEY": "a=b"}, result)
+
+    def test_value_can_be_empty_string(self):
+        result = parse_env_pairs(["KEY="])
+        self.assertEqual({"KEY": ""}, result)
+
+    def test_missing_equals_raises_bad_parameter(self):
+        with self.assertRaises(typer.BadParameter):
+            parse_env_pairs(["INVALID_NO_EQUALS"])
+
+    def test_empty_key_raises_bad_parameter(self):
+        with self.assertRaises(typer.BadParameter):
+            parse_env_pairs(["=value"])
+
+    def test_later_duplicate_key_overwrites_earlier(self):
+        result = parse_env_pairs(["FOO=first", "FOO=second"])
+        self.assertEqual({"FOO": "second"}, result)
+
+    def test_valid_pair_mixed_with_invalid_raises_bad_parameter(self):
+        with self.assertRaises(typer.BadParameter):
+            parse_env_pairs(["FOO=bar", "INVALID"])
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_created")
+    def test_env_list_parsed_to_dict_before_service_call(self, mock_render):
+        mock_render.return_value = "rendered"
+        args = AddCommandArgs(
+            alias="alias1",
+            template="tmpl1",
+            description="Description",
+            tags=["tag1"],
+            env=["FOO=bar", "BAZ=qux"],
+            interactive=False,
+        )
+
+        run_add_command(
+            args=args,
+            get_cmd_services=self.get_cmd_services,
+            get_tag_services=self.get_tag_services,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.create_command.assert_called_with(
+            alias="alias1",
+            template="tmpl1",
+            description="Description",
+            tags=["tag1"],
+            cwd=None,
+            shell=None,
+            env={"FOO": "bar", "BAZ": "qux"},
+            timeout=None,
+        )
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_created")
+    def test_cwd_shell_timeout_passed_through_correctly(self, mock_render):
+        mock_render.return_value = "rendered"
+        args = AddCommandArgs(
+            alias="alias1",
+            template="tmpl1",
+            description="Description",
+            tags=["tag1"],
+            cwd="/some/path",
+            shell="bash",
+            timeout=30,
+            interactive=False,
+        )
+
+        run_add_command(
+            args=args,
+            get_cmd_services=self.get_cmd_services,
+            get_tag_services=self.get_tag_services,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.create_command.assert_called_with(
+            alias="alias1",
+            template="tmpl1",
+            description="Description",
+            tags=["tag1"],
+            cwd="/some/path",
+            shell="bash",
+            env=None,
+            timeout=30,
+        )
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_created")
+    def test_env_with_value_containing_equals_parsed_correctly(self, mock_render):
+        mock_render.return_value = "rendered"
+        args = AddCommandArgs(
+            alias="alias1",
+            template="tmpl1",
+            description="Description",
+            tags=["tag1"],
+            env=["KEY=a=b"],
+            interactive=False,
+        )
+
+        run_add_command(
+            args=args,
+            get_cmd_services=self.get_cmd_services,
+            get_tag_services=self.get_tag_services,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.create_command.assert_called_with(
+            alias="alias1",
+            template="tmpl1",
+            description="Description",
+            tags=["tag1"],
+            cwd=None,
+            shell=None,
+            env={"KEY": "a=b"},
+            timeout=None,
+        )
+
+    def _make_cmd(self, **overrides):
+        cmd = MagicMock()
+        cmd.id = 1
+        cmd.alias = "alias1"
+        cmd.template = "old_tmpl"
+        cmd.description = "old_desc"
+        cmd.cwd = None
+        cmd.shell = None
+        cmd.env = None
+        cmd.timeout = None
+        for key, value in overrides.items():
+            setattr(cmd, key, value)
+        self.mock_cmd_services.get_command.return_value = cmd
+        self.mock_cmd_services.get_command_by_id.return_value = MagicMock()
+        return cmd
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_cwd_shell_timeout_passed_to_update(self, mock_render):
+        mock_render.return_value = "rendered"
+        self._make_cmd()
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            cwd="/new/path",
+            shell="bash",
+            env=None,
+            timeout=30,
+            set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_called_with(
+            "alias1", cwd="/new/path", shell="bash", timeout=30
+        )
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_env_list_parsed_to_dict_before_update(self, mock_render):
+        mock_render.return_value = "rendered"
+        self._make_cmd()
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            cwd=None,
+            shell=None,
+            env=["FOO=bar", "BAZ=qux"],
+            timeout=None,
+            set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_called_with(
+            "alias1", env={"FOO": "bar", "BAZ": "qux"}
+        )
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_no_changes_detected_when_env_is_unchanged(self, mock_render):
+        mock_render.return_value = "rendered"
+        self._make_cmd(env=json.dumps({"FOO": "bar"}))
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            cwd=None,
+            shell=None,
+            env=["FOO=bar"],
+            timeout=None,
+            set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_not_called()
+        self.mock_console.info.assert_called_with("No changes detected.")
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_no_changes_detected_when_cwd_is_unchanged(self, mock_render):
+        mock_render.return_value = "rendered"
+        self._make_cmd(cwd="/existing/path")
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            cwd="/existing/path",
+            shell=None,
+            env=None,
+            timeout=None,
+            set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_not_called()
+        self.mock_console.info.assert_called_with("No changes detected.")
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_no_changes_detected_when_timeout_is_unchanged(self, mock_render):
+        mock_render.return_value = "rendered"
+        self._make_cmd(timeout=30)
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=30,
+            set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_not_called()
+        self.mock_console.info.assert_called_with("No changes detected.")
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_changed_env_key_triggers_update(self, mock_render):
+        mock_render.return_value = "rendered"
+        self._make_cmd(env=json.dumps({"FOO": "original"}))
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            cwd=None,
+            shell=None,
+            env=["FOO=updated"],
+            timeout=None,
+            set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_called_with(
+            "alias1", env={"FOO": "updated"}
+        )
