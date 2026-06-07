@@ -1,3 +1,4 @@
+import json
 from typing import Sequence, Callable
 
 from cmdbox.cli.ui.primitives import (
@@ -25,6 +26,26 @@ COMMAND_COLUMNS: dict[str, tuple[str, dict, Callable[[Command], object]]] = {
         "Description",
         {"overflow": "fold"},
         lambda c: c.description,
+    ),
+    "cwd": (
+        "Working Directory",
+        {"overflow": "fold"},
+        lambda c: c.cwd,
+    ),
+    "shell": (
+        "Shell",
+        {"no_wrap": True},
+        lambda c: c.shell,
+    ),
+    "env": (
+        "Environment",
+        {"overflow": "fold"},
+        lambda c: format_env(c.env),
+    ),
+    "timeout": (
+        "Timeout",
+        {"no_wrap": True},
+        lambda c: f"{c.timeout}s" if c.timeout is not None else None,
     ),
     "used": (
         "Used",
@@ -66,11 +87,15 @@ def render_command_created(command: Command):
 
 
 def render_command(command: Command):
-    # TODO: add fields to this
+    # Conditional fields will only be shown if they are not None
+    conditional_fields = ["cwd", "shell", "env", "timeout"]
     rows = []
-    for value in COMMAND_COLUMNS.values():
+    for key, value in COMMAND_COLUMNS.items():
         header, _, extractor = value
-        rows.append((header, extractor(command)))
+        extracted_value = extractor(command)
+        if key in conditional_fields and extracted_value is None:
+            continue
+        rows.append((header, extracted_value))
     cmd_display = kv_table(rows)
     return cmd_display
 
@@ -117,3 +142,27 @@ def render_command_deleted(command: Command):
         body=rendered_command,
         border_style="status.success",
     )
+
+
+def format_env(env: str | None) -> str | None:
+    """
+    Formats the provided environment string by parsing it as JSON and converting the
+    key-value pairs into a newline-separated string. If the string is not valid JSON
+    or parsing fails, the original string is returned.
+
+    Args:
+        env (str | None): A string representing the environment in JSON format, or
+            None if no environment is provided.
+
+    Returns:
+        str | None: A formatted string with key-value pairs separated by newlines
+            if the input was parsed successfully; otherwise, the original string or
+            None if the input was None.
+    """
+    if not env:
+        return None
+    try:
+        parsed = json.loads(env)
+        return "\n".join(f"{k}={v}" for k, v in parsed.items())
+    except (json.JSONDecodeError, AttributeError):
+        return env
