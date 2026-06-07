@@ -1,8 +1,9 @@
+import json
 import unittest
 
 from peewee import DoesNotExist
 
-from cmdbox.database import db, get_db
+from cmdbox.database import db, get_db, ensure_schema
 from cmdbox.repositories.errors import (
     ValidationError,
     AliasConflictError,
@@ -14,7 +15,6 @@ from cmdbox.repositories.errors import (
 )
 from cmdbox.models import Command, Tag, CommandTag, ALL_MODELS
 from cmdbox.repositories.command_repository import CommandRepository
-from cmdbox.database import ensure_schema
 
 
 class TestCommandRepository(unittest.TestCase):
@@ -153,6 +153,58 @@ class TestCommandRepository(unittest.TestCase):
         command = self.repo.create(alias=" test ", template="echo test")
         self.assertTrue(isinstance(command, Command))
         self.assertEqual("test", command.alias)
+
+    def test_create_with_cwd_stores_correctly(self):
+        command = self.repo.create(alias="test", template="echo test", cwd="/some/path")
+        self.assertEqual("/some/path", Command.get(Command.id == command.id).cwd)
+
+    def test_create_with_shell_stores_correctly(self):
+        command = self.repo.create(alias="test", template="echo test", shell="bash")
+        self.assertEqual("bash", Command.get(Command.id == command.id).shell)
+
+    def test_create_with_env_serializes_to_json(self):
+        env = {"FOO": "bar", "BAZ": "qux"}
+        command = self.repo.create(alias="test", template="echo test", env=env)
+        stored = Command.get(Command.id == command.id)
+        self.assertEqual(env, json.loads(stored.env))
+
+    def test_create_with_timeout_stores_correctly(self):
+        command = self.repo.create(alias="test", template="echo test", timeout=30)
+        self.assertEqual(30, Command.get(Command.id == command.id).timeout)
+
+    def test_create_with_all_new_fields_stores_correctly(self):
+        env = {"FOO": "bar"}
+        command = self.repo.create(
+            alias="test",
+            template="echo test",
+            cwd="/some/path",
+            shell="bash",
+            env=env,
+            timeout=30,
+        )
+        stored = Command.get(Command.id == command.id)
+        self.assertEqual("/some/path", stored.cwd)
+        self.assertEqual("bash", stored.shell)
+        self.assertEqual(env, json.loads(stored.env))
+        self.assertEqual(30, stored.timeout)
+
+    def test_create_with_no_new_fields_stores_null_values(self):
+        command = self.repo.create(alias="test", template="echo test")
+        stored = Command.get(Command.id == command.id)
+        self.assertIsNone(stored.cwd)
+        self.assertIsNone(stored.shell)
+        self.assertIsNone(stored.env)
+        self.assertIsNone(stored.timeout)
+
+    def test_create_with_env_none_stores_null(self):
+        command = self.repo.create(alias="test", template="echo test", env=None)
+        self.assertIsNone(Command.get(Command.id == command.id).env)
+
+    def test_create_env_preserves_all_key_value_pairs(self):
+        env = {"NODE_ENV": "production", "DEBUG": "1", "PORT": "8080"}
+        command = self.repo.create(alias="test", template="echo test", env=env)
+        stored = Command.get(Command.id == command.id)
+        self.assertEqual(env, json.loads(stored.env))
 
     # =================================================================================
     # SECTION: GET TESTS
@@ -330,6 +382,60 @@ class TestCommandRepository(unittest.TestCase):
         )
         self.repo.update(command=cmd, alias=" test2 ")
         self.assertEqual("test2", Command.get(Command.id == cmd.id).alias)
+
+    def test_update_cwd_works(self):
+        command = Command.create(alias="test", template="echo test")
+        self.repo.update(command=command, cwd="/new/path")
+        self.assertEqual("/new/path", Command.get(Command.id == command.id).cwd)
+
+    def test_update_shell_works(self):
+        command = Command.create(alias="test", template="echo test")
+        self.repo.update(command=command, shell="zsh")
+        self.assertEqual("zsh", Command.get(Command.id == command.id).shell)
+
+    def test_update_env_serializes_to_json(self):
+        command = Command.create(alias="test", template="echo test")
+        env = {"NODE_ENV": "production"}
+        self.repo.update(command=command, env=env)
+        stored = Command.get(Command.id == command.id)
+        self.assertEqual(env, json.loads(stored.env))
+
+    def test_update_timeout_works(self):
+        command = Command.create(alias="test", template="echo test")
+        self.repo.update(command=command, timeout=60)
+        self.assertEqual(60, Command.get(Command.id == command.id).timeout)
+
+    def test_update_env_with_multiple_keys_serializes_all(self):
+        command = Command.create(alias="test", template="echo test")
+        env = {"FOO": "bar", "BAZ": "qux", "NODE_ENV": "production"}
+        self.repo.update(command=command, env=env)
+        stored = Command.get(Command.id == command.id)
+        self.assertEqual(env, json.loads(stored.env))
+
+    def test_update_existing_cwd_to_new_value(self):
+        command = Command.create(alias="test", template="echo test", cwd="/old/path")
+        self.repo.update(command=command, cwd="/new/path")
+        self.assertEqual("/new/path", Command.get(Command.id == command.id).cwd)
+
+    def test_update_existing_env_to_new_dict(self):
+        command = Command.create(
+            alias="test",
+            template="echo test",
+            env=json.dumps({"FOO": "original"}),
+        )
+        self.repo.update(command=command, env={"FOO": "updated", "BAR": "new"})
+        stored = Command.get(Command.id == command.id)
+        self.assertEqual({"FOO": "updated", "BAR": "new"}, json.loads(stored.env))
+
+    def test_update_context_fields_do_not_affect_other_fields(self):
+        command = Command.create(
+            alias="test", template="echo test", description="original desc"
+        )
+        self.repo.update(command=command, cwd="/new/path", timeout=10)
+        stored = Command.get(Command.id == command.id)
+        self.assertEqual("original desc", stored.description)
+        self.assertEqual("test", stored.alias)
+        self.assertEqual("echo test", stored.template)
 
     # =================================================================================
     # SECTION: LIST TESTS
