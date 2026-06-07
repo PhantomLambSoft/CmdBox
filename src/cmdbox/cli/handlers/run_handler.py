@@ -89,8 +89,10 @@ def run_preview_command(
             runtime_vars[var_name] = value
 
     run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
-    prev_result = run_service.preview(alias, runtime_vars=runtime_vars)
-    rendered_result = render_preview_result(prev_result, ctx=run_ctx)
+    prev_result, effective_ctx = run_service.preview(
+        alias, runtime_vars=runtime_vars, ctx=run_ctx
+    )
+    rendered_result = render_preview_result(prev_result, ctx=effective_ctx)
     console = get_console()
     console.print(rendered_result)
 

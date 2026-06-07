@@ -79,8 +79,11 @@ class RunService:
         return result
 
     def preview(
-        self, command_alias: str, runtime_vars: dict[str, str] | None = None
-    ) -> ResolveResult:
+        self,
+        command_alias: str,
+        runtime_vars: dict[str, str] | None = None,
+        ctx: RunContext | None = None,
+    ) -> tuple[ResolveResult, RunContext | None]:
         """
         Retrieves and resolves a command template based on its alias.
 
@@ -91,12 +94,15 @@ class RunService:
         Args:
             command_alias (str): The alias of the command to be resolved.
             runtime_vars (dict[str, str] | None): Runtime variables to be used during command resolution.
+            ctx (RunContext | None): The context in which the command is being executed.
 
         Returns:
-            ResolveResult: The resolved result of the command template.
+            tuple[ResolveResult, RunContext | None]: The resolved result of the command template and the effective context.
         """
         cmd = self._repo.get_by_alias(command_alias)
-        return self._resolver.resolve(cmd.template, runtime_vars=runtime_vars)
+        resolved = self._resolver.resolve(cmd.template, runtime_vars=runtime_vars)
+        effective_ctx = self.build_context(cmd, ctx)
+        return resolved, effective_ctx
 
     def record_history(
         self,
