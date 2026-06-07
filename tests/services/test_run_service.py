@@ -1,5 +1,8 @@
+import json
 import unittest
 from unittest.mock import MagicMock, patch
+
+from cmdbox.runtime.executor import RunContext
 from cmdbox.services.run_service import RunService
 from cmdbox.models import Command
 from cmdbox.resolve.type_defs import ResolveResult
@@ -191,3 +194,243 @@ class TestRunService(unittest.TestCase):
         self.assertIn(f"Alias '{alias}' not found.", str(context.exception))
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
         self.mock_resolver.collect_missing_vars.assert_not_called()
+
+
+class TestBuildContext(unittest.TestCase):
+
+    def setUp(self):
+        self.service = RunService(
+            repo=MagicMock(),
+            resolver=MagicMock(),
+            executor=MagicMock(),
+        )
+
+    def _make_command(
+        self,
+        cwd=None,
+        shell=None,
+        env=None,
+        timeout=None,
+    ) -> MagicMock:
+        """Creates a mock Command with the given execution context fields.
+        env should be passed as a dict; it is serialized to JSON to match
+        how it is stored on the model.
+        """
+        cmd = MagicMock(spec=Command)
+        cmd.cwd = cwd
+        cmd.shell = shell
+        cmd.env = json.dumps(env) if env is not None else None
+        cmd.timeout = timeout
+        return cmd
+
+    # =========================================================================
+    # SECTION: None/empty cases
+    # =========================================================================
+
+    def test_no_stored_fields_no_runtime_returns_none(self):
+        cmd = self._make_command()
+        result = self.service.build_context(cmd, None)
+        self.assertIsNone(result)
+
+    def test_no_stored_fields_default_runtime_context_returns_none(self):
+        # RunContext() has all defaults (None/False), so nothing meaningful
+        # to merge — should still return None
+        cmd = self._make_command()
+        result = self.service.build_context(cmd, RunContext())
+        self.assertIsNone(result)
+
+    # =========================================================================
+    # SECTION: cwd
+    # =========================================================================
+
+    def test_stored_cwd_used_when_runtime_is_none(self):
+        cmd = self._make_command(cwd="/stored/path")
+        result = self.service.build_context(cmd, None)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.cwd, "/stored/path")
+
+    def test_stored_cwd_used_when_runtime_cwd_is_none(self):
+        cmd = self._make_command(cwd="/stored/path")
+        result = self.service.build_context(cmd, RunContext())
+        self.assertEqual(result.cwd, "/stored/path")
+
+    def test_runtime_cwd_overrides_stored_cwd(self):
+        cmd = self._make_command(cwd="/stored/path")
+        result = self.service.build_context(cmd, RunContext(cwd="/runtime/path"))
+        self.assertEqual(result.cwd, "/runtime/path")
+
+    def test_runtime_cwd_used_when_no_stored_cwd(self):
+        cmd = self._make_command()
+        result = self.service.build_context(cmd, RunContext(cwd="/runtime/path"))
+        self.assertEqual(result.cwd, "/runtime/path")
+
+    # =========================================================================
+    # SECTION: shell
+    # =========================================================================
+
+    def test_stored_shell_used_when_runtime_is_none(self):
+        cmd = self._make_command(shell="bash")
+        result = self.service.build_context(cmd, None)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.shell, "bash")
+
+    def test_stored_shell_used_when_runtime_shell_is_none(self):
+        cmd = self._make_command(shell="bash")
+        result = self.service.build_context(cmd, RunContext())
+        self.assertEqual(result.shell, "bash")
+
+    def test_runtime_shell_overrides_stored_shell(self):
+        cmd = self._make_command(shell="bash")
+        result = self.service.build_context(cmd, RunContext(shell="zsh"))
+        self.assertEqual(result.shell, "zsh")
+
+    def test_runtime_shell_used_when_no_stored_shell(self):
+        cmd = self._make_command()
+        result = self.service.build_context(cmd, RunContext(shell="zsh"))
+        self.assertEqual(result.shell, "zsh")
+
+    # =========================================================================
+    # SECTION: timeout
+    # =========================================================================
+
+    def test_stored_timeout_used_when_runtime_is_none(self):
+        cmd = self._make_command(timeout=30)
+        result = self.service.build_context(cmd, None)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.timeout, 30)
+
+    def test_stored_timeout_used_when_runtime_timeout_is_none(self):
+        cmd = self._make_command(timeout=30)
+        result = self.service.build_context(cmd, RunContext())
+        self.assertEqual(result.timeout, 30)
+
+    def test_runtime_timeout_overrides_stored_timeout(self):
+        cmd = self._make_command(timeout=30)
+        result = self.service.build_context(cmd, RunContext(timeout=10))
+        self.assertEqual(result.timeout, 10)
+
+    def test_runtime_timeout_used_when_no_stored_timeout(self):
+        cmd = self._make_command()
+        result = self.service.build_context(cmd, RunContext(timeout=10))
+        self.assertEqual(result.timeout, 10)
+
+    # =========================================================================
+    # SECTION: env
+    # =========================================================================
+
+    def test_stored_env_used_when_runtime_is_none(self):
+        cmd = self._make_command(env={"FOO": "bar"})
+        result = self.service.build_context(cmd, None)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.env, {"FOO": "bar"})
+
+    def test_stored_env_used_when_runtime_env_is_none(self):
+        cmd = self._make_command(env={"FOO": "bar"})
+        result = self.service.build_context(cmd, RunContext())
+        self.assertEqual(result.env, {"FOO": "bar"})
+
+    def test_runtime_env_key_overrides_stored_key(self):
+        cmd = self._make_command(env={"FOO": "stored_value"})
+        result = self.service.build_context(
+            cmd, RunContext(env={"FOO": "runtime_value"})
+        )
+        self.assertEqual(result.env["FOO"], "runtime_value")
+
+    def test_runtime_env_merge_preserves_non_overridden_stored_keys(self):
+        cmd = self._make_command(env={"FOO": "stored_foo", "BAR": "stored_bar"})
+        result = self.service.build_context(cmd, RunContext(env={"FOO": "runtime_foo"}))
+        self.assertEqual(result.env["FOO"], "runtime_foo")
+        self.assertEqual(result.env["BAR"], "stored_bar")
+
+    def test_runtime_env_only_used_when_no_stored_env(self):
+        cmd = self._make_command()
+        result = self.service.build_context(cmd, RunContext(env={"FOO": "bar"}))
+        self.assertEqual(result.env, {"FOO": "bar"})
+
+    def test_both_env_none_produces_no_env_on_context(self):
+        cmd = self._make_command(cwd="/some/path")
+        result = self.service.build_context(cmd, RunContext())
+        self.assertIsNone(result.env)
+
+    def test_multiple_stored_and_runtime_env_keys_merged_correctly(self):
+        cmd = self._make_command(env={"A": "1", "B": "2", "C": "3"})
+        result = self.service.build_context(
+            cmd, RunContext(env={"B": "overridden", "D": "4"})
+        )
+        self.assertEqual(result.env["A"], "1")
+        self.assertEqual(result.env["B"], "overridden")
+        self.assertEqual(result.env["C"], "3")
+        self.assertEqual(result.env["D"], "4")
+
+    # =========================================================================
+    # SECTION: behavioral flags
+    # =========================================================================
+
+    def test_capture_flag_taken_from_runtime(self):
+        cmd = self._make_command(cwd="/some/path")
+        result = self.service.build_context(cmd, RunContext(capture=True))
+        self.assertTrue(result.capture)
+
+    def test_emit_flag_taken_from_runtime(self):
+        cmd = self._make_command(cwd="/some/path")
+        result = self.service.build_context(cmd, RunContext(emit=True))
+        self.assertTrue(result.emit)
+
+    def test_verbose_flag_taken_from_runtime(self):
+        cmd = self._make_command(cwd="/some/path")
+        result = self.service.build_context(cmd, RunContext(verbose=True))
+        self.assertTrue(result.verbose)
+
+    def test_behavioral_flags_default_to_false_when_runtime_is_none(self):
+        cmd = self._make_command(cwd="/some/path")
+        result = self.service.build_context(cmd, None)
+        self.assertFalse(result.capture)
+        self.assertFalse(result.emit)
+        self.assertFalse(result.verbose)
+
+    def test_behavioral_flags_not_sourced_from_stored_command(self):
+        # Behavioral flags only come from runtime; stored command has no
+        # capture/emit/verbose fields. This verifies that even if runtime
+        # has all flags False, the result is still a valid context when
+        # stored fields are present.
+        cmd = self._make_command(cwd="/some/path", shell="bash", timeout=30)
+        result = self.service.build_context(cmd, RunContext())
+        self.assertFalse(result.capture)
+        self.assertFalse(result.emit)
+        self.assertFalse(result.verbose)
+
+    # =========================================================================
+    # SECTION: all fields together
+    # =========================================================================
+
+    def test_all_fields_stored_and_no_runtime_uses_all_stored(self):
+        cmd = self._make_command(
+            cwd="/stored/path",
+            shell="bash",
+            env={"FOO": "bar"},
+            timeout=30,
+        )
+        result = self.service.build_context(cmd, None)
+        self.assertEqual(result.cwd, "/stored/path")
+        self.assertEqual(result.shell, "bash")
+        self.assertEqual(result.env, {"FOO": "bar"})
+        self.assertEqual(result.timeout, 30)
+
+    def test_all_fields_runtime_overrides_all_stored(self):
+        cmd = self._make_command(
+            cwd="/stored/path",
+            shell="bash",
+            env={"FOO": "stored"},
+            timeout=30,
+        )
+        runtime = RunContext(
+            cwd="/runtime/path",
+            shell="zsh",
+            env={"FOO": "runtime"},
+            timeout=10,
+        )
+        result = self.service.build_context(cmd, runtime)
+        self.assertEqual(result.cwd, "/runtime/path")
+        self.assertEqual(result.shell, "zsh")
+        self.assertEqual(result.env["FOO"], "runtime")
+        self.assertEqual(result.timeout, 10)
