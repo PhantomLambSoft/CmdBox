@@ -61,6 +61,7 @@ class TestRunService(unittest.TestCase):
 
         command = MagicMock(spec=Command)
         command.template = template
+        command.env = None
         self.mock_repo.get_by_alias.return_value = command
 
         resolve_result = MagicMock(spec=ResolveResult)
@@ -69,7 +70,7 @@ class TestRunService(unittest.TestCase):
         self.mock_resolver.resolve.return_value = resolve_result
 
         # Execute
-        result = self.service.preview(alias)
+        result, ctx = self.service.preview(alias)
 
         # Assert
         self.assertEqual(result, resolve_result)
