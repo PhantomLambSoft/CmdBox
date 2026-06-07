@@ -124,6 +124,7 @@ def get_run_ctx(raw_run_ctx: RawRunContext | None) -> RunContext:
         env=env,
         capture=raw_run_ctx.capture,
         shell=raw_run_ctx.shell,
+        timeout=raw_run_ctx.timeout,
         emit=raw_run_ctx.emit,
         verbose=raw_run_ctx.verbose,
     )
