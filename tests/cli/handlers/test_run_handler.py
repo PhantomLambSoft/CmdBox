@@ -272,19 +272,22 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=runtime_vars,
         )
 
+    @patch("cmdbox.cli.handlers.run_handler.get_run_ctx")
     @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
-    def test_run_preview_command(self, mock_render):
+    def test_run_preview_command(self, mock_render, mock_get_run_ctx):
         mock_run_service = MagicMock()
         mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
-        mock_run_service.preview.return_value = mock_resolve_result
+        mock_ctx = MagicMock()
+        mock_get_run_ctx.return_value = mock_ctx
+        mock_run_service.preview.return_value = mock_resolve_result, mock_ctx
         mock_run_service.collect_missing_vars.return_value = []
         mock_render.return_value = "rendered_preview"
 
         run_preview_command(
             alias="test-alias",
-            run_ctx=None,
+            run_ctx=mock_ctx,
             get_run_service=lambda: mock_run_service,
             get_settings=lambda: mock_settings,
             get_console=lambda: mock_console,
@@ -295,18 +298,21 @@ class TestRunHandler(unittest.TestCase):
             "test-alias", runtime_vars=None
         )
         mock_run_service.preview.assert_called_once_with(
-            "test-alias", runtime_vars=None
+            "test-alias", runtime_vars=None, ctx=mock_ctx
         )
-        mock_render.assert_called_once_with(mock_resolve_result, ctx=RunContext())
+        mock_render.assert_called_once_with(mock_resolve_result, ctx=mock_ctx)
         mock_console.print.assert_called_once_with("rendered_preview")
 
+    @patch("cmdbox.cli.handlers.run_handler.get_run_ctx")
     @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
-    def test_run_preview_command_with_ctx(self, mock_render):
+    def test_run_preview_command_with_ctx(self, mock_render, mock_get_run_ctx):
         mock_run_service = MagicMock()
         mock_settings = MagicMock(execution_settings=MagicMock(verbose=True))
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
-        mock_run_service.preview.return_value = mock_resolve_result
+        mock_ctx = MagicMock()
+        mock_get_run_ctx.return_value = mock_ctx
+        mock_run_service.preview.return_value = mock_resolve_result, mock_ctx
         mock_run_service.collect_missing_vars.return_value = []
         raw_ctx = RawRunContext(cwd="/tmp")
         mock_render.return_value = "rendered_preview"
@@ -324,31 +330,33 @@ class TestRunHandler(unittest.TestCase):
             "test-alias", runtime_vars=None
         )
         mock_run_service.preview.assert_called_once_with(
-            "test-alias", runtime_vars=None
+            "test-alias", runtime_vars=None, ctx=mock_ctx
         )
-        mock_render.assert_called_once_with(
-            mock_resolve_result, ctx=RunContext(cwd="/tmp")
-        )
+        mock_get_run_ctx.assert_called_once_with(raw_ctx)
+        mock_render.assert_called_once_with(mock_resolve_result, ctx=mock_ctx)
         mock_console.print.assert_called_once_with("rendered_preview")
 
+    @patch("cmdbox.cli.handlers.run_handler.get_run_ctx")
     @patch("cmdbox.cli.handlers.run_handler.prompt_for_missing_var")
     @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
     def test_run_preview_command_prompts_for_missing_vars(
-        self, mock_render, mock_prompt
+        self, mock_render, mock_prompt, mock_get_run_ctx
     ):
         mock_run_service = MagicMock()
         mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
         mock_run_service.collect_missing_vars.return_value = ["name"]
-        mock_run_service.preview.return_value = mock_resolve_result
+        mock_ctx = MagicMock()
+        mock_get_run_ctx.return_value = mock_ctx
+        mock_run_service.preview.return_value = mock_resolve_result, mock_ctx
         mock_prompt.return_value = "Homer"
         mock_render.return_value = "rendered_preview"
         runtime_vars = {}
 
         run_preview_command(
             alias="test-alias",
-            run_ctx=None,
+            run_ctx=mock_ctx,
             runtime_vars=runtime_vars,
             get_run_service=lambda: mock_run_service,
             get_settings=lambda: mock_settings,
@@ -361,7 +369,7 @@ class TestRunHandler(unittest.TestCase):
         )
         mock_prompt.assert_called_once_with("name")
         mock_run_service.preview.assert_called_once_with(
-            "test-alias", runtime_vars=runtime_vars
+            "test-alias", runtime_vars=runtime_vars, ctx=mock_ctx
         )
-        mock_render.assert_called_once_with(mock_resolve_result, ctx=RunContext())
+        mock_render.assert_called_once_with(mock_resolve_result, ctx=mock_ctx)
         mock_console.print.assert_called_once_with("rendered_preview")
