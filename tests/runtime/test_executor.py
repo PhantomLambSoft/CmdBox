@@ -1,3 +1,4 @@
+import subprocess
 import unittest
 from unittest.mock import patch, MagicMock
 
@@ -86,6 +87,7 @@ class TestExecutor(unittest.TestCase):
         self.assertIsNone(ctx.env)
         self.assertFalse(ctx.capture)
         self.assertIsNone(ctx.shell)
+        self.assertIsNone(ctx.timeout)
         self.assertFalse(ctx.emit)
         self.assertFalse(ctx.verbose)
 
@@ -242,3 +244,314 @@ class TestExecutor(unittest.TestCase):
         command = "echo hello\necho world"
         self.executor.run(command)
         mock_run_multiline.assert_called_once()
+
+    @patch("cmdbox.runtime.executor.subprocess.run")
+    def test_without_timeout_uses_subprocess_run(self, mock_run):
+        mock_completed = MagicMock()
+        mock_completed.returncode = 0
+        mock_completed.stdout = "hello\n"
+        mock_completed.stderr = ""
+        mock_run.return_value = mock_completed
+
+        result = self.executor.execute_command(
+            "echo hello",
+            popen_args=["echo", "hello"],
+            cwd=None,
+            env={},
+            capture_output=False,
+            timeout=None,
+        )
+
+        mock_run.assert_called_once()
+        self.assertIsInstance(result, ExecutionResult)
+        self.assertEqual(result.exit_code, 0)
+        self.assertEqual(result.stdout, "hello\n")
+
+    @patch("cmdbox.runtime.executor.Executor._run_subprocess")
+    def test_with_timeout_uses_run_subprocess(self, mock_run_subprocess):
+        mock_completed = MagicMock()
+        mock_completed.returncode = 0
+        mock_completed.stdout = "hello\n"
+        mock_completed.stderr = ""
+        mock_run_subprocess.return_value = mock_completed
+
+        result = self.executor.execute_command(
+            "echo hello",
+            popen_args=["echo", "hello"],
+            timeout=5,
+        )
+
+        mock_run_subprocess.assert_called_once()
+        self.assertEqual(result.exit_code, 0)
+
+    @patch("cmdbox.runtime.executor.subprocess.run")
+    @patch("cmdbox.runtime.executor.Executor._run_subprocess")
+    def test_without_timeout_does_not_call_run_subprocess(
+        self, mock_run_subprocess, mock_run
+    ):
+        mock_completed = MagicMock()
+        mock_completed.returncode = 0
+        mock_completed.stdout = ""
+        mock_completed.stderr = ""
+        mock_run.return_value = mock_completed
+
+        self.executor.execute_command(
+            "echo hello",
+            popen_args=["echo", "hello"],
+            timeout=None,
+        )
+
+        mock_run_subprocess.assert_not_called()
+
+    @patch("cmdbox.runtime.executor.Executor._run_subprocess")
+    def test_timeout_expired_returns_exit_code_124(self, mock_run_subprocess):
+        mock_run_subprocess.side_effect = subprocess.TimeoutExpired(
+            cmd="echo hello", timeout=5
+        )
+
+        result = self.executor.execute_command(
+            "echo hello",
+            popen_args=["echo", "hello"],
+            timeout=5,
+        )
+
+        self.assertEqual(result.exit_code, 124)
+        self.assertEqual(result.stdout, "")
+
+    @patch("cmdbox.runtime.executor.Executor._run_subprocess")
+    def test_timeout_expired_stderr_contains_timeout_value(self, mock_run_subprocess):
+        mock_run_subprocess.side_effect = subprocess.TimeoutExpired(
+            cmd="echo hello", timeout=10
+        )
+
+        result = self.executor.execute_command(
+            "echo hello",
+            popen_args=["echo", "hello"],
+            timeout=10,
+        )
+
+        self.assertIn("10", result.stderr)
+
+    @patch("cmdbox.runtime.executor.subprocess.run")
+    def test_non_zero_exit_code_returned_correctly(self, mock_run):
+        mock_completed = MagicMock()
+        mock_completed.returncode = 1
+        mock_completed.stdout = ""
+        mock_completed.stderr = "error message"
+        mock_run.return_value = mock_completed
+
+        result = self.executor.execute_command(
+            "false",
+            popen_args=["false"],
+            timeout=None,
+        )
+
+        self.assertEqual(result.exit_code, 1)
+        self.assertEqual(result.stderr, "error message")
+
+    @patch("cmdbox.runtime.executor.subprocess.run")
+    def test_cwd_and_capture_passed_to_subprocess_run(self, mock_run):
+        mock_completed = MagicMock()
+        mock_completed.returncode = 0
+        mock_completed.stdout = ""
+        mock_completed.stderr = ""
+        mock_run.return_value = mock_completed
+
+        self.executor.execute_command(
+            "echo hello",
+            popen_args=["echo", "hello"],
+            cwd="/some/path",
+            env={"VAR": "val"},
+            capture_output=True,
+            timeout=None,
+        )
+
+        args, kwargs = mock_run.call_args
+        self.assertEqual(kwargs["cwd"], "/some/path")
+        self.assertTrue(kwargs["capture_output"])
+        self.assertEqual(kwargs["env"]["VAR"], "val")
+
+    @patch("cmdbox.runtime.executor.subprocess.Popen")
+    def test_success_returns_completed_process_with_correct_values(self, mock_popen):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_proc.communicate.return_value = ("stdout output", "stderr output")
+        mock_popen.return_value.__enter__.return_value = mock_proc
+
+        result = self.executor._run_subprocess(
+            ["echo", "hello"],
+            cwd=None,
+            env={},
+            capture_output=True,
+            timeout=5,
+        )
+
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "stdout output")
+        self.assertEqual(result.stderr, "stderr output")
+
+    @patch("cmdbox.runtime.executor.subprocess.Popen")
+    def test_communicate_called_with_correct_timeout(self, mock_popen):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_proc.communicate.return_value = ("", "")
+        mock_popen.return_value.__enter__.return_value = mock_proc
+
+        self.executor._run_subprocess(
+            ["echo", "hello"],
+            cwd=None,
+            env={},
+            capture_output=False,
+            timeout=7,
+        )
+
+        mock_proc.communicate.assert_called_once_with(timeout=7)
+
+    @patch("cmdbox.runtime.executor.Executor._kill_process_tree")
+    @patch("cmdbox.runtime.executor.subprocess.Popen")
+    def test_timeout_expired_kills_process_tree_and_reraises(
+        self, mock_popen, mock_kill
+    ):
+        mock_proc = MagicMock()
+        mock_proc.communicate.side_effect = subprocess.TimeoutExpired(
+            cmd="ping", timeout=2
+        )
+        mock_popen.return_value.__enter__.return_value = mock_proc
+
+        with self.assertRaises(subprocess.TimeoutExpired):
+            self.executor._run_subprocess(
+                ["ping", "127.0.0.1"],
+                cwd=None,
+                env={},
+                capture_output=False,
+                timeout=2,
+            )
+
+        mock_kill.assert_called_once_with(mock_proc)
+        mock_proc.wait.assert_called_once()
+
+    @patch("cmdbox.runtime.executor.Executor._kill_process_tree")
+    @patch("cmdbox.runtime.executor.subprocess.Popen")
+    def test_keyboard_interrupt_kills_process_tree_and_reraises(
+        self, mock_popen, mock_kill
+    ):
+        mock_proc = MagicMock()
+        mock_proc.communicate.side_effect = KeyboardInterrupt()
+        mock_popen.return_value.__enter__.return_value = mock_proc
+
+        with self.assertRaises(KeyboardInterrupt):
+            self.executor._run_subprocess(
+                ["ping", "127.0.0.1"],
+                cwd=None,
+                env={},
+                capture_output=False,
+                timeout=5,
+            )
+
+        mock_kill.assert_called_once_with(mock_proc)
+        mock_proc.wait.assert_called_once()
+
+    @patch("cmdbox.runtime.executor.Executor._kill_process_tree")
+    @patch("cmdbox.runtime.executor.subprocess.Popen")
+    def test_success_does_not_call_kill_process_tree(self, mock_popen, mock_kill):
+        mock_proc = MagicMock()
+        mock_proc.returncode = 0
+        mock_proc.communicate.return_value = ("", "")
+        mock_popen.return_value.__enter__.return_value = mock_proc
+
+        self.executor._run_subprocess(
+            ["echo", "hello"],
+            cwd=None,
+            env={},
+            capture_output=False,
+            timeout=5,
+        )
+
+        mock_kill.assert_not_called()
+
+    @patch("cmdbox.runtime.executor.subprocess.run")
+    @patch("cmdbox.runtime.executor.sys")
+    def test_windows_calls_taskkill_with_correct_args(self, mock_sys, mock_run):
+        mock_sys.platform = "win32"
+        mock_proc = MagicMock()
+        mock_proc.pid = 12345
+
+        Executor._kill_process_tree(mock_proc)
+
+        mock_run.assert_called_once_with(
+            ["taskkill", "/F", "/T", "/PID", "12345"],
+            capture_output=True,
+        )
+
+    @patch("cmdbox.runtime.executor.Executor._run_subprocess")
+    @patch("os.remove")
+    @patch("tempfile.NamedTemporaryFile")
+    def test_with_timeout_uses_run_subprocess(
+        self, mock_temp, mock_remove, mock_run_subprocess
+    ):
+        command = "echo hello\necho world"
+        ctx = RunContext(capture=True, timeout=5)
+        env = {"VAR": "VAL"}
+
+        mock_file = MagicMock()
+        mock_file.name = "temp_script.sh"
+        mock_temp.return_value.__enter__.return_value = mock_file
+
+        mock_completed = MagicMock()
+        mock_completed.returncode = 0
+        mock_completed.stdout = "hello\nworld\n"
+        mock_completed.stderr = ""
+        mock_run_subprocess.return_value = mock_completed
+
+        result = self.executor.run_multiline_as_script(command, ctx, env)
+
+        mock_run_subprocess.assert_called_once()
+        self.assertEqual(result.exit_code, 0)
+
+    @patch("cmdbox.runtime.executor.subprocess.run")
+    @patch("cmdbox.runtime.executor.Executor._run_subprocess")
+    @patch("os.remove")
+    @patch("tempfile.NamedTemporaryFile")
+    def test_without_timeout_does_not_use_run_subprocess(
+        self, mock_temp, mock_remove, mock_run_subprocess, mock_run
+    ):
+        command = "echo hello\necho world"
+        ctx = RunContext(capture=True)
+        env = {}
+
+        mock_file = MagicMock()
+        mock_file.name = "temp_script.sh"
+        mock_temp.return_value.__enter__.return_value = mock_file
+
+        mock_completed = MagicMock()
+        mock_completed.returncode = 0
+        mock_completed.stdout = ""
+        mock_completed.stderr = ""
+        mock_run.return_value = mock_completed
+
+        self.executor.run_multiline_as_script(command, ctx, env)
+
+        mock_run_subprocess.assert_not_called()
+
+    @patch("cmdbox.runtime.executor.Executor._run_subprocess")
+    @patch("os.remove")
+    @patch("tempfile.NamedTemporaryFile")
+    def test_timeout_expired_returns_exit_code_124_and_cleans_up_temp_file(
+        self, mock_temp, mock_remove, mock_run_subprocess
+    ):
+        command = "echo hello\necho world"
+        ctx = RunContext(timeout=2)
+        env = {}
+
+        mock_file = MagicMock()
+        mock_file.name = "temp_script.sh"
+        mock_temp.return_value.__enter__.return_value = mock_file
+
+        mock_run_subprocess.side_effect = subprocess.TimeoutExpired(
+            cmd="temp_script.sh", timeout=2
+        )
+
+        result = self.executor.run_multiline_as_script(command, ctx, env)
+
+        self.assertEqual(result.exit_code, 124)
+        mock_remove.assert_called_once_with("temp_script.sh")
