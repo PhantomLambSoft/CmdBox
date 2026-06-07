@@ -180,12 +180,8 @@ class RunService:
             runtime_ctx.shell if runtime_ctx and runtime_ctx.shell else None
         ) or cmd.shell
         timeout = (
-            (
-                runtime_ctx.timeout
-                if runtime_ctx and runtime_ctx.timeout is not None
-                else None
-            )
-            if runtime_ctx
+            runtime_ctx.timeout
+            if (runtime_ctx and runtime_ctx.timeout is not None)
             else cmd.timeout
         )
 
