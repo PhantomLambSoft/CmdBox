@@ -80,7 +80,7 @@ class Executor:
         if not ctx:
             ctx = RunContext()
         log.info(
-            "Executing command: mode=%s, multiline=%s, capture=%s, shell=%s, cmd_len=%s, cwd_set=%s, env_override=%s",
+            "Executing command: mode=%s, multiline=%s, capture=%s, shell=%s, cmd_len=%s, cwd_set=%s, env_override=%s, timeout=%s",
             "emit" if ctx.emit else "subprocess",
             self.is_multiline(command),
             ctx.capture,
@@ -88,6 +88,7 @@ class Executor:
             len(command),
             ctx.cwd is not None,
             ctx.env is not None,
+            ctx.timeout,
         )
 
         if ctx.emit:
@@ -102,58 +103,14 @@ class Executor:
             return self.run_multiline_as_script(command, ctx=ctx, env=env)
 
         popen_args = build_shell_command(command, preferred_shell=ctx.shell)
-        completed = subprocess.run(
-            popen_args,
+        return self.execute_command(
+            command,
+            popen_args=popen_args,
             cwd=ctx.cwd,
-            text=True,
             env=env,
             capture_output=ctx.capture,
+            timeout=ctx.timeout,
         )
-
-        log.info("Command completed with exit code: %s", completed.returncode)
-
-        return ExecutionResult(
-            command=command,
-            exit_code=completed.returncode,
-            stdout=completed.stdout or "",
-            stderr=completed.stderr or "",
-        )
-
-    @staticmethod
-    def emit_command(command: str) -> None:
-        """
-        Emits a formatted command to standard output and terminates the process
-        with a success exit code.
-
-        This method takes a string command as input, appends a newline character,
-        and writes it to the standard output. It ensures the command is formatted
-        with a single trailing newline before being emitted. Once executed, the
-        method forcefully exits the process with an exit code of 0.
-
-        Args:
-            command (str): The input command that needs to be written to standard
-                output. It should be a valid string representation of the command
-                to execute.
-        """
-        cmd = command.strip("\n") + "\n"
-        sys.stdout.write(cmd)
-        raise typer.Exit(code=0)
-
-    @staticmethod
-    def is_multiline(command: str) -> bool:
-        """
-        Determines if the given command is multiline. A command is considered multiline
-        if it contains at least one newline character after stripping leading and trailing
-        newlines.
-
-        Args:
-            command (str): The command string to check.
-
-        Returns:
-            bool: True if the command contains at least one newline character after
-            trimming leading and trailing newline characters, False otherwise.
-        """
-        return "\n" in command.strip("\n")
 
     @log_action(__name__, "run_executor_run_multiline_as_script")
     def run_multiline_as_script(
@@ -206,28 +163,196 @@ class Executor:
                 "exec multiline args_count=%s header=%s", len(popen_args), bool(header)
             )
 
-            completed = subprocess.run(
-                popen_args,
+            return self.execute_command(
+                command,
+                popen_args=popen_args,
                 cwd=ctx.cwd,
-                text=True,
                 env=env,
                 capture_output=ctx.capture,
+                timeout=ctx.timeout,
             )
 
-            log.info("Command completed with exit code: %s", completed.returncode)
-
-            return ExecutionResult(
-                command=command,
-                exit_code=completed.returncode,
-                stdout=completed.stdout or "",
-                stderr=completed.stderr or "",
-            )
         finally:
             if script_path:
                 try:
                     os.remove(script_path)
                 except OSError:
                     pass
+
+    def execute_command(
+        self,
+        command: str,
+        *,
+        popen_args: list[str],
+        cwd: str | None = None,
+        env: dict[str, str] | None = None,
+        capture_output: bool = False,
+        timeout: int | None = None,
+    ) -> ExecutionResult:
+        """
+        Executes a command using the appropriate subprocess strategy based on
+        whether a timeout is set. When no timeout is provided, uses subprocess.run
+        for simplicity. When a timeout is provided, uses subprocess.Popen with
+        process tree cleanup to prevent orphaned child processes on timeout.
+
+        Args:
+            command (str): The original command string, used for logging and the
+                returned ExecutionResult.
+            popen_args (list[str]): The fully resolved argument list to pass to
+                the subprocess.
+            cwd (str | None): Working directory for the process.
+            env (dict[str, str] | None): Environment variables for the process.
+            capture_output (bool): Whether to capture stdout and stderr.
+            timeout (int | None): Maximum seconds to wait before killing the
+                process tree. If None, the command runs indefinitely.
+
+        Returns:
+            ExecutionResult: The result of the execution including exit code and
+                any captured output.
+        """
+        if timeout is not None:
+            # If timeout is provided, use _run_subprocess method to handle timeout
+            try:
+                completed = self._run_subprocess(
+                    popen_args,
+                    cwd=cwd,
+                    env=env,
+                    capture_output=capture_output,
+                    timeout=timeout,
+                )
+            except subprocess.TimeoutExpired:
+                log.warning("Command timed out after %s seconds", timeout)
+                return ExecutionResult(
+                    command=command,
+                    exit_code=124,
+                    stdout="",
+                    stderr=f"Command timed out after {timeout} seconds",
+                )
+        else:
+            completed = subprocess.run(
+                popen_args,
+                cwd=cwd,
+                text=True,
+                env=env,
+                capture_output=capture_output,
+            )
+
+        log.info("Command completed with exit code: %s", completed.returncode)
+
+        return ExecutionResult(
+            command=command,
+            exit_code=completed.returncode,
+            stdout=completed.stdout or "",
+            stderr=completed.stderr or "",
+        )
+
+    def _run_subprocess(
+        self,
+        popen_args: list[str],
+        *,
+        cwd: str | None,
+        env: dict[str, str] | None,
+        capture_output: bool,
+        timeout: int | None,
+    ) -> subprocess.CompletedProcess:
+        """
+        Runs a subprocess with proper process tree cleanup on timeout. On timeout,
+        the entire process tree is killed rather than just the direct child, which
+        prevents orphaned processes from continuing to run after the timeout expires.
+
+        Args:
+            popen_args (list[str]): The command and arguments to run.
+            cwd (str | None): Working directory for the process.
+            env (dict[str, str]): Environment variables for the process.
+            capture_output (bool): Whether to capture stdout and stderr.
+            timeout (int | None): Maximum seconds to wait before killing the process tree.
+
+        Returns:
+            subprocess.CompletedProcess: The result of the process.
+
+        Raises:
+            subprocess.TimeoutExpired: If the process exceeds the timeout.
+        """
+        kwargs = dict(
+            cwd=cwd,
+            text=True,
+            env=env,
+            stdout=subprocess.PIPE if capture_output else None,
+            stderr=subprocess.PIPE if capture_output else None,
+        )
+
+        if sys.platform != "win32":
+            kwargs["start_new_session"] = True
+
+        with subprocess.Popen(popen_args, **kwargs) as proc:
+            try:
+                stdout, stderr = proc.communicate(timeout=timeout)
+                return subprocess.CompletedProcess(
+                    popen_args, proc.returncode, stdout, stderr
+                )
+            except (subprocess.TimeoutExpired, KeyboardInterrupt):
+                self._kill_process_tree(proc)
+                proc.wait()
+                raise
+
+    @staticmethod
+    def _kill_process_tree(proc: subprocess.Popen) -> None:
+        """
+        Kills a process and all of its children. On Windows, uses taskkill to
+        terminate the entire process tree. On Linux, sends SIGTERM to the process
+        group created by start_new_session=True.
+
+        Args:
+            proc (subprocess.Popen): The process whose tree should be killed.
+        """
+        if sys.platform == "win32":
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(proc.pid)],
+                capture_output=True,
+            )
+        else:
+            import signal
+
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+            except ProcessLookupError:
+                proc.kill()
+
+    @staticmethod
+    def emit_command(command: str) -> None:
+        """
+        Emits a formatted command to standard output and terminates the process
+        with a success exit code.
+
+        This method takes a string command as input, appends a newline character,
+        and writes it to the standard output. It ensures the command is formatted
+        with a single trailing newline before being emitted. Once executed, the
+        method forcefully exits the process with an exit code of 0.
+
+        Args:
+            command (str): The input command that needs to be written to standard
+                output. It should be a valid string representation of the command
+                to execute.
+        """
+        cmd = command.strip("\n") + "\n"
+        sys.stdout.write(cmd)
+        raise typer.Exit(code=0)
+
+    @staticmethod
+    def is_multiline(command: str) -> bool:
+        """
+        Determines if the given command is multiline. A command is considered multiline
+        if it contains at least one newline character after stripping leading and trailing
+        newlines.
+
+        Args:
+            command (str): The command string to check.
+
+        Returns:
+            bool: True if the command contains at least one newline character after
+            trimming leading and trailing newline characters, False otherwise.
+        """
+        return "\n" in command.strip("\n")
 
     @staticmethod
     def script_suffix_for_shell(shell: str) -> str:
