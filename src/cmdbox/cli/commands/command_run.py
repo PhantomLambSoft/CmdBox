@@ -60,6 +60,14 @@ def run(
             "--shell", "-s", help="The shell to use for the command execution."
         ),
     ] = None,
+    timeout: Annotated[
+        int | None,
+        typer.Option(
+            "--timeout",
+            "-t",
+            help="The number of seconds before the process is killed.",
+        ),
+    ] = None,
     emit: Annotated[
         bool,
         typer.Option(
@@ -84,13 +92,14 @@ def run(
     Run stored commands by using their alias.
     """
     log.debug(
-        "run.run called. alias=%s, preview=%s, cwd_used=%s, env=%s, capture=%s, shell=%s, emit=%s, verbose=%s",
+        "run.run called. alias=%s, preview=%s, cwd_used=%s, env=%s, capture=%s, shell=%s, timeout=%s, emit=%s, verbose=%s",
         alias,
         preview_cmd,
         cwd,
         env,
         capture,
         shell,
+        timeout,
         emit,
         verbose,
     )
@@ -101,6 +110,7 @@ def run(
             env=env,
             capture=capture,
             shell=shell,
+            timeout=timeout,
             verbose=verbose,
             ctx=ctx,
         )
@@ -110,7 +120,13 @@ def run(
     runtime_vars = parse_runtime_vars(extra_args)
 
     ctx = RawRunContext(
-        cwd=cwd, env=env, capture=capture, shell=shell, emit=emit, verbose=verbose
+        cwd=cwd,
+        env=env,
+        capture=capture,
+        shell=shell,
+        timeout=timeout,
+        emit=emit,
+        verbose=verbose,
     )
     run_run_command(
         alias=alias,
@@ -160,6 +176,14 @@ def preview(
             "--shell", "-s", help="The shell to use for the command execution."
         ),
     ] = None,
+    timeout: Annotated[
+        int | None,
+        typer.Option(
+            "--timeout",
+            "-t",
+            help="The number of seconds before the process is killed.",
+        ),
+    ] = None,
     verbose: Annotated[
         Optional[bool],
         typer.Option(
@@ -173,16 +197,19 @@ def preview(
     Output the command that will be executed without actually running it.
     """
     log.debug(
-        "run.preview called. alias=%s, cwd=%s, env=%s, capture=%s, shell=%s, verbose=%s",
+        "run.preview called. alias=%s, cwd=%s, env=%s, capture=%s, shell=%s, timeout=%s, verbose=%s",
         alias,
         cwd,
         env,
         capture,
         shell,
+        timeout,
         verbose,
     )
     runtime_vars = parse_runtime_vars(ctx.args)
-    ctx = RawRunContext(cwd=cwd, env=env, capture=capture, shell=shell, verbose=verbose)
+    ctx = RawRunContext(
+        cwd=cwd, env=env, capture=capture, shell=shell, timeout=timeout, verbose=verbose
+    )
     run_preview_command(
         alias=alias,
         runtime_vars=runtime_vars,

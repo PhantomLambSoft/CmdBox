@@ -90,6 +90,7 @@ class TestCommandRun(unittest.TestCase):
             env=env,
             capture=capture,
             shell=shell,
+            timeout=22,
             verbose=verbose,
             ctx=mock_ctx,
         )
@@ -101,6 +102,7 @@ class TestCommandRun(unittest.TestCase):
             env=env,
             capture=capture,
             shell=shell,
+            timeout=22,
             verbose=verbose,
             ctx=mock_ctx,
         )
