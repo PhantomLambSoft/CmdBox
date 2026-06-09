@@ -23,6 +23,8 @@ searching, no forgetting.
 
 - Named commands with short, memorable aliases
 - Parameterized templates with saved and runtime variables
+- Stored execution context per command (working directory, shell, environment variables, and timeout) with runtime
+  overrides
 - Command execution history with the ability to rerun past executions
 - Tag-based organization and filtering
 - Field-based search across commands, variables, and tags
