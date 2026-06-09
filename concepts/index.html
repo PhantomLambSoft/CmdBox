@@ -968,6 +968,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#execution-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Context
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Execution Context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#runtime-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-variable-merging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment variable merging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timeout-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeout behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#command-references" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1184,6 +1234,56 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#execution-context" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Execution Context
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Execution Context">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#runtime-overrides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Runtime overrides
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#environment-variable-merging" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Environment variable merging
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#timeout-behavior" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timeout behavior
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#command-references" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1283,6 +1383,22 @@ that gets executed, and any additional information you want to store alongside i
 <tr>
 <td><code>tags</code></td>
 <td>A list of tags used to categorize the command.</td>
+</tr>
+<tr>
+<td><code>cwd</code></td>
+<td>The working directory where the command is executed.</td>
+</tr>
+<tr>
+<td><code>shell</code></td>
+<td>The shell interpreter used to execute the command.</td>
+</tr>
+<tr>
+<td><code>env</code></td>
+<td>Environmental variables set for the duration of the command.</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td>The maximum number of seconds before the process is killed.</td>
 </tr>
 </tbody>
 </table>
@@ -1399,12 +1515,70 @@ variables on the fly while the rest fill in from saved values:</p>
 </table>
 <p>See the <a href="../commands/var/"><code>var</code> reference</a> for full details on managing variables.</p>
 <hr />
+<h2 id="execution-context">Execution Context<a class="headerlink" href="#execution-context" title="Permanent link">&para;</a></h2>
+<p>Execution context controls the environment a command runs in. The four context fields are
+<code>cwd</code>, <code>shell</code>, <code>env</code>, and <code>timeout</code>. All four are optional and default to <code>null</code>, meaning
+CmdBox inherits them from your current terminal session when not set.</p>
+<p>You can store context values directly on a command so they apply automatically every time
+it runs:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">&gt; cb cmd add deploy &quot;npm run deploy&quot; \</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">    --cwd &quot;/home/user/projects/myapp&quot; \</span>
+<a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="go">    --env NODE_ENV=production \</span>
+<a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="go">    --timeout 60</span>
+</code></pre></div>
+<p>Now running <code>cb deploy</code> always uses that working directory, environment variable, and timeout
+without any extra flags.</p>
+<h3 id="runtime-overrides">Runtime overrides<a class="headerlink" href="#runtime-overrides" title="Permanent link">&para;</a></h3>
+<p>The same flags are available on <code>cb run</code>. A value supplied at runtime always takes precedence
+over the value stored on the command for that run, leaving the stored value unchanged for
+future runs.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="go">&gt; cb run deploy --env NODE_ENV=staging</span>
+</code></pre></div>
+<p>This runs the command with <code>NODE_ENV=staging</code> for this invocation only. The stored value
+remains <code>production</code>.</p>
+<h3 id="environment-variable-merging">Environment variable merging<a class="headerlink" href="#environment-variable-merging" title="Permanent link">&para;</a></h3>
+<p>Runtime <code>--env</code> flags merge with stored environment variables key-by-key rather than
+replacing the stored dict entirely. Only the keys you supply at runtime are overridden.
+Any stored keys you do not mention are preserved.</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Stored</strong></td>
+<td><code>NODE_ENV=production</code>, <code>PORT=3000</code></td>
+</tr>
+<tr>
+<td><strong>Runtime</strong></td>
+<td><code>--env NODE_ENV=staging</code></td>
+</tr>
+<tr>
+<td><strong>Result</strong></td>
+<td><code>NODE_ENV=staging</code>, <code>PORT=3000</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="timeout-behavior">Timeout behavior<a class="headerlink" href="#timeout-behavior" title="Permanent link">&para;</a></h3>
+<p>When a timeout is set, CmdBox manages the subprocess differently to ensure the entire process
+tree is cleaned up when the limit is exceeded — not just the direct child process. The exit
+code is set to <code>124</code> when a timeout occurs, consistent with the Unix <code>timeout</code> command
+convention.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Execution context fields can be stored and updated via <code>cb cmd add</code> and <code>cb cmd update</code>.
+See the <a href="../commands/cmd/"><code>cmd</code> reference</a> for full details.</p>
+</div>
+<hr />
 <h2 id="command-references">Command References<a class="headerlink" href="#command-references" title="Permanent link">&para;</a></h2>
 <p>A template can reference another saved command using the <code>&lt;cmd:alias&gt;</code> syntax. When the
 command runs, CmdBox looks up the referenced alias and substitutes its template inline before
 executing.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>alias:    full-deploy
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>template: &lt;cmd:git-pull&gt; &amp;&amp; &lt;cmd:build&gt; &amp;&amp; &lt;cmd:deploy&gt;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>alias:    full-deploy
+<a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>template: &lt;cmd:git-pull&gt; &amp;&amp; &lt;cmd:build&gt; &amp;&amp; &lt;cmd:deploy&gt;
 </code></pre></div>
 <p>Running <code>cb full-deploy</code> resolves each reference and executes the resulting command. This
 lets you compose complex workflows from simpler saved commands without duplicating template
@@ -1417,10 +1591,10 @@ logic.</p>
 <h2 id="tags">Tags<a class="headerlink" href="#tags" title="Permanent link">&para;</a></h2>
 <p>Tags are labels you attach to commands or variables for organization. A command or variable
 can have multiple tags, and lists can be filtered by tag at any time.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="go">&gt; cb cmd add deploy &quot;git push origin main &amp;&amp; fly deploy&quot; --tags work,production</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="go">&gt; cb cmd add deploy &quot;git push origin main &amp;&amp; fly deploy&quot; --tags work,production</span>
 </code></pre></div>
 <p>Filter your command list by tag:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="go">&gt; cb cmd list --tag work</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="go">&gt; cb cmd list --tag work</span>
 </code></pre></div>
 <p>Tags themselves can be searched and managed via the <a href="../commands/tag/"><code>tag</code> reference</a>.</p>
 <hr />
