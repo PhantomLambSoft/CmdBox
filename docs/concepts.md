@@ -13,21 +13,25 @@ A command has several fields. Some are editable, and some are maintained automat
 
 **Fields you can edit:**
 
-| Field | Description |
-|---|---|
-| `alias` | The name you use to run the command. |
-| `template` | The shell instruction that gets executed. |
-| `description` | A short description of what the command does. |
-| `tags` | A list of tags used to categorize the command. |
+| Field         | Description                                                  |
+|---------------|--------------------------------------------------------------|
+| `alias`       | The name you use to run the command.                         |
+| `template`    | The shell instruction that gets executed.                    |
+| `description` | A short description of what the command does.                |
+| `tags`        | A list of tags used to categorize the command.               |
+| `cwd`         | The working directory where the command is executed.         |
+| `shell`       | The shell interpreter used to execute the command.           |
+| `env`         | Environmental variables set for the duration of the command. |
+| `timeout`     | The maximum number of seconds before the process is killed.  |
 
 **Fields maintained by CmdBox:**
 
-| Field | Description |
-|---|---|
-| `date_created` | The date and time the command was first saved. |
-| `last_updated` | The date and time the command was last edited. |
-| `used` | A count of how many times the command has been executed. |
-| `last_used` | The date and time the command was last executed. |
+| Field          | Description                                              |
+|----------------|----------------------------------------------------------|
+| `date_created` | The date and time the command was first saved.           |
+| `last_updated` | The date and time the command was last edited.           |
+| `used`         | A count of how many times the command has been executed. |
+| `last_used`    | The date and time the command was last executed.         |
 
 These metadata fields are read-only. They can be displayed in `list` and `search` results or
 used for sorting. See the [`cmd` reference](commands/cmd.md) for more information.
@@ -128,12 +132,69 @@ When a command runs, CmdBox resolves each variable in this order:
 
 Like commands, variables have metadata fields maintained by CmdBox:
 
-| Field | Description |
-|---|---|
-| `date_created` | The date and time the variable was first saved. |
+| Field          | Description                                      |
+|----------------|--------------------------------------------------|
+| `date_created` | The date and time the variable was first saved.  |
 | `last_updated` | The date and time the variable was last updated. |
 
 See the [`var` reference](commands/var.md) for full details on managing variables.
+
+---
+
+## Execution Context
+
+Execution context controls the environment a command runs in. The four context fields are
+`cwd`, `shell`, `env`, and `timeout`. All four are optional and default to `null`, meaning
+CmdBox inherits them from your current terminal session when not set.
+
+You can store context values directly on a command so they apply automatically every time
+it runs:
+
+```console
+> cb cmd add deploy "npm run deploy" \
+    --cwd "/home/user/projects/myapp" \
+    --env NODE_ENV=production \
+    --timeout 60
+```
+
+Now running `cb deploy` always uses that working directory, environment variable, and timeout
+without any extra flags.
+
+### Runtime overrides
+
+The same flags are available on `cb run`. A value supplied at runtime always takes precedence
+over the value stored on the command for that run, leaving the stored value unchanged for
+future runs.
+
+```console
+> cb run deploy --env NODE_ENV=staging
+```
+
+This runs the command with `NODE_ENV=staging` for this invocation only. The stored value
+remains `production`.
+
+### Environment variable merging
+
+Runtime `--env` flags merge with stored environment variables key-by-key rather than
+replacing the stored dict entirely. Only the keys you supply at runtime are overridden.
+Any stored keys you do not mention are preserved.
+
+|             |                                    |
+|-------------|------------------------------------|
+| **Stored**  | `NODE_ENV=production`, `PORT=3000` |
+| **Runtime** | `--env NODE_ENV=staging`           |
+| **Result**  | `NODE_ENV=staging`, `PORT=3000`    |
+
+### Timeout behavior
+
+When a timeout is set, CmdBox manages the subprocess differently to ensure the entire process
+tree is cleaned up when the limit is exceeded — not just the direct child process. The exit
+code is set to `124` when a timeout occurs, consistent with the Unix `timeout` command
+convention.
+
+!!! note
+    Execution context fields can be stored and updated via `cb cmd add` and `cb cmd update`.
+    See the [`cmd` reference](commands/cmd.md) for full details.
 
 ---
 
