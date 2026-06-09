@@ -63,3 +63,4 @@ That's the core loop. From here, explore:
 - [The `cmd` reference](commands/cmd.md) for full command management options
 - [Variables (`var`)](commands/var.md) to save variable values for reuse across commands
 - [Tags (`tag`)](commands/tag.md) to organize your commands and variables
+- [Concepts](concepts.md) for a deeper understanding of how CmdBox works
