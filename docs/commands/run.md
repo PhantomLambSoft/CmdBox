@@ -70,7 +70,6 @@ directory.
 > cb run build --cwd C:\Projects\myapp
 ```
 
-
 ---
 
 **`--env`**
@@ -82,6 +81,9 @@ times to set multiple variables.
 > cb run build --env NODE_ENV=production --env CI=true
 ```
 
+If the command has environment variables stored on it, runtime `--env` values are merged with
+them key-by-key. Runtime values always win on conflict, and any stored keys you do not
+override are preserved.
 
 ---
 
@@ -106,6 +108,22 @@ shell. Use this option to override it for a specific run.
 > cb run my-script --shell powershell
 ```
 
+---
+
+**`--timeout`**
+
+Sets the maximum number of seconds the command is allowed to run before it is killed. If the
+command exceeds this limit, all spawned child processes are also terminated and the exit code
+is set to `124`.
+
+```console
+> cb run long-job --timeout 30
+```
+
+!!! warning
+    Using `--timeout` changes how CmdBox manages the subprocess in order to ensure the entire
+    process tree is cleaned up on expiry. Commands that interact directly with the terminal
+    (such as prompting for input) may not behave as expected when a timeout is set.
 
 ---
 
@@ -118,6 +136,30 @@ suppress it if verbose output is on by default in your settings.
 > cb run build --verbose
 ```
 
+---
+
+### Stored execution context
+
+Values for `--cwd`, `--shell`, `--env`, and `--timeout` can be stored directly on a command
+using `cb cmd add` or `cb cmd update`. When stored, those values act as defaults every time
+the command runs without you needing to supply them at the command line.
+
+```console
+# Stored on the command at add time:
+> cb cmd add deploy "npm run deploy" --cwd "/home/user/projects/myapp" --env NODE_ENV=production --timeout 60
+
+# Running without flags uses the stored values:
+> cb run deploy
+
+# Running with a flag overrides only that value for this run:
+> cb run deploy --env NODE_ENV=staging
+```
+
+Runtime flags always take precedence over stored values. For `--env` specifically, the
+override is key-by-key — supplying `--env NODE_ENV=staging` at runtime overrides only
+that key while any other stored environment variables are preserved.
+
+Use `cb preview` to see the fully resolved execution context before running.
 
 ---
 
@@ -132,8 +174,9 @@ variables are resolved and substituted, so you can verify the final command befo
 
 ![run preview output](../assets/run/run-preview-output.svg)
 
-`preview` accepts the same options as `run` — `--cwd`, `--env`, `--shell`, `--capture`, and
-`--verbose` — so you can preview the command exactly as it would be run under those conditions.
+`preview` accepts the same options as `run` — `--cwd`, `--env`, `--shell`, `--timeout`,
+`--capture`, and `--verbose` — so you can preview the command exactly as it would be run
+under those conditions.
 
 !!! tip
     Use `preview` any time a command contains multiple variables or references other commands
