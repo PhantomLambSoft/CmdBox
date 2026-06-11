@@ -69,6 +69,7 @@ class RunService:
         resolved_cmd = self._resolver.resolve(cmd.template, runtime_vars=runtime_vars)
         ctx = self.build_context(cmd, ctx)
         result = self._executor.run(resolved_cmd.text, ctx=ctx)
+        self._repo.record_use(cmd.id)
         self.record_history(
             alias=command_alias,
             template=cmd.template,

@@ -2,6 +2,7 @@ import json
 import unittest
 from unittest.mock import MagicMock, patch
 
+from cmdbox.exceptions import CmdboxError
 from cmdbox.runtime.executor import RunContext
 from cmdbox.services.run_service import RunService
 from cmdbox.models import Command
@@ -55,6 +56,70 @@ class TestRunService(unittest.TestCase):
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_called_once_with(resolved_text, ctx=mock_context)
+
+    @patch("cmdbox.services.run_service.RunService.build_context")
+    def test_record_use_updates_command_usage(self, mock_build_context):
+        mock_context = MagicMock()
+        mock_build_context.return_value = mock_context
+
+        # Setup
+        alias = "test-alias"
+        template = "echo <variable:name>"
+        resolved_text = "echo world"
+
+        command = MagicMock(spec=Command)
+        command.template = template
+        command.env = None
+        self.mock_repo.get_by_alias.return_value = command
+
+        resolve_result = MagicMock(spec=ResolveResult)
+        resolve_result.text = resolved_text
+        self.mock_resolver.resolve.return_value = resolve_result
+
+        execution_result = ExecutionResult(
+            command=resolved_text, exit_code=0, stdout="world\n", stderr=""
+        )
+        self.mock_executor.run.return_value = execution_result
+
+        # Execute
+        result = self.service.run(alias)
+
+        # Assert
+        self.mock_repo.record_use.assert_called_once()
+
+    @patch("cmdbox.services.run_service.RunService.build_context")
+    def test_record_use_updates_when_command_fails(self, mock_build_context):
+        """
+        Running a stored command and encountering a failed exit code should record
+        a use. CmdBox's concern is that a command was run, not whether that command
+        was successful or not.
+        """
+        alias = "test-alias"
+        execution_result = ExecutionResult(
+            command="echo test", exit_code=1, stdout="", stderr="failed"
+        )
+        self.mock_executor.run.return_value = execution_result
+
+        self.service.run(alias)
+
+        self.mock_repo.record_use.assert_called_once()
+
+    @patch("cmdbox.services.run_service.RunService.build_context")
+    def test_record_use_updates_when_executor_throws_exception(
+        self, mock_build_context
+    ):
+        """
+        If an exception occurs during the execution of the command, it's use
+        should not be recorded as an issue with CmdBox kept the command from
+        executing at all.
+        """
+        alias = "test-alias"
+        self.mock_executor.run.side_effect = CmdboxError()
+
+        with self.assertRaises(CmdboxError):
+            self.service.run(alias)
+
+        self.mock_repo.record_use.assert_not_called()
 
     def test_preview_success(self):
         # Setup
