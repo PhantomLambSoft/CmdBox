@@ -77,7 +77,7 @@ cb ssh-connect --host 192.168.1.1
 ## Installation
 
 ```bash
-pip install cmdbox
+pip install cmdbox-cli
 ```
 
 Or install from source:

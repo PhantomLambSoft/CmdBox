@@ -75,7 +75,7 @@ sudo dnf install python3 python3-pip
 With Python installed, install CmdBox by running:
 
 ```console
-pip install cmd-box
+pip install cmdbox-cli
 ```
 
 That's it! Once it finishes, CmdBox is available in any terminal window.
@@ -86,7 +86,7 @@ You should see an output displaying the latest version of CmdBox.
 **To update CmdBox later**
 
 ```console
-pip install --upgrade cmd-box
+pip install --upgrade cmdbox-cli
 ```
 
 
