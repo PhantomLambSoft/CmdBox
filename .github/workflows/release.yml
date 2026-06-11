@@ -1,0 +1,70 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v[0-9]+.[0-9]+.[0-9]+"
+
+permissions:
+    contents: write
+    id-token: write
+
+jobs:
+    release:
+        runs-on: ubuntu-latest
+        environment: release
+
+        steps:
+            -   name: Checkout
+                uses: actions/checkout@v4
+
+            -   name: Set up Python
+                uses: actions/setup-python@v5
+                with:
+                    python-version: "3.x"
+
+            -   name: Extract version from tag
+                id: tag_version
+                run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+            -   name: Validate tag matches __version__
+                run: |
+                    FILE_VERSION=$(python -c "
+                    import re
+                    content = open('src/cmdbox/version.py').read()
+                    print(re.search(r'__version__\s*=\s*[\"\'](.*?)[\"\']', content).group(1))
+                    ")
+                    TAG_VERSION="${{ steps.tag_version.outputs.version }}"
+                    if [ "$FILE_VERSION" != "$TAG_VERSION" ]; then
+                      echo "Error: tag ($TAG_VERSION) does not match __version__ in version.py ($FILE_VERSION)"
+                      exit 1
+                    fi
+                    echo "Version validated: $FILE_VERSION"
+
+            -   name: Extract changelog section
+                run: |
+                    VERSION="${{ steps.tag_version.outputs.version }}"
+                    awk "/^## \[$VERSION\]/{found=1; next} found && /^## \[/{exit} found{print}" CHANGELOG.md > release_notes.md
+                    if [ ! -s release_notes.md ]; then
+                      echo "Error: no changelog section found for version $VERSION"
+                      exit 1
+                    fi
+                    echo "Changelog section extracted:"
+                    cat release_notes.md
+
+            -   name: Build package
+                run: |
+                    pip install build
+                    python -m build
+
+            -   name: Create GitHub Release
+                env:
+                    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                run: |
+                    gh release create "${{ github.ref_name }}" \
+                      --title "v${{ steps.tag_version.outputs.version }}" \
+                      --notes-file release_notes.md \
+                      dist/*
+
+            -   name: Publish to PyPI
+                uses: pypa/gh-action-pypi-publish@release/v1
