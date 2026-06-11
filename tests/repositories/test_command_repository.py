@@ -437,6 +437,24 @@ class TestCommandRepository(unittest.TestCase):
         self.assertEqual("test", stored.alias)
         self.assertEqual("echo test", stored.template)
 
+    def test_record_use_updates_command_usage(self):
+        command = Command.create(alias="test", template="echo test")
+        self.assertEqual(0, command.used)
+        self.assertIsNone(command.last_used)
+        self.repo.record_use(command.id)
+        stored = Command.get(Command.id == command.id)
+        self.assertEqual(1, stored.used)
+        self.assertIsNotNone(stored.last_used)
+
+    def test_record_use_increments_correctly_from_non_zero(self):
+        command = Command.create(alias="test", template="echo test")
+        command.used = 35
+        command.save()
+        self.assertEqual(35, command.used)
+        self.repo.record_use(command.id)
+        stored = Command.get(Command.id == command.id)
+        self.assertEqual(36, stored.used)
+
     # =================================================================================
     # SECTION: LIST TESTS
     # =================================================================================

@@ -1,5 +1,6 @@
 import json
 from typing import Sequence
+from datetime import datetime
 
 from peewee import IntegrityError
 
@@ -172,6 +173,19 @@ class CommandRepository(BaseRepository[Command]):
             if alias is not None and self._is_unique_alias_violation(exc):
                 raise AliasConflictError(alias=alias) from exc
             raise
+
+    def record_use(self, command_id: int) -> None:
+        """
+        Records the use of a specific command by updating its usage count and the timestamp of
+        its last use in the database.
+
+        Args:
+            command_id (int): The unique identifier of the command to update.
+        """
+        Command.update(
+            used=Command.used + 1,
+            last_used=datetime.now(),
+        ).where(Command.id == command_id).execute()
 
     def add_tags(self, command: Command, tags: Sequence[Tag]) -> TagAttachResult:
         """
