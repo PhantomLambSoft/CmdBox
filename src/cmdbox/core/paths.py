@@ -2,7 +2,7 @@ from pathlib import Path
 import os
 import sys
 
-VENDOR = "SomeGuySoftware"
+VENDOR = "PhantomLamb"
 APP_NAME = "CmdBox"
 
 
