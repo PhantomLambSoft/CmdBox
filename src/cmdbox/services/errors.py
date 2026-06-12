@@ -35,3 +35,17 @@ class HistoryIndexError(CmdboxError):
 
     def __init__(self, index: int):
         super().__init__(f"No history entry at index {index}.")
+
+
+class ImportValidationError(CmdboxError):
+    """Raised when an import fails validation before any writes occur"""
+
+    pass
+
+
+class ImportCycleError(ImportValidationError):
+    """Raised when import data contains a circular reference."""
+
+    def __init__(self, cycle: list[str]):
+        self.cycle = cycle
+        super().__init__(f"Circular reference detected: {' -> '.join(cycle)}")
