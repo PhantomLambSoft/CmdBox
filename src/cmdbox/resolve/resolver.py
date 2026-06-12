@@ -1,8 +1,7 @@
-from typing import Optional
-
 from .errors import MaxDepthExceeded, UnknownReference, CycleDetectionError
 from .lookup import ResolverLookup
 from .type_defs import ResolveResult, TraceStep, RefKind
+from .reference_parsing import read_angle_token, parse_kind_and_key
 
 
 class Resolver:
@@ -140,7 +139,7 @@ class Resolver:
                     continue
 
             if ch == "<":
-                token_inner, raw_token, next_i = self._read_angle_token(template, i)
+                token_inner, raw_token, next_i = read_angle_token(template, i)
                 if token_inner is None:
                     out.append("<")
                     i += 1
@@ -195,9 +194,9 @@ class Resolver:
                 i += 2
                 continue
             if template[i] == "<":
-                token_inner, _, next_i = self._read_angle_token(template, i)
+                token_inner, _, next_i = read_angle_token(template, i)
                 if token_inner:
-                    kind, key = self._parse_kind_and_key(token_inner)
+                    kind, key = parse_kind_and_key(token_inner)
                     if kind == RefKind.VARIABLE:
                         if runtime_vars and key in runtime_vars:
                             pass  # satisfied
@@ -231,47 +230,6 @@ class Resolver:
             else:
                 i += 1
 
-    def _read_angle_token(self, s: str, start_i: int) -> tuple[Optional[str], str, int]:
-        """
-        Reads a token beginning with "<" until an unescaped ">" is encountered.
-
-        Args:
-            s (str): The string containing the token.
-            start_i (int): The index of the first character of the token.
-
-        Returns:
-            str: token_inner (with escapes already interpreted), or None if no closing bracket.
-            str: raw_token - the original token string, including the angle brackets.
-            int: next_i - the index of the first character after the closing bracket.
-
-        """
-        assert s[start_i] == "<"
-        i = start_i + 1
-        n = len(s)
-
-        inner_chars: list[str] = []
-
-        while i < n:
-            ch = s[i]
-            if ch == "\\":
-                if i + 1 < n and s[i + 1] in ("\\", "<", ">"):
-                    inner_chars.append(s[i + 1])
-                    i += 2
-                    continue
-                inner_chars.append("\\")
-                i += 1
-                continue
-
-            if ch == ">":
-                raw_token = s[start_i + 1 : i]
-                token_inner = "".join(inner_chars).strip()
-                return token_inner, raw_token, i + 1
-
-            inner_chars.append(ch)
-            i += 1
-
-        return None, s[start_i:], n
-
     def _expand_angle_token(
         self,
         token_inner: str,
@@ -303,7 +261,7 @@ class Resolver:
         """
         if not token_inner:
             return raw_token
-        kind, key = self._parse_kind_and_key(token_inner)
+        kind, key = parse_kind_and_key(token_inner)
 
         if kind == RefKind.VARIABLE:
 
@@ -356,33 +314,6 @@ class Resolver:
             TraceStep(kind=RefKind.COMMAND, key=rec.alias, expanded_to=expanded)
         )
         return expanded
-
-    def _parse_kind_and_key(self, token_inner: str) -> tuple[RefKind, str]:
-        """
-        Parses the kind and key from a given token string.
-
-        This method evaluates the provided token and determines its type, which can be a
-        command or variable, based on the prefix present in the token. If no prefix is
-        found, it defaults to `RefKind.VARIABLE`. The method ensures that parts of the
-        token are appropriately stripped of whitespace during processing.
-
-        Args:
-            token_inner (str): The input token string that may specify a prefix and a key,
-                separated by a colon.
-
-        Returns:
-            tuple[RefKind, str]: A tuple containing the kind of reference (`RefKind`) and
-            its corresponding key as a string.
-        """
-        if ":" not in token_inner:
-            return RefKind.VARIABLE, token_inner
-        prefix, key = (part.strip() for part in token_inner.split(":", 1))
-
-        if prefix == "cmd":
-            return RefKind.COMMAND, key
-        if prefix == "var":
-            return RefKind.VARIABLE, key
-        return RefKind.VARIABLE, token_inner
 
     def _check_cycle(self, next_label: str, stack: list[str]) -> None:
         """
