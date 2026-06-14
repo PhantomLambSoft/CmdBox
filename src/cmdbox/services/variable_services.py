@@ -1,6 +1,7 @@
 from typing import Sequence
 
 from cmdbox.models import Tag, Variable
+from cmdbox.repositories.errors import UnknownNameError
 from cmdbox.repositories.variable_repository import VariableRepository
 from cmdbox.database import db
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
@@ -140,6 +141,23 @@ class VariableServices:
         """
         var = self._repo.get_by_name(name)
         return var
+
+    def get_variable_or_none(self, name: str) -> Variable | None:
+        """
+        Retrieves a variable by its name and returns it if found, or returns None
+        if the variable is not found.
+
+        Args:
+            name (str): The name of the variable to retrieve.
+
+        Returns:
+            Variable | None: The variable associated with the given name if it exists,
+            otherwise None in case the name does not correspond to any variable.
+        """
+        try:
+            return self.get_variable(name)
+        except UnknownNameError:
+            return None
 
     def get_variable_by_id(self, var_id: int) -> Variable:
         var = self._repo.get_by_id(var_id)

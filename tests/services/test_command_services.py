@@ -1,5 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
+
+from cmdbox.repositories.errors import UnknownAliasError
 from cmdbox.services.command_services import CommandServices
 from cmdbox.models import Command, Tag, ALL_MODELS
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
@@ -167,6 +169,29 @@ class TestCommandServices(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, expected_cmd)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+
+    def tets_get_command_or_none_returns_existing_command(self):
+        alias = "test-cmd"
+        expected_cmd = MagicMock(spec=Command)
+        self.mock_repo.get_by_alias.return_value = expected_cmd
+
+        # Execute
+        result = self.services.get_command_or_none(alias)
+
+        # Assert
+        self.assertEqual(result, expected_cmd)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+
+    def test_get_command_or_none_returns_none_if_not_found(self):
+        alias = "non-existant-test-cmd"
+        self.mock_repo.get_by_alias.side_effect = UnknownAliasError(alias)
+
+        # Execute
+        result = self.services.get_command_or_none(alias)
+
+        # Assert
+        self.assertEqual(result, None)
         self.mock_repo.get_by_alias.assert_called_once_with(alias)
 
     def test_get_command_by_id(self):

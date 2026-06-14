@@ -3,6 +3,7 @@ from typing import Sequence
 from cmdbox.models import Tag, Command
 from cmdbox.repositories.command_repository import CommandRepository
 from cmdbox.database import db
+from cmdbox.repositories.errors import UnknownAliasError
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
 from cmdbox.repositories.tag_repository import TagRepository
 
@@ -163,6 +164,27 @@ class CommandServices:
         """
         cmd = self._repo.get_by_alias(alias)
         return cmd
+
+    def get_command_or_none(self, alias: str) -> Command | None:
+        """
+        Gets the command associated with the given alias or returns None if the alias
+        is not recognized.
+
+        This method attempts to retrieve a command by its alias. If the alias is not
+        found, or if an error is raised due to an unknown alias, the method will return
+        None instead of raising the error.
+
+        Args:
+            alias (str): The alias of the command to retrieve.
+
+        Returns:
+            Command | None: The command associated with the alias if found, otherwise
+            None.
+        """
+        try:
+            return self.get_command(alias)
+        except UnknownAliasError:
+            return None
 
     def get_command_by_id(self, cmd_id: int) -> Command:
         """
