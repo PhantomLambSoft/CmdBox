@@ -11,6 +11,7 @@ from .errors import (
     TagDetachError,
     UpdateError,
     UnknownVariableError,
+    UnknownNameError,
 )
 from .validators import VariableValidator
 from .results import TagAttachResult, TagDetachResult
@@ -49,22 +50,27 @@ class VariableRepository(BaseRepository[Variable]):
                 raise NameConflictError(name=name) from exc
             raise
 
-    def get_by_name(self, name: str) -> Variable | None:
+    def get_by_name(self, name: str) -> Variable:
         """
-        Retrieves a variable instance by its name.
+        Retrieves a variable by its name.
 
-        Converts the provided name to lowercase, searches for a variable with the
-        matching name in the database, and retrieves it. This function returns None
-        if no variable with the specified name is found.
+        The method looks for a variable with the specified name in a case-insensitive
+        manner. If the variable is not found, it raises an `UnknownNameError`.
 
         Args:
-            name (str): The name of the variable to retrieve.
+            name (str): The name of the Variable to retrieve.
 
         Returns:
-            Variable | None: The variable object if found, otherwise None.
+            Variable: The Variable instance corresponding to the provided name.
+
+        Raises:
+            UnknownNameError: If no variable with the given name is found.
         """
         name = name.lower()
-        return Variable.get_or_none(Variable.name == name)
+        var = Variable.get_or_none(Variable.name == name)
+        if var is None:
+            raise UnknownNameError(name=name)
+        return var
 
     def get_by_id(self, var_id: int) -> Variable:
         var = Variable.get_or_none(Variable.id == var_id)
