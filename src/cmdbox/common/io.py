@@ -15,7 +15,7 @@ def atomic_write_text(dest: Path, text: str, encoding: str = "utf-8") -> None:
     Args:
         dest (Path): The destination path for the final output file.
         text (str): The text content to write to the file.
-
+        encoding (str, optional): The encoding to use for the file. Defaults to "utf-8".
     """
     dest.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
