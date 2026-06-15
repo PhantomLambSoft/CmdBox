@@ -49,3 +49,9 @@ class ImportCycleError(ImportValidationError):
     def __init__(self, cycle: list[str]):
         self.cycle = cycle
         super().__init__(f"Circular reference detected: {' -> '.join(cycle)}")
+
+
+class ImportFileError(ImportValidationError):
+    """Raised when an import file cannot be read or does not match the expected format."""
+
+    pass
