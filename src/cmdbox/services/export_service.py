@@ -23,6 +23,8 @@ class ExportResult:
     path: Path
     commands: list[str] = field(default_factory=list)
     variables: list[str] = field(default_factory=list)
+    transient_commands: list[str] = field(default_factory=list)
+    transient_variables: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
 
 
@@ -247,6 +249,7 @@ class ExportService:
                 [], collected_cmds, self._var_service
             )
 
+            target_set = set(target_aliases)
             for alias in target_aliases:
                 if alias not in collected_cmds:
                     result.warnings.append(f"Command {alias} not found")
@@ -269,8 +272,11 @@ class ExportService:
                 )
                 for var in collected_vars.values()
             ]
-            result.commands = list(collected_cmds.keys())
-            result.variables = list(collected_vars.keys())
+            result.commands = [x for x in collected_cmds if x in target_set]
+            result.transient_commands = [
+                x for x in collected_cmds if x not in target_set
+            ]
+            result.transient_variables = list(collected_vars.keys())
 
         doc = _build_document("cmds", serialized_cmds, serialized_vars)
         atomic_write_text(result.path, json.dumps(doc, indent=2))
@@ -316,6 +322,7 @@ class ExportService:
         else:
             collected_vars = collect_deep_variables(target_names, {}, self._var_service)
 
+            target_names = set(target_names)
             for name in target_names:
                 if name not in collected_vars:
                     result.warnings.append(f"Variable {name} not found")
@@ -329,7 +336,11 @@ class ExportService:
                 )
                 for var in collected_vars.values()
             ]
-            result.variables = list(collected_vars.keys())
+
+            result.variables = [x for x in collected_vars if x in target_names]
+            result.transient_variables = [
+                x for x in collected_vars if x not in target_names
+            ]
 
         doc = _build_document("vars", [], serialized_vars)
         atomic_write_text(result.path, json.dumps(doc, indent=2))

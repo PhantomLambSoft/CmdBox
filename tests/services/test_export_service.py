@@ -194,8 +194,10 @@ class TestExportService(unittest.TestCase):
         result = self.service.export_cmds(["deploy", "missing"], flatten=False)
 
         self.assertEqual(["Command missing not found"], result.warnings)
-        self.assertEqual({"deploy", "build"}, set(result.commands))
-        self.assertEqual({"env", "build_flag"}, set(result.variables))
+        self.assertEqual(["deploy"], result.commands)
+        self.assertEqual(["build"], result.transient_commands)
+        self.assertEqual([], result.variables)
+        self.assertEqual({"env", "build_flag"}, set(result.transient_variables))
         self.assertEqual(Path("C:\\exports\\cmds.json"), result.path)
         mock_atomic_write_text.assert_called_once()
         written_doc = json.loads(mock_atomic_write_text.call_args.args[1])
@@ -220,6 +222,8 @@ class TestExportService(unittest.TestCase):
 
         self.assertEqual(["deploy"], result.commands)
         self.assertEqual([], result.variables)
+        self.assertEqual([], result.transient_commands)
+        self.assertEqual([], result.transient_variables)
         self.assertEqual(["Command missing not found"], result.warnings)
         written_doc = json.loads(mock_atomic_write_text.call_args.args[1])
         self.assertEqual(1, len(written_doc["commands"]))
@@ -254,7 +258,9 @@ class TestExportService(unittest.TestCase):
         result = self.service.export_vars(["root", "missing"], flatten=False)
 
         self.assertEqual(["Variable missing not found"], result.warnings)
-        self.assertEqual({"root", "child"}, set(result.variables))
+        self.assertEqual(["root"], result.variables)
+        self.assertEqual({"child"}, set(result.transient_variables))
+        self.assertEqual([], result.transient_commands)
         written_doc = json.loads(mock_atomic_write_text.call_args.args[1])
         self.assertEqual("vars", written_doc["type"])
         self.assertEqual(0, len(written_doc["commands"]))
@@ -275,6 +281,8 @@ class TestExportService(unittest.TestCase):
         result = self.service.export_vars(None, tag="prod", flatten=True)
 
         self.assertEqual(["a"], result.variables)
+        self.assertEqual([], result.transient_commands)
+        self.assertEqual([], result.transient_variables)
         self.assertEqual(["Variable missing not found"], result.warnings)
         self.var_service.list_variables.assert_called_once_with(
             tags="prod", limit=10000
