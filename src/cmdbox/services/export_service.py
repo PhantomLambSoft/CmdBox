@@ -207,7 +207,7 @@ class ExportService:
 
     def export_cmds(
         self,
-        aliases: list[str],
+        aliases: list[str] | None = None,
         tag: str | None = None,
         flatten: bool = False,
         output_path: str | None = None,

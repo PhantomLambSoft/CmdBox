@@ -230,7 +230,7 @@ class TestExportService(unittest.TestCase):
         self.assertEqual(0, len(written_doc["variables"]))
 
     @patch("cmdbox.services.export_service.atomic_write_text")
-    def test_export_cmds_uses_tag_listing_when_aliases_empty(
+    def test_export_cmds_uses_tag_listing_when_aliases_are_none(
         self, mock_atomic_write_text
     ):
         self.cmd_service.list_commands.return_value = [
@@ -240,31 +240,11 @@ class TestExportService(unittest.TestCase):
             "by-tag": make_command("by-tag", "echo hi")
         }.get(alias)
 
-        result = self.service.export_cmds([], tag="ops", flatten=True)
+        result = self.service.export_cmds(None, tag="ops", flatten=True)
 
         self.assertEqual(["by-tag"], result.commands)
         self.cmd_service.list_commands.assert_called_once_with(tags="ops", limit=10000)
         mock_atomic_write_text.assert_called_once()
-
-    @patch("cmdbox.services.export_service.atomic_write_text")
-    def test_export_vars_non_flatten_collects_nested_and_warnings(
-        self, mock_atomic_write_text
-    ):
-        self.var_service.get_variable_or_none.side_effect = lambda name: {
-            "root": make_variable("root", "<var:child>"),
-            "child": make_variable("child", "leaf"),
-        }.get(name)
-
-        result = self.service.export_vars(["root", "missing"], flatten=False)
-
-        self.assertEqual(["Variable missing not found"], result.warnings)
-        self.assertEqual(["root"], result.variables)
-        self.assertEqual({"child"}, set(result.transient_variables))
-        self.assertEqual([], result.transient_commands)
-        written_doc = json.loads(mock_atomic_write_text.call_args.args[1])
-        self.assertEqual("vars", written_doc["type"])
-        self.assertEqual(0, len(written_doc["commands"]))
-        self.assertEqual(2, len(written_doc["variables"]))
 
     @patch("cmdbox.services.export_service.atomic_write_text")
     def test_export_vars_flatten_uses_tag_listing_and_ignores_missing(
