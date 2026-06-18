@@ -7,6 +7,7 @@ from cmdbox.resolve.reference_parsing import extract_references
 from cmdbox.resolve.type_defs import RefKind
 from cmdbox.services.command_services import CommandServices
 from cmdbox.services.errors import ImportCycleError, ImportFileError
+from cmdbox.services.tag_services import TagServices
 from cmdbox.services.variable_services import VariableServices
 
 _SUPPORTED_VERSIONS = {"1"}
@@ -117,9 +118,15 @@ def _parse_import_file(path: str | Path) -> dict:
 
 class ImportService:
 
-    def __init__(self, cmd_service: CommandServices, var_service: VariableServices):
+    def __init__(
+        self,
+        cmd_service: CommandServices,
+        var_service: VariableServices,
+        tag_service: TagServices,
+    ):
         self._cmd_service = cmd_service
         self._var_service = var_service
+        self.tag_service = tag_service
         self.result = ImportResult()
 
     def import_file(
@@ -158,6 +165,9 @@ class ImportService:
 
         if preview:
             return self.result
+
+        tag_names = self._collect_tag_names(cmd_actions, var_actions)
+        self._ensure_tag_exists(tag_names)
 
         self.handle_commands(cmd_actions)
         self.handle_variables(var_actions)
@@ -240,3 +250,17 @@ class ImportService:
             self._var_service.remove_tags(name, tags_to_remove)
         if tags_to_add:
             self._var_service.add_tags(name, tags_to_add)
+
+    def _collect_tag_names(
+        self, cmd_actions: list[tuple[dict, str]], var_actions: list[tuple[dict, str]]
+    ) -> set[str]:
+        names: set[str] = set()
+        for data, action in cmd_actions + var_actions:
+            if action != "skip":
+                names.update(data.get("tags", []))
+        return names
+
+    def _ensure_tag_exists(self, tag_names: set[str]) -> None:
+        for name in tag_names:
+            if not self.tag_service.tag_exists(name):
+                self.tag_service.create_tag(name)

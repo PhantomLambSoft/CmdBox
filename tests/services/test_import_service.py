@@ -15,7 +15,7 @@ from cmdbox.services.import_service import (
 
 
 def make_tag(name):
-    return SimpleNamespace(name=name)
+    return SimpleNamespace(tag=SimpleNamespace(name=name))
 
 
 class TestImportHelpers(unittest.TestCase):
@@ -113,7 +113,10 @@ class TestImportService(unittest.TestCase):
     def setUp(self):
         self.cmd_service = MagicMock()
         self.var_service = MagicMock()
-        self.service = ImportService(self.cmd_service, self.var_service)
+        self.tag_service = MagicMock()
+        self.service = ImportService(
+            self.cmd_service, self.var_service, self.tag_service
+        )
 
     @patch("cmdbox.services.import_service.validate_no_cycles")
     @patch("cmdbox.services.import_service.build_dependency_graph")

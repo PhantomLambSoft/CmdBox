@@ -141,6 +141,7 @@ def get_import_service() -> ImportService:
     return ImportService(
         cmd_service=get_command_services(),
         var_service=get_variable_services(),
+        tag_service=get_tag_services(),
     )
 
 

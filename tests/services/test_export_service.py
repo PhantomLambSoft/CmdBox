@@ -30,7 +30,7 @@ def make_command(
         alias=alias,
         template=template,
         description=description,
-        tags=[SimpleNamespace(name=t) for t in (tags or [])],
+        tags=[SimpleNamespace(tag=SimpleNamespace(name=t)) for t in (tags or [])],
         cwd=cwd,
         shell=shell,
         env=env,
@@ -42,7 +42,7 @@ def make_variable(name, value, tags=None):
     return SimpleNamespace(
         name=name,
         value=value,
-        tags=[SimpleNamespace(name=t) for t in (tags or [])],
+        tags=[SimpleNamespace(tag=SimpleNamespace(name=t)) for t in (tags or [])],
     )
 
 
