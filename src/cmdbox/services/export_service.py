@@ -150,7 +150,7 @@ def _serialize_command(
         "alias": cmd.alias,
         "template": template,
         "description": cmd.description,
-        "tags": [tag.name for tag in cmd.tags],
+        "tags": [ct.tag.name for ct in cmd.tags],
         "cwd": cmd.cwd,
         "shell": cmd.shell,
         "env": json.loads(cmd.env) if cmd.env else None,
@@ -170,7 +170,7 @@ def _serialize_variable(
     return {
         "name": var.name,
         "value": value,
-        "tags": [tag.name for tag in var.tags],
+        "tags": [ct.tag.name for ct in var.tags],
     }
 
 
