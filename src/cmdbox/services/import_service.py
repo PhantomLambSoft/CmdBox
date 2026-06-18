@@ -192,7 +192,7 @@ class ImportService:
 
     def overwrite_existing_command(self, alias: str, cmd_data: dict, tags: list[str]):
         existing = self._cmd_service.get_command(alias)
-        current_tags = {tag.name for tag in existing.tags}
+        current_tags = {ct.tag.name for ct in existing.tags}
         new_tag = set(tags)
         self._cmd_service.update_command(
             alias=alias,
@@ -231,7 +231,7 @@ class ImportService:
 
     def overwrite_existing_variable(self, name: str, var_data: dict, tags: list[str]):
         existing = self._var_service.get_variable(name)
-        current_tags = {tag.name for tag in existing.tags}
+        current_tags = {ct.tag.name for ct in existing.tags}
         new_tags = set(tags)
         self._var_service.update_variable(name, value=var_data["value"])
         tags_to_remove = list(current_tags - new_tags)
