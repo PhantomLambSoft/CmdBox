@@ -25,7 +25,7 @@ def run_import_file(
     console = get_console()
     try:
         import_service = get_import_service()
-        result = import_service.import_file(path, overwrite=overwrite)
+        result = import_service.import_file(path, preview=preview, overwrite=overwrite)
     except ImportFileError as e:
         console.error(str(e))
         raise typer.Exit(code=1)
