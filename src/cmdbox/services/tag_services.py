@@ -1,6 +1,7 @@
 from typing import Sequence
 
 from cmdbox.models import Tag
+from cmdbox.repositories.errors import UnknownNameError
 from cmdbox.repositories.tag_repository import TagRepository
 
 
@@ -132,3 +133,10 @@ class TagServices:
         if not fields:
             fields = ("name", "description")
         return self._repo.search(query, fields, limit)
+
+    def tag_exists(self, name: str) -> bool:
+        try:
+            self._repo.get_by_name(name)
+            return True
+        except UnknownNameError:
+            return False

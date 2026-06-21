@@ -1,5 +1,7 @@
 import unittest
 from unittest.mock import MagicMock, patch
+
+from cmdbox.repositories.errors import UnknownNameError
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.models import Variable, Tag
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
@@ -134,6 +136,25 @@ class TestVariableServices(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, expected_var)
+        self.mock_repo.get_by_name.assert_called_once_with(name)
+
+    def test_get_variable_or_none(self):
+        name = "test-var"
+        expected_var = MagicMock(spec=Variable)
+        self.mock_repo.get_by_name.return_value = expected_var
+
+        result = self.services.get_variable_or_none(name)
+
+        self.assertEqual(result, expected_var)
+        self.mock_repo.get_by_name.assert_called_once_with(name)
+
+    def test_get_variable_or_none_returns_none_if_not_found(self):
+        name = "non-existant-test-var"
+        self.mock_repo.get_by_name.side_effect = UnknownNameError(name)
+
+        result = self.services.get_variable_or_none(name)
+
+        self.assertEqual(result, None)
         self.mock_repo.get_by_name.assert_called_once_with(name)
 
     def test_get_variable_by_id(self):

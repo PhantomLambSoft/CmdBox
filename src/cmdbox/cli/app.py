@@ -17,6 +17,8 @@ from .commands.tag_crud import app as tag_crud_app
 from .commands.init import app as init_app
 from .commands.settings import app as settings_app
 from .commands.history import app as history_app
+from .commands.export import app as export_app
+from .commands.import_ import app as import_app
 
 app = typer.Typer(
     name="cb",
@@ -37,6 +39,12 @@ app.add_typer(init_app)
 app.add_typer(settings_app, name="settings", help="Manage CmdBox settings.")
 app.add_typer(
     history_app, name="history", help="View and re-run command execution history."
+)
+app.add_typer(
+    export_app, name="export", help="Export commands and variables to a JSON file."
+)
+app.add_typer(
+    import_app, name="import", help="Import commands and variables from a JSON file."
 )
 
 

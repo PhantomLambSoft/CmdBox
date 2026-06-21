@@ -11,8 +11,10 @@ from cmdbox.core.fields import (
     TAG_SEARCH_FIELDS,
 )
 from cmdbox.repositories.history_repository import HistoryRepository
+from cmdbox.services.export_service import ExportService
 from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.history_service import HistoryService
+from cmdbox.services.import_service import ImportService
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.settings.models import Settings
 from cmdbox.settings.settings_repository import SettingsRepository
@@ -123,6 +125,23 @@ def get_history_service() -> HistoryService:
     return HistoryService(
         repo=get_history_repo(),
         get_settings=get_settings,
+    )
+
+
+@lru_cache(maxsize=1)
+def get_export_service() -> ExportService:
+    return ExportService(
+        cmd_service=get_command_services(),
+        var_service=get_variable_services(),
+    )
+
+
+@lru_cache(maxsize=1)
+def get_import_service() -> ImportService:
+    return ImportService(
+        cmd_service=get_command_services(),
+        var_service=get_variable_services(),
+        tag_service=get_tag_services(),
     )
 
 

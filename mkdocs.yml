@@ -59,6 +59,7 @@ nav:
         - tag: commands/tag.md
         - run: commands/run.md
         - history: commands/history.md
+        - import/export: commands/import_export.md
         - settings: commands/settings.md
         - init: commands/init.md
     - Concepts: concepts.md
