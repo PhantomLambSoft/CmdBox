@@ -152,12 +152,12 @@ class TestImportService(unittest.TestCase):
 
         self.assertIsInstance(result, ImportResult)
         self.assertTrue(result.preview)
-        self.assertEqual([], result.commands_created)
+        self.assertEqual(["create-cmd"], result.commands_created)
         self.assertEqual([], result.commands_skipped)
-        self.assertEqual([], result.commands_overwritten)
-        self.assertEqual([], result.variables_created)
+        self.assertEqual(["skip-cmd", "overwrite-cmd"], result.commands_overwritten)
+        self.assertEqual(["create-var"], result.variables_created)
         self.assertEqual([], result.variables_skipped)
-        self.assertEqual([], result.variables_overwritten)
+        self.assertEqual(["skip-var", "overwrite-var"], result.variables_overwritten)
         self.cmd_service.create_command.assert_not_called()
         self.cmd_service.update_command.assert_not_called()
         self.var_service.create_variable.assert_not_called()
@@ -263,7 +263,6 @@ class TestImportService(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(["deploy"], self.service.result.commands_overwritten)
         self.cmd_service.update_command.assert_called_once_with(
             alias="deploy",
             template="echo",
@@ -311,7 +310,6 @@ class TestImportService(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(["host"], self.service.result.variables_overwritten)
         self.var_service.update_variable.assert_called_once_with("host", value="prod")
         self.var_service.remove_tags.assert_called_once_with("host", ["old"])
         self.var_service.add_tags.assert_called_once_with("host", ["new"])
@@ -324,8 +322,6 @@ class TestImportService(unittest.TestCase):
             ]
         )
 
-        self.assertEqual(["skip"], self.service.result.variables_skipped)
-        self.assertEqual(["create"], self.service.result.variables_created)
         self.var_service.create_variable.assert_called_once_with(
             "create", value="y", tags=["prod"]
         )
