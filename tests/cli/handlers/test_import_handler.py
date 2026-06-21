@@ -37,6 +37,7 @@ class TestImportHandler(unittest.TestCase):
         self.mock_import_service.import_file.assert_called_once_with(
             path,
             overwrite=False,
+            preview=False,
         )
         mock_render.assert_called_once_with(result)
         self.mock_console.print.assert_called_once_with("rendered_result")
@@ -63,6 +64,7 @@ class TestImportHandler(unittest.TestCase):
         self.mock_import_service.import_file.assert_called_once_with(
             path,
             overwrite=True,
+            preview=True,
         )
         mock_render_preview.assert_called_once_with(result, source=str(path))
         mock_render_result.assert_not_called()
