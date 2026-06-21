@@ -202,11 +202,10 @@ class ImportService:
 
     def handle_commands(self, cmd_actions: list[tuple[dict, str]]):
         for cmd_data, action in cmd_actions:
-            alias = cmd_data["alias"]
-
             if action == "skip":
-                self.result.commands_skipped.append(alias)
                 continue
+
+            alias = cmd_data["alias"]
 
             tags = cmd_data.get("tags", [])
 
@@ -221,10 +220,8 @@ class ImportService:
                     env=cmd_data.get("env", None),
                     timeout=cmd_data.get("timeout", None),
                 )
-                self.result.commands_created.append(alias)
             else:
                 self.overwrite_existing_command(alias, cmd_data, tags)
-                self.result.commands_overwritten.append(alias)
 
     def overwrite_existing_command(self, alias: str, cmd_data: dict, tags: list[str]):
         existing = self._cmd_service.get_command(alias)
@@ -270,11 +267,10 @@ class ImportService:
 
     def handle_variables(self, var_actions: list[tuple[dict, str]]):
         for var_data, action in var_actions:
-            name = var_data["name"]
-
             if action == "skip":
-                self.result.variables_skipped.append(name)
                 continue
+
+            name = var_data["name"]
 
             tags = var_data.get("tags", [])
 
@@ -282,10 +278,8 @@ class ImportService:
                 self._var_service.create_variable(
                     name, value=var_data["value"], tags=tags
                 )
-                self.result.variables_created.append(name)
             else:
                 self.overwrite_existing_variable(name, var_data, tags)
-                self.result.variables_overwritten.append(name)
 
     def overwrite_existing_variable(self, name: str, var_data: dict, tags: list[str]):
         existing = self._var_service.get_variable(name)
