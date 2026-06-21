@@ -163,6 +163,9 @@ class ImportService:
             else:
                 var_actions.append((var_data, "skip"))
 
+        self.classify_commands(cmd_actions)
+        self.classify_variables(var_actions)
+
         if preview:
             return self.result
 
@@ -173,6 +176,29 @@ class ImportService:
         self.handle_variables(var_actions)
 
         return self.result
+
+    def classify_commands(self, cmd_actions: list[tuple[dict, str]]):
+        """
+        Classifies commands based on their specified actions and updates the result object
+        with the corresponding command names categorized into created, overwritten, or skipped.
+
+        This is handled as a separate method with a separate iteration so
+        that `preview` can still return a meaningful result.
+
+        Args:
+            cmd_actions (list[tuple[dict, str]]): A list of tuples, where each tuple
+            contains a dictionary with command data and a string representing the
+            action to be performed. The dictionary must include an 'alias' key.
+
+        """
+        for data, action in cmd_actions:
+            alias = data["alias"]
+            if action == "create":
+                self.result.commands_created.append(alias)
+            elif action == "overwrite":
+                self.result.commands_overwritten.append(alias)
+            elif action == "skip":
+                self.result.commands_skipped.append(alias)
 
     def handle_commands(self, cmd_actions: list[tuple[dict, str]]):
         for cmd_data, action in cmd_actions:
@@ -219,6 +245,28 @@ class ImportService:
             self._cmd_service.remove_tags(alias, tags_to_remove)
         if tags_to_add:
             self._cmd_service.add_tags(alias, tags_to_add)
+
+    def classify_variables(self, var_actions: list[tuple[dict, str]]):
+        """
+        Classifies variables based on the specified actions and updates the result object with
+        the corresponding variable names categorized into created, overwritten, or skipped.
+
+        This is handled as a separate method with a separate iteration so
+        that `preview` can still return a meaningful result.
+
+        Args:
+            var_actions (list[tuple[dict, str]]): A list of tuples, where each tuple contains a
+                dictionary with variable data and a string representing the associated action
+                to be performed. The dictionary must include a 'name' key.
+        """
+        for data, action in var_actions:
+            name = data["name"]
+            if action == "create":
+                self.result.variables_created.append(name)
+            elif action == "overwrite":
+                self.result.variables_overwritten.append(name)
+            elif action == "skip":
+                self.result.variables_skipped.append(name)
 
     def handle_variables(self, var_actions: list[tuple[dict, str]]):
         for var_data, action in var_actions:
