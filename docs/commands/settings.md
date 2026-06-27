@@ -54,3 +54,20 @@ This opens the settings file in your default text editor.
 !!! warning
     When using `--external`, take care not to change field names or the file structure.
     CmdBox may not start correctly if the settings file is malformed.
+
+---
+
+## `data-dir`
+
+The `data-dir` subcommand opens the directory where CmdBox stores its data in the default file explorer. This is 
+intended as a convenience command for users who want quick access to their settings, database, or log files.
+
+```console
+> cb settings data-dir
+```
+
+You may also provide the `--print` (or `-p`) flag to print this path to the console without opening it.
+
+```console
+> cb settings data-dir --print
+```
