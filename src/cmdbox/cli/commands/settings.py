@@ -60,3 +60,25 @@ def show(
         get_settings_service=container.get_settings_service,
         get_console=container.get_console,
     )
+
+
+@app.command("data-dir")
+@cli_guard
+def data_dir(
+    print_only: Annotated[
+        bool,
+        typer.Option(
+            "--print",
+            "-p",
+            help="Prints the data directory path to the console, then exits.",
+        ),
+    ] = False,
+) -> None:
+    """
+    Opens the current data directory in the default file explorer.
+    """
+    log.debug("settings.data_dir called")
+    settings_handler.run_open_data_dir(
+        print_only=print_only,
+        get_console=container.get_console,
+    )
