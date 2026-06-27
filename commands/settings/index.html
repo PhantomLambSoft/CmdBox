@@ -848,6 +848,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#data-dir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        data-dir
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -994,6 +1005,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#data-dir" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        data-dir
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1059,6 +1081,15 @@ This opens the settings file in your default text editor.</p>
 <p>When using <code>--external</code>, take care not to change field names or the file structure.
 CmdBox may not start correctly if the settings file is malformed.</p>
 </div>
+<hr />
+<h2 id="data-dir"><code>data-dir</code><a class="headerlink" href="#data-dir" title="Permanent link">&para;</a></h2>
+<p>The <code>data-dir</code> subcommand opens the directory where CmdBox stores its data in the default file explorer. This is 
+intended as a convenience command for users who want quick access to their settings, database, or log files.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">&gt; cb settings data-dir</span>
+</code></pre></div>
+<p>You may also provide the <code>--print</code> (or <code>-p</code>) flag to print this path to the console without opening it.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="go">&gt; cb settings data-dir --print</span>
+</code></pre></div>
 
 
 
