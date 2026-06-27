@@ -10,6 +10,8 @@
     - Import validates for circular references and rejects the file before writing anything.
     - Import supports a `--preview` flag to see what would be imported without making any changes.
     - Import supports an `--overwrite` flag to replace existing items on conflict.
+- Added the `data-dir` subcommand to settings.
+    - Allows users to quickly open CmdBox's data directory in the default file manager.
 
 ### Fixed
 - Vendor name changed to "PhantomLamb"
