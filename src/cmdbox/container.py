@@ -48,7 +48,7 @@ def get_settings() -> Settings:
 def get_console() -> ConsoleUI:
     _settings = get_settings()
     theme = build_theme(_settings)
-    return ConsoleUI(theme)
+    return ConsoleUI(theme, use_color=_settings.ui.use_color)
 
 
 @lru_cache(maxsize=1)
