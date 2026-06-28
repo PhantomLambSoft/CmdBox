@@ -176,9 +176,11 @@ class RunService:
         runtime_env = getattr(runtime_ctx, "env", None) or {}
         merged_env = {**stored_env, **runtime_env} or None
 
-        cwd = (runtime_ctx.cwd if runtime_ctx and runtime_ctx.cwd else None) or cmd.cwd
+        cwd = (
+            runtime_ctx.cwd if runtime_ctx and runtime_ctx.cwd is not None else None
+        ) or cmd.cwd
         shell = (
-            runtime_ctx.shell if runtime_ctx and runtime_ctx.shell else None
+            runtime_ctx.shell if runtime_ctx and runtime_ctx.shell is not None else None
         ) or cmd.shell
         timeout = (
             runtime_ctx.timeout
