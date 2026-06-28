@@ -91,7 +91,7 @@ def common(
         ),
     ] = None,
     version: Annotated[
-        bool,
+        bool | None,
         typer.Option(
             "--version",
             "-V",
