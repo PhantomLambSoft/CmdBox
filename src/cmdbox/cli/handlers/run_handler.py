@@ -30,11 +30,11 @@ class RawRunContext:
 
     cwd: str | None = None
     env: list[str] | str | None = None
-    capture: bool = False
+    capture: bool | None = None
     shell: str | None = None
     timeout: int | None = None
     emit: bool = False
-    verbose: bool = False
+    verbose: bool | None = None
 
 
 @log_action(__name__, "run_run_command")
@@ -47,9 +47,10 @@ def run_run_command(
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ):
-    if run_ctx and run_ctx.verbose is None:
-        settings = get_settings()
-        run_ctx.verbose = settings.execution_settings.default_verbose
+    settings = get_settings()
+    if run_ctx is None:
+        run_ctx = RawRunContext()
+    apply_settings_defaults(run_ctx, settings)
 
     run_service = get_run_service()
 
@@ -59,7 +60,7 @@ def run_run_command(
             value = prompt_for_missing_var(var_name)
             runtime_vars[var_name] = value
 
-    run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
+    run_ctx = get_run_ctx(run_ctx)
     ex_result = run_service.run(alias, ctx=run_ctx, runtime_vars=runtime_vars)
     if run_ctx.verbose and not run_ctx.emit:
         console = get_console()
@@ -76,9 +77,10 @@ def run_preview_command(
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ):
-    if run_ctx and run_ctx.verbose is None:
-        settings = get_settings()
-        run_ctx.verbose = settings.execution_settings.default_verbose
+    settings = get_settings()
+    if run_ctx is None:
+        run_ctx = RawRunContext()
+    apply_settings_defaults(run_ctx, settings)
 
     run_service = get_run_service()
 
@@ -88,7 +90,7 @@ def run_preview_command(
             value = prompt_for_missing_var(var_name)
             runtime_vars[var_name] = value
 
-    run_ctx = get_run_ctx(run_ctx) if run_ctx else RunContext()
+    run_ctx = get_run_ctx(run_ctx)
     prev_result, effective_ctx = run_service.preview(
         alias, runtime_vars=runtime_vars, ctx=run_ctx
     )
@@ -97,7 +99,30 @@ def run_preview_command(
     console.print(rendered_result)
 
 
-def get_run_ctx(raw_run_ctx: RawRunContext | None) -> RunContext:
+def apply_settings_defaults(run_ctx: RawRunContext, settings: Settings) -> None:
+    """
+    Adjusts the execution context by applying default settings if certain values
+    are not explicitly defined. This ensures that the runtime behavior aligns
+    with the provided configuration.
+
+    Args:
+        run_ctx: An object representing the current runtime context. It contains
+            runtime-specific configurations, such as verbosity, shell usage,
+            and output capturing.
+        settings: A configuration object that holds execution defaults. These
+            defaults are applied to the runtime context when corresponding
+            settings are unspecified.
+    """
+    ex = settings.execution_settings
+    if run_ctx.verbose is None:
+        run_ctx.verbose = ex.default_verbose
+    if run_ctx.capture is None:
+        run_ctx.capture = ex.capture_output
+    if run_ctx.shell is None:
+        run_ctx.shell = ex.default_shell
+
+
+def get_run_ctx(raw_run_ctx: RawRunContext) -> RunContext:
     """
     Creates and returns a `RunContext` object based on the provided `raw_run_ctx`.
 
