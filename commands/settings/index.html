@@ -857,6 +857,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="data-dir">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-directory-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Directory Location
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1014,6 +1031,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="data-dir">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#data-directory-location" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Data Directory Location
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
     </ul>
@@ -1090,6 +1124,356 @@ intended as a convenience command for users who want quick access to their setti
 <p>You may also provide the <code>--print</code> (or <code>-p</code>) flag to print this path to the console without opening it.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="go">&gt; cb settings data-dir --print</span>
 </code></pre></div>
+<h3 id="data-directory-location">Data Directory Location<a class="headerlink" href="#data-directory-location" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Platform</th>
+<th>Path</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Windows</td>
+<td><code>%APPDATA%\PhantomLamb\CmdBox\settings.toml</code></td>
+</tr>
+<tr>
+<td>macOS</td>
+<td><code>~/Library/Application Support/PhantomLamb/CmdBox/settings.toml</code></td>
+</tr>
+<tr>
+<td>Linux</td>
+<td><code>~/.local/share/PhantomLamb/CmdBox/settings.toml</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h1 id="settings-reference">Settings Reference<a class="headerlink" href="#settings-reference" title="Permanent link">&para;</a></h1>
+<p>Below is a reference for all available settings in the <code>settings.toml</code> file, what they do, and their default values.</p>
+<hr />
+<h3 id="ui"><code>[ui]</code><a class="headerlink" href="#ui" title="Permanent link">&para;</a></h3>
+<p>General user interface settings.</p>
+<h4 id="use_color"><code>use_color</code><a class="headerlink" href="#use_color" title="Permanent link">&para;</a></h4>
+<p><strong>Default:</strong> <code>true</code></p>
+<p>Controls whether CmdBox uses colors and styles in terminal output. Set to <code>false</code> to disable all
+styling, which can be useful in environments that do not support ANSI color codes or when piping
+output to other tools.</p>
+<hr />
+<h3 id="uicolors"><code>[ui.colors]</code><a class="headerlink" href="#uicolors" title="Permanent link">&para;</a></h3>
+<p>Controls the colors and text styles used throughout CmdBox's output. Each key corresponds to a
+specific UI element. Values are <a href="https://rich.readthedocs.io/en/stable/style.html">Rich style strings</a>,
+which support colors, boldness, italics, and other text attributes.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You do not need to define every key. You only need to change the values you want to customize.
+Leave any entry as an empty string (<code>""</code>) to use your terminal's default text style.</p>
+</div>
+<p>The following table lists all available color keys, their default values, and where each style
+is applied.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Applied To</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>title</code></td>
+<td><code>"bold"</code></td>
+<td>Page and section titles</td>
+</tr>
+<tr>
+<td><code>subtitle</code></td>
+<td><code>"dim"</code></td>
+<td>Subtitles beneath titles</td>
+</tr>
+<tr>
+<td><code>muted</code></td>
+<td><code>"dim"</code></td>
+<td>De-emphasized or secondary text</td>
+</tr>
+<tr>
+<td><code>border</code></td>
+<td><code>"dim"</code></td>
+<td>Table and panel borders</td>
+</tr>
+<tr>
+<td><code>panel_title</code></td>
+<td><code>"bold"</code></td>
+<td>Titles inside panels</td>
+</tr>
+<tr>
+<td><code>table_header</code></td>
+<td><code>"bold"</code></td>
+<td>Column headers in tables</td>
+</tr>
+<tr>
+<td><code>caption</code></td>
+<td><code>"dim"</code></td>
+<td>Captions beneath tables or panels</td>
+</tr>
+<tr>
+<td><code>kv_key</code></td>
+<td><code>"dim"</code></td>
+<td>Keys in key-value displays</td>
+</tr>
+<tr>
+<td><code>kv_value</code></td>
+<td><code>""</code></td>
+<td>Values in key-value displays</td>
+</tr>
+<tr>
+<td><code>success</code></td>
+<td><code>"green"</code></td>
+<td>Success messages</td>
+</tr>
+<tr>
+<td><code>info</code></td>
+<td><code>"cyan"</code></td>
+<td>Informational messages</td>
+</tr>
+<tr>
+<td><code>warning</code></td>
+<td><code>"yellow"</code></td>
+<td>Warning messages</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td><code>"red"</code></td>
+<td>Error messages</td>
+</tr>
+<tr>
+<td><code>debug</code></td>
+<td><code>"dim blue"</code></td>
+<td>Debug messages</td>
+</tr>
+<tr>
+<td><code>code</code></td>
+<td><code>"cyan"</code></td>
+<td>General code text</td>
+</tr>
+<tr>
+<td><code>code_inline</code></td>
+<td><code>"cyan"</code></td>
+<td>Inline code within prose</td>
+</tr>
+<tr>
+<td><code>code_block</code></td>
+<td><code>"dim cyan"</code></td>
+<td>Multi-line code blocks</td>
+</tr>
+<tr>
+<td><code>entity_name</code></td>
+<td><code>"bold"</code></td>
+<td>Names of commands, variables, and tags</td>
+</tr>
+<tr>
+<td><code>entity_id</code></td>
+<td><code>"magenta"</code></td>
+<td>IDs of commands, variables, and tags</td>
+</tr>
+<tr>
+<td><code>entity_count</code></td>
+<td><code>"bold"</code></td>
+<td>Count values (e.g., number of results)</td>
+</tr>
+<tr>
+<td><code>entity_time</code></td>
+<td><code>"dim"</code></td>
+<td>Timestamps and dates</td>
+</tr>
+<tr>
+<td><code>tag_pill</code></td>
+<td><code>"bold white on dark_green"</code></td>
+<td>Tag labels in normal contexts</td>
+</tr>
+<tr>
+<td><code>tag_pill_muted</code></td>
+<td><code>"white on grey23"</code></td>
+<td>Tag labels in de-emphasized contexts</td>
+</tr>
+<tr>
+<td><code>run_command</code></td>
+<td><code>"cyan"</code></td>
+<td>The command shown before execution output</td>
+</tr>
+<tr>
+<td><code>run_stdout</code></td>
+<td><code>""</code></td>
+<td>Standard output from executed commands</td>
+</tr>
+<tr>
+<td><code>run_stderr</code></td>
+<td><code>"bold red"</code></td>
+<td>Standard error from executed commands</td>
+</tr>
+<tr>
+<td><code>trace_kind</code></td>
+<td><code>"dim"</code></td>
+<td>The kind label in trace output</td>
+</tr>
+<tr>
+<td><code>trace_key</code></td>
+<td><code>"magenta"</code></td>
+<td>Keys in trace output</td>
+</tr>
+<tr>
+<td><code>trace_value</code></td>
+<td><code>"purple3"</code></td>
+<td>Values in trace output</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="execution_settings"><code>[execution_settings]</code><a class="headerlink" href="#execution_settings" title="Permanent link">&para;</a></h3>
+<p>Controls how CmdBox executes commands. Each setting acts as the default value for the
+corresponding CLI flag on <code>cb cmd run</code>, and can always be overridden at runtime.</p>
+<h4 id="default_shell"><code>default_shell</code><a class="headerlink" href="#default_shell" title="Permanent link">&para;</a></h4>
+<p><strong>Default:</strong> <code>"auto"</code></p>
+<p>The shell used to execute commands. When set to <code>"auto"</code>, CmdBox detects the appropriate shell
+for your platform (<code>cmd.exe</code> on Windows, the user's default shell on macOS and Linux). Set this
+to a specific shell (e.g., <code>"bash"</code>, <code>"zsh"</code>, <code>"powershell"</code>) to override the detected value.
+Can be overridden at runtime with the <code>--shell</code> flag.</p>
+<h4 id="capture_output"><code>capture_output</code><a class="headerlink" href="#capture_output" title="Permanent link">&para;</a></h4>
+<p><strong>Default:</strong> <code>false</code></p>
+<p>The default value for the <code>--capture</code> flag on <code>cb cmd run</code>. When <code>true</code>, command output is
+captured and returned rather than printed directly to the terminal. Useful when running CmdBox
+inside scripts. Can be overridden at runtime with <code>--capture</code> or <code>--no-capture</code>.</p>
+<h4 id="default_verbose"><code>default_verbose</code><a class="headerlink" href="#default_verbose" title="Permanent link">&para;</a></h4>
+<p><strong>Default:</strong> <code>false</code></p>
+<p>The default value for the <code>--verbose</code> flag on <code>cb cmd run</code>. When <code>true</code>, CmdBox prints additional
+details during command execution. Can be overridden at runtime with <code>--verbose</code> or <code>--no-verbose</code>.</p>
+<hr />
+<h3 id="default_fields"><code>[default_fields]</code><a class="headerlink" href="#default_fields" title="Permanent link">&para;</a></h3>
+<p>Controls which fields are shown by default in output and search results. Each key accepts a list
+of field names. Any field available on the underlying model can be included — these are just the
+defaults. You can always request specific fields at runtime using the <code>--fields</code> flag.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>command_output</code></td>
+<td><code>alias</code>, <code>template</code>, <code>description</code></td>
+</tr>
+<tr>
+<td><code>command_search</code></td>
+<td><code>alias</code>, <code>template</code>, <code>description</code></td>
+</tr>
+<tr>
+<td><code>variable_output</code></td>
+<td><code>name</code>, <code>value</code></td>
+</tr>
+<tr>
+<td><code>variable_search</code></td>
+<td><code>name</code>, <code>value</code></td>
+</tr>
+<tr>
+<td><code>tag_output</code></td>
+<td><code>name</code>, <code>description</code></td>
+</tr>
+<tr>
+<td><code>tag_search</code></td>
+<td><code>name</code>, <code>description</code></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3 id="field_aliases"><code>[field_aliases]</code><a class="headerlink" href="#field_aliases" title="Permanent link">&para;</a></h3>
+<h4 id="field_aliasesalias_mapping"><code>[field_aliases.alias_mapping]</code><a class="headerlink" href="#field_aliasesalias_mapping" title="Permanent link">&para;</a></h4>
+<p>Maps full field names to shorthand aliases you can use with the <code>--fields</code> flag. This lets you
+type <code>--fields a,d</code> instead of <code>--fields alias,description</code>, for example. CmdBox ships with
+sensible defaults, but you can add or change any mapping to match your preferred shorthand.</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Default Aliases</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>alias</code></td>
+<td><code>a</code>, <code>al</code></td>
+</tr>
+<tr>
+<td><code>template</code></td>
+<td><code>t</code>, <code>temp</code></td>
+</tr>
+<tr>
+<td><code>description</code></td>
+<td><code>d</code>, <code>desc</code></td>
+</tr>
+<tr>
+<td><code>date_created</code></td>
+<td><code>dc</code>, <code>created</code></td>
+</tr>
+<tr>
+<td><code>last_updated</code></td>
+<td><code>lu</code>, <code>updated</code></td>
+</tr>
+<tr>
+<td><code>used</code></td>
+<td><code>u</code></td>
+</tr>
+<tr>
+<td><code>last_used</code></td>
+<td><code>luse</code></td>
+</tr>
+</tbody>
+</table>
+<p>To add your own alias, add an entry under <code>[field_aliases.alias_mapping]</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[field_aliases.alias_mapping]</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;temp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tmpl&quot;</span><span class="p">]</span><span class="w">  </span><span class="c1"># add as many aliases as you like</span>
+</code></pre></div>
+<hr />
+<h3 id="logging"><code>[logging]</code><a class="headerlink" href="#logging" title="Permanent link">&para;</a></h3>
+<h4 id="console_level"><code>console_level</code><a class="headerlink" href="#console_level" title="Permanent link">&para;</a></h4>
+<p><strong>Default:</strong> <code>"CRITICAL"</code></p>
+<p>The minimum log level printed to the terminal. Defaults to <code>"CRITICAL"</code> so that internal log
+messages do not clutter command output during normal use. Set to a lower level if you need to
+inspect CmdBox's internal behavior.</p>
+<p>Accepted values (from least to most verbose): <code>"CRITICAL"</code>, <code>"ERROR"</code>, <code>"WARNING"</code>, <code>"INFO"</code>, <code>"DEBUG"</code></p>
+<h4 id="loggingfile"><code>[logging.file]</code><a class="headerlink" href="#loggingfile" title="Permanent link">&para;</a></h4>
+<p>Controls log file output. Log files are written to the same application data directory as the
+settings file.</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enabled</code></td>
+<td><code>true</code></td>
+<td>Whether log file output is active</td>
+</tr>
+<tr>
+<td><code>level</code></td>
+<td><code>"ERROR"</code></td>
+<td>Minimum log level written to the file</td>
+</tr>
+<tr>
+<td><code>max_bytes</code></td>
+<td><code>1000000</code></td>
+<td>Maximum log file size before rotation. Accepts a raw byte count or a human-readable string such as <code>"1mb"</code> or <code>"500kb"</code>.</td>
+</tr>
+<tr>
+<td><code>backups</code></td>
+<td><code>3</code></td>
+<td>Number of rotated log files to keep</td>
+</tr>
+</tbody>
+</table>
 
 
 
