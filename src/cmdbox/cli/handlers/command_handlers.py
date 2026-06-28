@@ -226,7 +226,7 @@ def run_list_command(
     *,
     limit: int,
     order: str,
-    tags: list[str],
+    tags: list[str] | None,
     fields: list[str] | None = None,
     get_cmd_services: Callable[[], CommandServices],
     get_settings: Callable[[], Settings],
