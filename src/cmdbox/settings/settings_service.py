@@ -2,6 +2,7 @@ from dataclasses import asdict, is_dataclass, fields
 from tomlkit import parse
 
 from cmdbox.cli.ui.editor import EditCanceled
+from cmdbox.settings.errors import SettingsError
 from cmdbox.settings.models import Settings
 from cmdbox.settings.settings_repository import SettingsRepository
 
@@ -57,9 +58,14 @@ class SettingsService:
         self._current = self._load()
 
     def _load(self) -> Settings:
-        raw = self._repo.load()
-        merged = self._merge(asdict(self._defaults), raw)
-        return build_dataclass(Settings, merged)
+        try:
+            raw = self._repo.load()
+            merged = self._merge(asdict(self._defaults), raw)
+            return build_dataclass(Settings, merged)
+        except Exception as exc:
+            raise SettingsError(
+                f"Failed to read settings file at '{self._repo.path}'.\n" f"Hint: {exc}"
+            ) from exc
 
     def get(self) -> Settings:
         return self._current
@@ -105,14 +111,14 @@ class SettingsService:
             doc = parse(edited_text)
             edited_raw = doc.unwrap()
         except Exception as exc:
-            raise ValueError(f"Invalid TOML: {exc}") from exc
+            raise SettingsError(f"Invalid TOML: {exc}") from exc
 
         try:
             merged_new = self._merge(asdict(self._defaults), edited_raw)
             # This will raise TypeError if types don't match or missing required fields
             _ = build_dataclass(Settings, merged_new)
         except Exception as exc:
-            raise ValueError(f"Settings validation failed: {exc}") from exc
+            raise SettingsError(f"Settings validation failed: {exc}") from exc
 
         self._repo.save(edited_raw)
         self._current = self._load()
