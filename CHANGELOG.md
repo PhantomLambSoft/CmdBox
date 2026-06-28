@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.0] - 2026-06-28
 
 ### Added
 - Added import/export functionality
@@ -15,6 +15,7 @@
 
 ### Fixed
 - Vendor name changed to "PhantomLamb"
+- Connected missing settings values to app functionality
 
 ## [1.0.0] - 2026-06-11
 
