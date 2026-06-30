@@ -11,7 +11,7 @@ from occasional users to seasoned developers.
 ## Why CmdBox?
 
 Most terminal users have commands they run regularly. Some are short. Many are long and
-complex, packed with flags and options that are easy to forget. Recalling them means digging
+complex, packed with flags and options that are easy to forget and tedious to type. Recalling them means digging
 through shell history, hunting through notes, or searching online every time.
 
 CmdBox gives every command a short, memorable alias. Run it instantly. No retyping, no
