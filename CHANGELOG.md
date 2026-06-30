@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Correctly prompt for variable when no stored value is found
+
 ## [1.1.0] - 2026-06-28
 
 ### Added
