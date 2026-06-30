@@ -8,6 +8,7 @@ from cmdbox.cli.commands.alias_fallback import AliasFallbackGroup
 from cmdbox.cli.ui.presenters.app_presenter import render_version
 from cmdbox.logging_setup.log_handlers import configure_logging
 from cmdbox.logging_setup.log_config import build_log_config, get_logger
+from cmdbox.settings.errors import SettingsError
 from cmdbox.version import __version__
 from cmdbox.database import ensure_schema, get_db
 from .commands.command_crud import app as command_crud_app
@@ -91,7 +92,7 @@ def common(
         ),
     ] = None,
     version: Annotated[
-        bool,
+        bool | None,
         typer.Option(
             "--version",
             "-V",
@@ -104,7 +105,11 @@ def common(
     if test:
         get_db(testing=True)
 
-    settings = container.get_settings()
+    try:
+        settings = container.get_settings()
+    except SettingsError as exc:
+        typer.echo(f"Error: {exc}", err=True)
+        raise typer.Exit(code=1)
 
     run_id = uuid.uuid4().hex[:6]
     log_config = build_log_config(

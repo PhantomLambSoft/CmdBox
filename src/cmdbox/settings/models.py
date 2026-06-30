@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 
+from cmdbox.common.parsing import parse_byte_size
+
 
 @dataclass(frozen=True)
 class UIStyle:
@@ -103,8 +105,11 @@ class ExecutionSettings:
 class LoggingFileSettings:
     enabled: bool = False
     level: str = "INFO"
-    max_bytes: int = 1_000_000
+    max_bytes: int | str = 1_000_000
     backups: int = 3
+
+    def __post_init__(self):
+        object.__setattr__(self, "max_bytes", parse_byte_size(self.max_bytes))
 
 
 @dataclass(frozen=True)

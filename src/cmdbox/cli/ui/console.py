@@ -3,10 +3,8 @@ from rich.console import Console
 
 class ConsoleUI:
 
-    def __init__(self, theme, *, force_color=None):
-        self._console = Console(
-            theme=theme, force_terminal=force_color, highlight=False
-        )
+    def __init__(self, theme, *, use_color: bool = True):
+        self._console = Console(theme=theme, no_color=not use_color, highlight=False)
         self._theme = theme
 
     def print(self, thing) -> None:

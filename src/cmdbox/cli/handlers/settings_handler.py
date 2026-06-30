@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Callable
 
 import typer
@@ -8,6 +9,7 @@ from cmdbox.cli.ui.editor import edit_text_fullscreen, EditCanceled, edit_text_i
 from cmdbox.cli.ui.presenters.settings_presenter import render_settings_show
 from cmdbox.logging_setup.log_decorators import log_action
 from cmdbox.settings.settings_service import SettingsService
+from cmdbox.core.paths import APP_DATA_DIR
 
 log = logging.getLogger(__name__)
 
@@ -57,3 +59,14 @@ def run_show_settings(
     settings = settings_service.get()
     output = render_settings_show(settings, parsed_fields)
     console.print(output)
+
+
+@log_action(__name__, "run_open_data_dir")
+def run_open_data_dir(
+    print_only: bool = False, *, get_console: Callable[[], ConsoleUI]
+) -> None:
+    if print_only:
+        console = get_console()
+        console.print(APP_DATA_DIR)
+        return
+    os.startfile(APP_DATA_DIR)

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "cmdbox-cli"
-version = "1.0.0"
+dynamic = ["version"]
 description = "A cross-platform command manager for terminal workflows."
 readme = "README.md"
 authors = [
@@ -38,6 +38,9 @@ cb = "cmdbox.cli.app:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 include = ["cmdbox*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "cmdbox.version.__version__"}
 
 [tool.setuptools.package-data]
 cmdbox = ["*.yaml", "*.json", "*.txt", "init/integrations/*"]

@@ -237,7 +237,7 @@ def list_cmds(
         ),
     ] = "alias",
     tags: Annotated[
-        list[str],
+        list[str] | None,
         typer.Option(
             "--tag",
             "-t",
