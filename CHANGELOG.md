@@ -1,9 +1,10 @@
 # Changelog
 
-## [Unreleased]
+## [1.1.1] - 2026-07-01
 
 ### Fixed
-- Correctly prompt for variable when no stored value is found
+- Prompt for variable when no stored value is found (previously raised NameNotFound error instead)
+
 
 ## [1.1.0] - 2026-06-28
 
@@ -21,6 +22,7 @@
 ### Fixed
 - Vendor name changed to "PhantomLamb"
 - Connected missing settings values to app functionality
+
 
 ## [1.0.0] - 2026-06-11
 
