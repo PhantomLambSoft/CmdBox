@@ -34,7 +34,7 @@ A command has several fields. Some are editable, and some are maintained automat
 | `last_used`    | The date and time the command was last executed.         |
 
 These metadata fields are read-only. They can be displayed in `list` and `search` results or
-used for sorting. See the [`cmd` reference](commands/cmd.md) for more information.
+used for sorting. See the [`cmd` reference](../commands/cmd.md) for more information.
 
 ### Alias
 
@@ -61,7 +61,7 @@ template: git log --oneline --graph --decorate --all
 
 Multi-line templates are supported and are executed as a script. Behind the scenes, CmdBox
 writes the template to a temporary file, executes it, then removes the file. See the
-[`cmd` reference](commands/cmd.md) for more information about multi-line templates.
+[`cmd` reference](../commands/cmd.md) for more information about multi-line templates.
 
 ---
 
@@ -137,7 +137,7 @@ Like commands, variables have metadata fields maintained by CmdBox:
 | `date_created` | The date and time the variable was first saved.  |
 | `last_updated` | The date and time the variable was last updated. |
 
-See the [`var` reference](commands/var.md) for full details on managing variables.
+See the [`var` reference](../commands/var.md) for full details on managing variables.
 
 ---
 
@@ -194,7 +194,7 @@ convention.
 
 !!! note
     Execution context fields can be stored and updated via `cb cmd add` and `cb cmd update`.
-    See the [`cmd` reference](commands/cmd.md) for full details.
+    See the [`cmd` reference](../commands/cmd.md) for full details.
 
 ---
 
@@ -233,7 +233,7 @@ Filter your command list by tag:
 > cb cmd list --tag work
 ```
 
-Tags themselves can be searched and managed via the [`tag` reference](commands/tag.md).
+Tags themselves can be searched and managed via the [`tag` reference](../commands/tag.md).
 
 ---
 
@@ -241,7 +241,7 @@ Tags themselves can be searched and managed via the [`tag` reference](commands/t
 
 CmdBox behavior and appearance can be customized through settings. This includes defaults for
 display fields, sort order, result limits, and more. Use the
-[`settings` reference](commands/settings.md) to view your current configuration and make
+[`settings` reference](../commands/settings.md) to view your current configuration and make
 changes.
 
 ---
@@ -254,4 +254,4 @@ session, like activating a virtual environment or changing directories, will not
 expected.
 
 Shell integration adds the `cbe` command, which runs a saved command directly in your current
-session. Setting it up is a one-time step handled by the [`init` subcommand](commands/init.md).
+session. Setting it up is a one-time step handled by the [`init` subcommand](../commands/init.md).
