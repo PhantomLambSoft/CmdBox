@@ -1,9 +1,22 @@
 # Changelog
 
-## [1.1.2] - 2026-07-08
+## [1.1.3] - 2026-07-08
+
+### Fixed
+- Alias commands (`cb <alias>`, `cb tags`, etc.) crashed on fresh install.
+
+### Changed
+- Removed the `click` dependencey added in the yanked 1.1.2 release.
 
 ### Fixed
 - Added missing `click` dependency to pyproject.toml
+
+
+## [1.1.2] - 2026-07-08 [YANKED]
+
+### Fixed
+- Added missing `click` dependency to pyproject.toml
+
 
 ## [1.1.1] - 2026-07-01
 
