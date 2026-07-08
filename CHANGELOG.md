@@ -8,9 +8,6 @@
 ### Changed
 - Removed the `click` dependencey added in the yanked 1.1.2 release.
 
-### Fixed
-- Added missing `click` dependency to pyproject.toml
-
 
 ## [1.1.2] - 2026-07-08 [YANKED]
 
