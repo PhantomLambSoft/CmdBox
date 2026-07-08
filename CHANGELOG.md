@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.2] - 2026-07-08
+
+### Fixed
+- Added missing `click` dependency to pyproject.toml
+
 ## [1.1.1] - 2026-07-01
 
 ### Fixed
