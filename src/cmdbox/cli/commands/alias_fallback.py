@@ -1,4 +1,5 @@
-import click
+import inspect
+import typer
 from typer.core import TyperGroup
 
 
@@ -33,7 +34,7 @@ class AliasFallbackGroup(TyperGroup):
     """
     _shortcut_commands: dict[str, list[str]] = {"!!": ["history", "last"]}
 
-    def get_command(self, ctx: click.Context, cmd_name: str):
+    def get_command(self, ctx: typer.Context, cmd_name: str):
         """
         Retrieves a command based on the command name, creating an alias command if
         the command was not directly found.
@@ -43,12 +44,12 @@ class AliasFallbackGroup(TyperGroup):
         except the `alias` parameter.
 
         Args:
-            ctx (click.Context): The Click context in which the command is being
+            ctx (typer.Context): The typer context in which the command is being
                 invoked.
             cmd_name (str): The name of the command to retrieve.
 
         Returns:
-            click.Command: The command object corresponding to the given
+            typer.Command: The command object corresponding to the given
             `cmd_name`, or an alias command if the original command does not exist.
             Returns None if `run` command is also unavailable.
         """
@@ -62,22 +63,39 @@ class AliasFallbackGroup(TyperGroup):
         if run_cmd is None:
             return None
 
-        forwarded_params = [p for p in run_cmd.params if p.name != "alias"]
+        return self._build_alias_command(cmd_name, run_cmd)
 
-        @click.command(
-            cmd_name,
-            params=forwarded_params,
-            help=f"Run stored command '{cmd_name}'.",
-            context_settings=run_cmd.context_settings,
+    def _build_alias_command(self, cmd_name: str, run_cmd):
+        original_func = run_cmd.callback
+        sig = inspect.signature(original_func)
+
+        visible_params = [
+            p for name, p in sig.parameters.items() if name not in ("alias", "ctx")
+        ]
+
+        def wrapper(ctx: typer.Context, *args, **kwargs):
+            ctx.meta["_extra_args"] = ctx.args[:]
+            return original_func(*args, alias=cmd_name, **kwargs)
+
+        wrapper.__name__ = cmd_name
+        wrapper.__signature__ = sig.replace(
+            parameters=[
+                inspect.Parameter(
+                    "ctx",
+                    inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                    annotation=typer.Context,
+                ),
+            ]
+            + visible_params
         )
-        @click.pass_context
-        def _alias_cmd(inner_ctx: click.Context, **kwargs):
-            inner_ctx.meta["_extra_args"] = inner_ctx.args[:]
-            inner_ctx.invoke(run_cmd, alias=cmd_name, **kwargs)
+        wrapper.__doc__ = f"Run stored command '{cmd_name}'."
 
-        return _alias_cmd
+        temp_app = typer.Typer(add_completion=False)
+        temp_app.command(cmd_name, context_settings=run_cmd.context_settings)(wrapper)
 
-    def resolve_command(self, ctx: click.Context, args: list):
+        return typer.main.get_command(temp_app)
+
+    def resolve_command(self, ctx: typer.Context, args: list):
         """
         Resolves the command by expanding shortcut commands if applicable.
 
@@ -88,7 +106,7 @@ class AliasFallbackGroup(TyperGroup):
         is passed directly.
 
         Args:
-            ctx (click.Context): The Click context containing information about the
+            ctx (typer.Context): The typer context containing information about the
                 execution of the command.
             args (list): A list of command-line arguments passed to the command.
 
