@@ -1,6 +1,8 @@
 import unittest
 from unittest.mock import MagicMock, patch
 from dataclasses import dataclass, asdict
+
+from cmdbox.settings.errors import SettingsError
 from cmdbox.settings.settings_service import SettingsService, build_dataclass
 from cmdbox.cli.ui.editor import EditCanceled
 from cmdbox.settings.models import Settings
@@ -154,7 +156,7 @@ class TestSettingsService(unittest.TestCase):
         def edit_fn(text):
             return "invalid = ["
 
-        with self.assertRaisesRegex(ValueError, "Invalid TOML"):
+        with self.assertRaisesRegex(SettingsError, "Invalid TOML"):
             self.service.edit(edit_fn)
 
         self.mock_repo.save.assert_not_called()
@@ -171,7 +173,7 @@ class TestSettingsService(unittest.TestCase):
         ) as mock_build_dataclass:
             mock_build_dataclass.side_effect = TypeError("Validation Error")
 
-            with self.assertRaisesRegex(ValueError, "Settings validation failed"):
+            with self.assertRaisesRegex(SettingsError, "Settings validation failed"):
                 self.service.edit(edit_fn)
 
         self.mock_repo.save.assert_not_called()

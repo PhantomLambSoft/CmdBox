@@ -15,6 +15,14 @@ from cmdbox.resolve.type_defs import ResolveResult
 
 class TestRunHandler(unittest.TestCase):
 
+    def setUp(self):
+        self.settings = MagicMock()
+        self.settings.execution_settings.default_verbose = False
+        self.settings.execution_settings.capture_output = False
+        self.settings.execution_settings.default_shell = None
+        self.mock_settings_service = MagicMock()
+        self.mock_settings_service.return_value = self.settings
+
     def test_parse_env_none(self):
         self.assertIsNone(parse_env(None))
 
@@ -71,7 +79,6 @@ class TestRunHandler(unittest.TestCase):
     @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
     def test_run_run_command_with_verbose(self, mock_render):
         mock_run_service = MagicMock()
-        mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_ex_result = ExecutionResult(
             command="echo hello", exit_code=0, stdout="hello", stderr=""
@@ -85,7 +92,7 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=None,
             run_ctx=RawRunContext(verbose=True),
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -101,7 +108,6 @@ class TestRunHandler(unittest.TestCase):
     @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
     def test_run_run_command_no_verbose(self, mock_render):
         mock_run_service = MagicMock()
-        mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_ex_result = ExecutionResult(
             command="echo hello", exit_code=0, stdout="hello", stderr=""
@@ -114,7 +120,7 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=None,
             run_ctx=RawRunContext(verbose=False),
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -122,15 +128,15 @@ class TestRunHandler(unittest.TestCase):
             "test-alias", runtime_vars=None
         )
         mock_run_service.run.assert_called_once_with(
-            "test-alias", runtime_vars=None, ctx=RunContext(verbose=False)
+            "test-alias", ctx=RunContext(verbose=False), runtime_vars=None
         )
         mock_render.assert_not_called()
         mock_console.print.assert_not_called()
 
     @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
     def test_run_run_command_with_default_settings_value(self, mock_render):
+        self.settings.execution_settings.default_verbose = True
         mock_run_service = MagicMock()
-        mock_settings = MagicMock(execution_settings=MagicMock(default_verbose=True))
         mock_console = MagicMock()
         mock_ex_result = ExecutionResult(
             command="echo hello", exit_code=0, stdout="hello", stderr=""
@@ -144,7 +150,7 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=None,
             run_ctx=RawRunContext(verbose=None),
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -152,7 +158,7 @@ class TestRunHandler(unittest.TestCase):
             "test-alias", runtime_vars=None
         )
         mock_run_service.run.assert_called_once_with(
-            "test-alias", runtime_vars=None, ctx=RunContext(verbose=True)
+            "test-alias", ctx=RunContext(verbose=True), runtime_vars=None
         )
         mock_render.assert_called_once_with(mock_ex_result)
         mock_console.print.assert_called_once_with("rendered_result")
@@ -160,7 +166,6 @@ class TestRunHandler(unittest.TestCase):
     @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
     def test_run_run_command_with_error(self, mock_render):
         mock_run_service = MagicMock()
-        mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_ex_result = ExecutionResult(
             command="echo hello", exit_code=1, stdout="", stderr="error occurred"
@@ -173,7 +178,7 @@ class TestRunHandler(unittest.TestCase):
             alias="test-alias",
             run_ctx=RawRunContext(verbose=True),
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -185,7 +190,6 @@ class TestRunHandler(unittest.TestCase):
 
     def test_run_run_command_with_ctx(self):
         mock_run_service = MagicMock()
-        mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_ex_result = ExecutionResult(
             command="echo hello", exit_code=0, stdout="hello", stderr=""
@@ -199,7 +203,7 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=None,
             run_ctx=raw_ctx,
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -212,7 +216,6 @@ class TestRunHandler(unittest.TestCase):
 
     def test_run_run_command_with_runtime_vars(self):
         mock_run_service = MagicMock()
-        mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_ex_result = ExecutionResult(
             command="echo hello", exit_code=0, stdout="hello", stderr=""
@@ -228,7 +231,7 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=vars,
             run_ctx=raw_ctx,
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -242,7 +245,6 @@ class TestRunHandler(unittest.TestCase):
     @patch("cmdbox.cli.handlers.run_handler.prompt_for_missing_var")
     def test_run_run_command_prompts_for_missing_vars(self, mock_prompt):
         mock_run_service = MagicMock()
-        mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_ex_result = ExecutionResult(
             command="echo hello", exit_code=0, stdout="hello", stderr=""
@@ -257,7 +259,7 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=runtime_vars,
             run_ctx=RawRunContext(verbose=False),
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -276,7 +278,6 @@ class TestRunHandler(unittest.TestCase):
     @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
     def test_run_preview_command(self, mock_render, mock_get_run_ctx):
         mock_run_service = MagicMock()
-        mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
         mock_ctx = MagicMock()
@@ -289,7 +290,7 @@ class TestRunHandler(unittest.TestCase):
             alias="test-alias",
             run_ctx=mock_ctx,
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
             runtime_vars=None,
         )
@@ -306,8 +307,8 @@ class TestRunHandler(unittest.TestCase):
     @patch("cmdbox.cli.handlers.run_handler.get_run_ctx")
     @patch("cmdbox.cli.handlers.run_handler.render_preview_result")
     def test_run_preview_command_with_ctx(self, mock_render, mock_get_run_ctx):
+        self.settings.execution_settings.verbose = True
         mock_run_service = MagicMock()
-        mock_settings = MagicMock(execution_settings=MagicMock(verbose=True))
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
         mock_ctx = MagicMock()
@@ -322,7 +323,7 @@ class TestRunHandler(unittest.TestCase):
             run_ctx=raw_ctx,
             runtime_vars=None,
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -343,7 +344,6 @@ class TestRunHandler(unittest.TestCase):
         self, mock_render, mock_prompt, mock_get_run_ctx
     ):
         mock_run_service = MagicMock()
-        mock_settings = MagicMock()
         mock_console = MagicMock()
         mock_resolve_result = ResolveResult(text="echo hello", trace=[])
         mock_run_service.collect_missing_vars.return_value = ["name"]
@@ -359,7 +359,7 @@ class TestRunHandler(unittest.TestCase):
             run_ctx=mock_ctx,
             runtime_vars=runtime_vars,
             get_run_service=lambda: mock_run_service,
-            get_settings=lambda: mock_settings,
+            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 

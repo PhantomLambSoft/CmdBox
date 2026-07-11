@@ -113,8 +113,8 @@ class TestVariableRepository(unittest.TestCase):
         self.assertEqual("test", Variable.get(Variable.name == "test").name)
 
     def test_get_unknown_variable_raises_exception(self):
-        with self.assertRaises(UnknownNameError):
-            var = self.repo.get_by_name("invalid_name")
+        var = self.repo.get_by_name("invalid_name")
+        self.assertIsNone(var)
 
     def test_variable_name_capitalisation_does_not_matter(self):
         variable = Variable.create(name="test", value="test_value")
@@ -131,13 +131,13 @@ class TestVariableRepository(unittest.TestCase):
         self.assertEqual(variable, var)
 
     def test_get_by_blank_field_raises_exception(self):
-        with self.assertRaises(UnknownNameError):
-            var = self.repo.get_by_name("")
+        var = self.repo.get_by_name("")
+        self.assertIsNone(var)
 
     def test_get_by_other_fields_does_not_work(self):
         Variable.create(name="test", value="test_value")
-        with self.assertRaises(UnknownNameError):
-            var = self.repo.get_by_name("test_value")
+        var = self.repo.get_by_name("test_value")
+        self.assertIsNone(var)
 
     def test_get_by_all_symbols_is_allowed(self):
         Variable.create(name="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|", value="test_value")
