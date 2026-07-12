@@ -161,7 +161,7 @@ def run_update_variable(
 @log_action(__name__, "run_list_variables")
 def run_list_variables(
     *,
-    limit: int,
+    limit: int | None,
     order_by: str,
     tags: list[str] | None,
     fields: list[str] | None = None,
@@ -172,9 +172,12 @@ def run_list_variables(
 ) -> None:
     console = get_console()
     var_service = get_var_services()
+    settings = get_settings()
+
+    if limit is None:
+        limit = settings.default_fields.variable_list_limit
     vars_ = var_service.list_variables(limit=limit, order_by=order_by, tags=tags)
 
-    settings = get_settings()
     fields = get_display_field_resolver().resolve(
         fields,
         default_fields=settings.default_fields.variable_output,
@@ -212,6 +215,8 @@ def run_search_variables(
         aliases=settings.field_aliases.alias_map,
     )
 
+    if limit is None:
+        limit = settings.default_fields.variable_list_limit
     vars_ = var_service.search(term, limit=limit, fields=search_fields)
     console.print(
         render_variable_list(vars_, title="Search Results", fields=output_fields)

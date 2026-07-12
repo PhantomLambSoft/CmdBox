@@ -258,7 +258,7 @@ def run_update_command(
 @log_action(__name__, "run_list_command")
 def run_list_command(
     *,
-    limit: int,
+    limit: int | None,
     order: str,
     tags: list[str] | None,
     fields: list[str] | None = None,
@@ -269,14 +269,16 @@ def run_list_command(
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
-
     settings = get_settings()
+
     resolved_fields = get_display_field_resolver().resolve(
         fields,
         default_fields=settings.default_fields.command_output,
         aliases=settings.field_aliases.alias_map,
     )
 
+    if limit is None:
+        limit = settings.default_fields.command_list_limit
     cmds = cmd_service.list_commands(limit=limit, order_by=order, tags=tags)
     rendered_cmd_list = render_command_list(
         cmds, title="Commands", fields=resolved_fields
@@ -288,7 +290,7 @@ def run_list_command(
 def run_search_command(
     *,
     term: str,
-    limit: int,
+    limit: int | None,
     search_fields: list[str] | None = None,
     fields: list[str] | None = None,
     get_cmd_services: Callable[[], CommandServices],
@@ -312,6 +314,8 @@ def run_search_command(
         aliases=settings.field_aliases.alias_map,
     )
 
+    if limit is None:
+        limit = settings.default_fields.command_list_limit
     cmds = cmd_service.search(term, limit=limit, fields=search_fields)
     rendered_cmd_list = render_command_list(
         cmds, title="Search Results", fields=output_fields
