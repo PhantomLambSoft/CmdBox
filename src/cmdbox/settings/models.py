@@ -59,10 +59,13 @@ class DefaultFields:
     command_search: list[str] = field(
         default_factory=lambda: ["alias", "template", "description"]
     )
+    command_list_limit: int = 25
     variable_output: list[str] = field(default_factory=lambda: ["name", "value"])
     variable_search: list[str] = field(default_factory=lambda: ["name", "value"])
+    variable_list_limit: int = 25
     tag_output: list[str] = field(default_factory=lambda: ["name", "description"])
     tag_search: list[str] = field(default_factory=lambda: ["name", "description"])
+    tag_list_limit: int = 25
 
 
 @dataclass(frozen=True)
