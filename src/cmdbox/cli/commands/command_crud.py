@@ -144,17 +144,16 @@ def update(
     ] = None,
     cwd: Annotated[
         str,
-        typer.Option("--cwd", "-c", help="Working directory to run the command from."),
+        typer.Option("--cwd", help="Working directory to run the command from."),
     ] = None,
     shell: Annotated[
         str,
-        typer.Option("--shell", "-s", help="Shell to use when running the command."),
+        typer.Option("--shell", help="Shell to use when running the command."),
     ] = None,
     env: Annotated[
         list[str],
         typer.Option(
             "--env",
-            "-e",
             help="Environment variable to set when running the command, in KEY=VALUE format.",
         ),
     ] = None,
@@ -162,7 +161,6 @@ def update(
         int,
         typer.Option(
             "--timeout",
-            "-o",
             help="Maximum number of seconds before the process is killed.",
         ),
     ] = None,
