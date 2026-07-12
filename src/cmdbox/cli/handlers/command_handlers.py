@@ -118,9 +118,13 @@ def run_update_command(
     description: Optional[str],
     new_alias: Optional[str],
     cwd: Optional[str],
+    clear_cwd: bool = False,
     shell: Optional[str],
+    clear_shell: bool = False,
     env: Optional[list[str]],
+    clear_env: bool = False,
     timeout: Optional[int],
+    clear_timeout: bool = False,
     set_pairs: Optional[Sequence[str]],
     edit_mode: bool,
     edit_fields: Optional[str],
@@ -135,10 +139,36 @@ def run_update_command(
     cmd = cmd_service.get_command(alias)
     console = get_console()
 
+    clear_flags = {
+        "cwd": clear_cwd,
+        "shell": clear_shell,
+        "env": clear_env,
+        "timeout": clear_timeout,
+    }
+    value_flags = {"cwd": cwd, "shell": shell, "env": env, "timeout": timeout}
+    for name, is_cleared in clear_flags.items():
+        if is_cleared and value_flags[name] is not None:
+            raise typer.BadParameter(f"--{name} cannot be combined with --clear-{name}")
+
     if edit_mode:
-        if any([template, description, new_alias, cwd, shell, env, timeout, set_pairs]):
+        if any(
+            [
+                template,
+                description,
+                new_alias,
+                cwd,
+                clear_cwd,
+                shell,
+                clear_shell,
+                env,
+                clear_env,
+                timeout,
+                clear_timeout,
+                set_pairs,
+            ]
+        ):
             raise typer.BadParameter(
-                "--edit cannot be combined with field options or --set"
+                "--edit cannot be combined with field options, --set or --clear-* flags"
             )
 
         updated_fields: dict[str, Any] = {}
@@ -166,14 +196,6 @@ def run_update_command(
             updated_fields["description"] = prompt_for_description(
                 default=cmd.description
             )
-        if check_field_alias("cwd"):
-            updated_fields["cwd"] = prompt_for_cwd(default=cmd.cwd or "")
-        if check_field_alias("shell"):
-            updated_fields["shell"] = prompt_for_shell(default=cmd.shell or "") or None
-        if check_field_alias("timeout"):
-            updated_fields["timeout"] = prompt_for_timeout(
-                default=str(cmd.timeout) if cmd.timeout else ""
-            )
 
         fields = updated_fields
 
@@ -184,13 +206,25 @@ def run_update_command(
             fields["description"] = description
         if new_alias is not None:
             fields["alias"] = new_alias
-        if cwd is not None:
+
+        if clear_cwd:
+            fields["cwd"] = None
+        elif cwd is not None:
             fields["cwd"] = cwd
-        if shell is not None:
+
+        if clear_shell:
+            fields["shell"] = None
+        elif shell is not None:
             fields["shell"] = shell
-        if env is not None:
+
+        if clear_env:
+            fields["env"] = None
+        elif env is not None:
             fields["env"] = parse_env_pairs(env)
-        if timeout is not None:
+
+        if clear_timeout:
+            fields["timeout"] = None
+        elif timeout is not None:
             fields["timeout"] = timeout
 
         fields = merge_fields(fields, parse_set_pairs(set_pairs))

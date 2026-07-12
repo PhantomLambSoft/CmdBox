@@ -455,6 +455,30 @@ class TestCommandRepository(unittest.TestCase):
         stored = Command.get(Command.id == command.id)
         self.assertEqual(36, stored.used)
 
+    def test_primary_field_raises_exception_on_none_value(self):
+        command = Command.create(
+            alias="test", template="echo test", description="Test command"
+        )
+        with self.assertRaises(UpdateError):
+            self.repo.update(command=command, alias=None)
+        with self.assertRaises(UpdateError):
+            self.repo.update(command=command, template=None)
+
+    def test_secondary_field_allows_none_value(self):
+        command = Command.create(
+            alias="test",
+            template="echo test",
+            description="Test command",
+            cwd="path/to/dir",
+            shell="cmd",
+            timeout=10,
+        )
+        cmd = self.repo.update(command=command, cwd=None, shell=None, timeout=None)
+        self.assertEqual(None, Command.get(Command.alias == "test").cwd)
+        self.assertEqual(None, Command.get(Command.alias == "test").shell)
+        self.assertEqual(None, Command.get(Command.alias == "test").timeout)
+        self.assertEqual(command, cmd)
+
     # =================================================================================
     # SECTION: LIST TESTS
     # =================================================================================

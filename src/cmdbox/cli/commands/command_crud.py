@@ -146,10 +146,16 @@ def update(
         str,
         typer.Option("--cwd", help="Working directory to run the command from."),
     ] = None,
+    clear_cwd: Annotated[
+        bool, typer.Option("--clear-cwd", help="Clear the stored working directory.")
+    ] = False,
     shell: Annotated[
         str,
         typer.Option("--shell", help="Shell to use when running the command."),
     ] = None,
+    clear_shell: Annotated[
+        bool, typer.Option("--clear-shell", help="Clear the stored shell.")
+    ] = False,
     env: Annotated[
         list[str],
         typer.Option(
@@ -157,6 +163,9 @@ def update(
             help="Environment variable to set when running the command, in KEY=VALUE format.",
         ),
     ] = None,
+    clear_env: Annotated[
+        bool, typer.Option("--clear-env", help="Clear stored environment variables.")
+    ] = False,
     timeout: Annotated[
         int,
         typer.Option(
@@ -164,6 +173,9 @@ def update(
             help="Maximum number of seconds before the process is killed.",
         ),
     ] = None,
+    clear_timeout: Annotated[
+        bool, typer.Option("--clear-timeout", help="Clear the stored timeout.")
+    ] = False,
     set_: Annotated[
         list[str],
         typer.Option(
@@ -188,7 +200,8 @@ def update(
     """
     Updates an existing command with the provided options. Each field can be updated
     individually or in bulk using the `--set` option. Using the `--edit` option enables
-    editing the already stored values in an interactive mode.
+    editing the already stored primary values (alias, template, and description) in an
+    interactive mode.
     """
     log.debug(
         "cmd.update called. alias=%s template_provided=%s description_provided=%s new_alias_provided=%s "
@@ -207,9 +220,13 @@ def update(
         description=description,
         new_alias=new_alias,
         cwd=cwd,
+        clear_cwd=clear_cwd,
         shell=shell,
+        clear_shell=clear_shell,
         env=env,
+        clear_env=clear_env,
         timeout=timeout,
+        clear_timeout=clear_timeout,
         set_pairs=set_,
         edit_mode=edit_mode,
         edit_fields=edit_fields,
