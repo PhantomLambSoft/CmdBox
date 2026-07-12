@@ -110,7 +110,6 @@ def update(
         str,
         typer.Option(
             "--edit-fields",
-            "-ef",
             help="A list of fields to be edited in edit mode, separated by commas. Defaults to all fields.",
         ),
     ] = None,
