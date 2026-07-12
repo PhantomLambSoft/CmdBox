@@ -6,7 +6,7 @@ The available subcommands for the `cmd` module are:
 
 - [add](#add)
 - [get](#get)
-- [edit](#edit)
+- [update](#update)
 - [list](#list)
 - [search](#search)
 - [delete](#delete)
@@ -14,6 +14,13 @@ The available subcommands for the `cmd` module are:
 - [untag](#untag)
 
 Some of these subcommands also have aliases available. These will be discussed in the subcommands section.
+
+!!! tip "Skipping the `cmd` prefix"
+    The `cmd` prefix is optional. `cb add prune-docker ...` works the same as `cb cmd add prune-docker ...`, and this
+    applies to every subcommand on this page, including their aliases (`cb ls` works the same as `cb cmd list`).
+    
+    If you have a stored command whose alias happens to match one of these subcommand names, the shorthand will
+    route to the `cmd` subcommand rather than running your stored command. Use `cb run <alias>` in that case.
 
 ## `add`
 
@@ -148,15 +155,33 @@ supply the flag multiple times.
 $ cb cmd update api-start --env HOST=0.0.0.0 --env PORT=9090
 ```
 
+To remove a stored execution context value entirely, use the corresponding `--clear-*` flag instead of supplying a
+new value.
+
+| Flag              | Clears                |
+|-------------------|-----------------------|
+| `--clear-cwd`     | Working directory     |
+| `--clear-shell`   | Shell                 |
+| `--clear-env`     | Environment variables |
+| `--clear-timeout` | Timeout               |
+
+```console
+$ cb cmd update deploy --clear-cwd --clear-timeout
+```
+
+!!! warning
+    A `--clear-*` flag cannot be combined with its corresponding value flag in the same command. For example,
+    `--cwd "/some/path" --clear-cwd` will raise an error.
+
 ### Edit mode
 
-If you want to update the current value of any field without supplying a completely new value, you can use the `--edit`
-(or `-e`) flag. When using `--edit`, you will be prompted to update each field, and the prompt will be pre-filled with
-the current value.
+If you want to update the current value of `alias`, `template`, or `description` without supplying a completely new
+value, you can use the `--edit` (or `-e`) flag. When using `--edit`, you will be prompted to update each of these
+fields, and the prompt will be pre-filled with the current value.
 
 ```console
 $ cb cmd update prune-docker --edit
-
+ 
 ? Enter alias: prune-docker
 ? Enter template: docker system prune
 ? Enter description: Removes all stopped containers, dangling images, and unused networks.
@@ -167,20 +192,13 @@ which fields to update by using the `--edit-fields` flag.
 
 ```console
 $ cb cmd update prune-docker --edit --edit-fields description
-
+ 
 ? Enter description: Removes all stopped containers, dangling images, and unused networks.
 ```
 
-The `--edit-fields` flag also supports the execution context fields `cwd`, `shell`, and `timeout`.
-
-```console
-$ cb cmd update deploy --edit --edit-fields cwd
-
-? Working directory: /home/user/projects/myapp
-```
-
 !!! note
-    Environment variables (`env`) cannot be updated in edit mode. Use the `--env` flag directly instead.
+    Execution context fields (`cwd`, `shell`, `env`, `timeout`) cannot be updated in edit mode. Use the flags described
+    in [Updating execution context](#updating-execution-context) instead.
 
 !!! warning
     `--edit-fields` can only be used in conjunction with the `--edit` flag.
