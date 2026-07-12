@@ -114,7 +114,28 @@ class AliasFallbackGroup(TyperGroup):
             tuple: A tuple containing the command name, the command object, and a list
             of remaining arguments.
         """
-        if args and args[0] in self._shortcut_commands:
-            expanded = self._shortcut_commands[args[0]]
+        if not args:
+            return super().resolve_command(ctx, args)
+
+        cmd_name = args[0]
+
+        if cmd_name in self._shortcut_commands:
+            expanded = self._shortcut_commands[cmd_name]
             return super().resolve_command(ctx, expanded + list(args[1:]))
+
+        if self._is_default_cmd_subcommand(ctx, cmd_name):
+            return super().resolve_command(ctx, ["cmd", cmd_name] + list(args[1:]))
+
         return super().resolve_command(ctx, args)
+
+    def _is_default_cmd_subcommand(self, ctx: typer.Context, cmd_name: str) -> bool:
+        resolved_name = self._command_aliases.get(cmd_name, cmd_name)
+
+        if super().get_command(ctx, resolved_name) is not None:
+            return False
+
+        cmd_group = super().get_command(ctx, "cmd")
+        if cmd_group is None:
+            return False
+
+        return cmd_group.get_command(ctx, cmd_name) is not None
