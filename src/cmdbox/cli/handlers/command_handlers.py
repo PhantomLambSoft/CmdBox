@@ -259,7 +259,7 @@ def run_update_command(
 def run_list_command(
     *,
     limit: int | None,
-    order: str,
+    order: str | None,
     tags: list[str] | None,
     fields: list[str] | None = None,
     get_cmd_services: Callable[[], CommandServices],
@@ -279,6 +279,9 @@ def run_list_command(
 
     if limit is None:
         limit = settings.default_fields.command_list_limit
+    if order is None:
+        order = settings.default_fields.command_default_order
+
     cmds = cmd_service.list_commands(limit=limit, order_by=order, tags=tags)
     rendered_cmd_list = render_command_list(
         cmds, title="Commands", fields=resolved_fields

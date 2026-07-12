@@ -148,14 +148,14 @@ app.command("edit", hidden=True)(update)
 @cli_guard
 def list_vars(
     order: Annotated[
-        str,
+        Optional[str],
         typer.Option(
             "--order",
             "-o",
             help="The field to order the results by.",
             autocompletion=variable_field_options,
         ),
-    ] = "name",
+    ] = None,
     tags: Annotated[
         list[str],
         typer.Option(

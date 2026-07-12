@@ -150,14 +150,14 @@ app.command("edit", hidden=True)(update)
 @cli_guard
 def list_tags(
     order: Annotated[
-        str,
+        Optional[str],
         typer.Option(
             "--order",
             "-o",
             help="The field to order the results by.",
             autocompletion=tag_field_options,
         ),
-    ] = "name",
+    ] = None,
     limit: Annotated[
         Optional[int],
         typer.Option("--limit", "-l", help="The maximum number of results to return."),

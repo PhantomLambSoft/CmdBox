@@ -162,7 +162,7 @@ def run_update_variable(
 def run_list_variables(
     *,
     limit: int | None,
-    order_by: str,
+    order_by: str | None,
     tags: list[str] | None,
     fields: list[str] | None = None,
     get_var_services: Callable[[], VariableServices],
@@ -176,6 +176,9 @@ def run_list_variables(
 
     if limit is None:
         limit = settings.default_fields.variable_list_limit
+    if order_by is None:
+        order_by = settings.default_fields.variable_default_order
+
     vars_ = var_service.list_variables(limit=limit, order_by=order_by, tags=tags)
 
     fields = get_display_field_resolver().resolve(

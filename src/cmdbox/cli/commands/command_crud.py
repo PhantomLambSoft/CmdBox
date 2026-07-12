@@ -243,14 +243,14 @@ app.command("edit", hidden=True)(update)
 @cli_guard
 def list_cmds(
     order: Annotated[
-        str,
+        Optional[str],
         typer.Option(
             "--order",
             "-o",
             help="The field to order the results by.",
             autocompletion=command_field_options,
         ),
-    ] = "alias",
+    ] = None,
     tags: Annotated[
         list[str] | None,
         typer.Option(

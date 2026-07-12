@@ -151,7 +151,7 @@ def run_update_tag(
 def run_list_tags(
     *,
     limit: int | None,
-    order_by: str,
+    order_by: str | None,
     fields: list[str] | None = None,
     get_tag_services: Callable[[], TagServices],
     get_settings: Callable[[], Settings],
@@ -164,6 +164,9 @@ def run_list_tags(
 
     if limit is None:
         limit = settings.default_fields.tag_list_limit
+    if order_by is None:
+        order_by = settings.default_fields.tag_default_order
+
     tags = tag_service.list_tags(limit=limit, order_by=order_by)
 
     fields = get_display_field_resolver().resolve(
