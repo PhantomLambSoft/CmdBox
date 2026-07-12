@@ -305,8 +305,8 @@ app.command("ls", hidden=True)(list_cmds)
 def search(
     term: Annotated[str, typer.Argument(help="The search term to use.")],
     limit: Annotated[
-        int, typer.Option(help="The maximum number of results to return.")
-    ] = 10,
+        Optional[int], typer.Option(help="The maximum number of results to return.")
+    ] = None,
     search_fields: Annotated[
         list[str],
         typer.Option(
