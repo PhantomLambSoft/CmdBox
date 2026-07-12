@@ -1,4 +1,4 @@
-from typing import Annotated
+from typing import Annotated, Optional
 import logging
 
 import typer
@@ -261,9 +261,9 @@ def list_cmds(
         ),
     ] = None,
     limit: Annotated[
-        int,
+        Optional[int],
         typer.Option("--limit", "-l", help="The maximum number of results to return."),
-    ] = 10,
+    ] = None,
     fields: Annotated[
         list[str] | None,
         typer.Option(
