@@ -193,9 +193,6 @@ class TestCommandHandlers(unittest.TestCase):
                 get_console=self.get_console,
             )
 
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_timeout")
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_shell")
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_cwd")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
@@ -206,17 +203,11 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_desc,
         mock_prompt_tmpl,
         mock_prompt_alias,
-        mock_prompt_cwd,
-        mock_prompt_shell,
-        mock_prompt_timeout,
     ):
         mock_render.return_value = "rendered_update"
         mock_prompt_alias.return_value = "new_prompt_alias"
         mock_prompt_tmpl.return_value = "new_prompt_tmpl"
         mock_prompt_desc.return_value = "new_prompt_desc"
-        mock_prompt_cwd.return_value = "new_prompt_cwd"
-        mock_prompt_shell.return_value = "new_prompt_shell"
-        mock_prompt_timeout.return_value = "new_prompt_timeout"
 
         mock_cmd = MagicMock()
         mock_cmd.id = 1
@@ -254,22 +245,13 @@ class TestCommandHandlers(unittest.TestCase):
             template="new_prompt_tmpl",
             description="new_prompt_desc",
             alias="new_prompt_alias",
-            cwd="new_prompt_cwd",
-            shell="new_prompt_shell",
-            timeout="new_prompt_timeout",
         )
         mock_render.assert_called_once_with(mock_updated_cmd)
         mock_prompt_desc.assert_called_once_with(default="old_desc")
         mock_prompt_tmpl.assert_called_once_with(ANY, default="old_tmpl")
         mock_prompt_alias.assert_called_once_with(ANY, default="old_alias")
-        mock_prompt_cwd.assert_called_once_with(default="")
-        mock_prompt_shell.assert_called_once_with(default="")
-        mock_prompt_timeout.assert_called_once_with(default="")
         self.mock_console.print.assert_called_with("rendered_update")
 
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_timeout")
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_shell")
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_cwd")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
@@ -280,17 +262,11 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_desc,
         mock_prompt_tmpl,
         mock_prompt_alias,
-        mock_prompt_cwd,
-        mock_prompt_shell,
-        mock_prompt_timeout,
     ):
         mock_render.return_value = "rendered_update"
         mock_prompt_alias.return_value = "new_prompt_alias"
         mock_prompt_tmpl.return_value = "new_prompt_tmpl"
         mock_prompt_desc.return_value = "new_prompt_desc"
-        mock_prompt_cwd.return_value = "new_prompt_cwd"
-        mock_prompt_shell.return_value = "new_prompt_shell"
-        mock_prompt_timeout.return_value = "new_prompt_timeout"
 
         mock_cmd = MagicMock()
         mock_cmd.id = 1
@@ -333,9 +309,6 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_alias.assert_not_called()
         self.mock_console.print.assert_called_with("rendered_update")
 
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_timeout")
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_shell")
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_cwd")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
@@ -346,17 +319,11 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_desc,
         mock_prompt_tmpl,
         mock_prompt_alias,
-        mock_prompt_cwd,
-        mock_prompt_shell,
-        mock_prompt_timeout,
     ):
         mock_render.return_value = "rendered_update"
         mock_prompt_alias.return_value = "new_prompt_alias"
         mock_prompt_tmpl.return_value = "new_prompt_tmpl"
         mock_prompt_desc.return_value = "new_prompt_desc"
-        mock_prompt_cwd.return_value = "new_prompt_cwd"
-        mock_prompt_shell.return_value = "new_prompt_shell"
-        mock_prompt_timeout.return_value = "new_prompt_timeout"
 
         mock_cmd = MagicMock()
         mock_cmd.id = 1
@@ -400,9 +367,6 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_alias.assert_not_called()
         self.mock_console.print.assert_called_with("rendered_update")
 
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_timeout")
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_shell")
-    @patch("cmdbox.cli.handlers.command_handlers.prompt_for_cwd")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_alias")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_template")
     @patch("cmdbox.cli.handlers.command_handlers.prompt_for_description")
@@ -413,17 +377,11 @@ class TestCommandHandlers(unittest.TestCase):
         mock_prompt_desc,
         mock_prompt_tmpl,
         mock_prompt_alias,
-        mock_prompt_cwd,
-        mock_prompt_shell,
-        mock_prompt_timeout,
     ):
         mock_render.return_value = "rendered_update"
         mock_prompt_alias.return_value = "new_prompt_alias"
         mock_prompt_tmpl.return_value = "new_prompt_tmpl"
         mock_prompt_desc.return_value = "new_prompt_desc"
-        mock_prompt_cwd.return_value = "new_prompt_cwd"
-        mock_prompt_shell.return_value = "new_prompt_shell"
-        mock_prompt_timeout.return_value = "new_prompt_timeout"
 
         mock_cmd = MagicMock()
         mock_cmd.id = 1
@@ -559,6 +517,43 @@ class TestCommandHandlers(unittest.TestCase):
                 get_settings=self.get_settings,
                 get_console=self.get_console,
             )
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
+    def test_run_update_command_with_clear_fields_supplied(self, mock_render):
+        mock_cmd = MagicMock()
+        mock_cmd.id = 1
+        mock_cmd.env = None
+        mock_cmd.cwd = "path/to/dir"
+        mock_cmd.shell = "cmd"
+        self.mock_cmd_services.get_command.return_value = mock_cmd
+        mock_updated_cmd = MagicMock()
+        self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
+        mock_render.return_value = "rendered_update"
+
+        run_update_command(
+            alias="alias1",
+            template=None,
+            description=None,
+            new_alias=None,
+            cwd=None,
+            clear_cwd=True,
+            shell=None,
+            clear_shell=True,
+            env=None,
+            timeout=None,
+            set_pairs=None,
+            edit_mode=False,
+            edit_fields=None,
+            get_cmd_services=self.get_cmd_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.update_command.assert_called_with(
+            "alias1", cwd=None, shell=None
+        )
+        mock_render.assert_called_once_with(mock_updated_cmd)
+        self.mock_console.print.assert_called_with("rendered_update")
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
     def test_run_list_command(self, mock_render):
