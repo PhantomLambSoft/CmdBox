@@ -98,6 +98,8 @@ class FieldAliases:
 class UiSettings:
     use_color: bool = True
     colors: UIStyle = UIStyle()
+    pager_mode: str = "auto"  # auto | always | never
+    pager_min_rows: int = 25
 
 
 @dataclass(frozen=True)
