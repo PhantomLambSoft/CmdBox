@@ -2,9 +2,17 @@
 
 ## [Unreleased]
 
+### Added
+- Unrecognized top-level commands now default to the `cmd` subcommand group, so `cb add ...` now works the same as
+ `cb cmd add ...`. The `cmd` prefix is still supported also.
+
 ### Fixed
 - Duplicate shorthand flags on various commands
 - 2-letter shorthand flags that did not work
+- Unable to set secondary cmd params to null
+  - `cwd`, `env`, `shell`, and `timeout`, could not be set back to null once they were set. Each param now has a
+  `--clear-*` flag to reset them to null.
+  - These params are no longer prompted for in cmd update's `--edit` mode.
 
 ## [1.1.3] - 2026-07-08
 
