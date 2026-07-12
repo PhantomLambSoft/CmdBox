@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Duplicate shorthand flags on various commands
+- 2-letter shorthand flags that did not work
+
 ## [1.1.3] - 2026-07-08
 
 ### Fixed
