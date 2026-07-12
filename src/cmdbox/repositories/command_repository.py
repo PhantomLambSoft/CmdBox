@@ -164,14 +164,18 @@ class CommandRepository(BaseRepository[Command]):
             for key, value in fields.items():
                 if not hasattr(command, key):
                     raise ValidationError(f"Invalid field: {key}")
-                if value is not None:
-                    setattr(command, key, value)
+                setattr(command, key, value)
             command.save()
             return command
         except IntegrityError as exc:
             alias = fields.get("alias", "")
             if alias is not None and self._is_unique_alias_violation(exc):
                 raise AliasConflictError(alias=alias) from exc
+            if alias is None:
+                raise UpdateError("Alias cannot be null")
+            template = fields.get("template", "")
+            if template is None:
+                raise UpdateError("Template cannot be null")
             raise
 
     def record_use(self, command_id: int) -> None:
