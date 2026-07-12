@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -159,9 +159,9 @@ def list_tags(
         ),
     ] = "name",
     limit: Annotated[
-        int,
+        Optional[int],
         typer.Option("--limit", "-l", help="The maximum number of results to return."),
-    ] = 10,
+    ] = None,
     fields: Annotated[
         list[str] | None,
         typer.Option(
@@ -201,8 +201,8 @@ def search(
         ),
     ],
     limit: Annotated[
-        int, typer.Option(help="The maximum number of results to return.")
-    ] = 10,
+        Optional[int], typer.Option(help="The maximum number of results to return.")
+    ] = None,
     search_fields: Annotated[
         list[str],
         typer.Option(
