@@ -11,11 +11,28 @@ class CommandValidatorConfig:
         {
             "help",
             "init",
+            "add",
+            "get",
+            "update",
+            "edit",
             "list",
             "ls",
-            "add",
-            "rm",
+            "search",
+            "find",
             "delete",
+            "del",
+            "rm",
+            "remove",
+            "tag",
+            "untag",
+            # Reserved because they are options to the run command and can conflict when dynamically called
+            "preview",
+            "cwd",
+            "env",
+            "capture",
+            "shell",
+            "emit",
+            "verbose",
         }
     )
     max_alias_length: int = 100

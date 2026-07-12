@@ -11,7 +11,9 @@ class TestAliasFallbackGroup(unittest.TestCase):
     def setUp(self):
         self.runner = CliRunner()
 
-    def _build_app(self, with_run: bool = True, with_tag: bool = True):
+    def _build_app(
+        self, with_run: bool = True, with_tag: bool = True, with_cmd_group: bool = True
+    ):
         calls = {}
         app = typer.Typer(cls=AliasFallbackGroup)
 
@@ -43,6 +45,20 @@ class TestAliasFallbackGroup(unittest.TestCase):
         @app.command("status")
         def status():
             calls["status_called"] = True
+
+        if with_cmd_group:
+            cmd_app = typer.Typer()
+
+            @cmd_app.command("add")
+            def cmd_add(name: str, value: str = typer.Option(None, "--value")):
+                calls["cmd_add_name"] = name
+                calls["cmd_add_value"] = value
+
+            @cmd_app.command("list")
+            def cmd_list():
+                calls["cmd_list_called"] = True
+
+            app.add_typer(cmd_app, name="cmd")
 
         return app, calls
 
@@ -195,3 +211,91 @@ class TestAliasFallbackGroup(unittest.TestCase):
         cmd = typer_group.get_command(ctx, "deploy")
 
         self.assertIsNone(cmd)
+
+    # --- Default-to-cmd-group fallback (resolve_command) ---
+
+    def test_unrecognized_top_level_token_routes_to_matching_cmd_subcommand(self):
+        app, calls = self._build_app()
+
+        result = self.runner.invoke(app, ["add", "deploy"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual("deploy", calls.get("cmd_add_name"))
+        self.assertNotIn("alias", calls)
+
+    def test_default_cmd_subcommand_forwards_options(self):
+        app, calls = self._build_app()
+
+        result = self.runner.invoke(
+            app, ["add", "deploy", "--value", "kubectl apply -f k8s/"]
+        )
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual("deploy", calls.get("cmd_add_name"))
+        self.assertEqual("kubectl apply -f k8s/", calls.get("cmd_add_value"))
+
+    def test_explicit_cmd_prefix_still_works(self):
+        app, calls = self._build_app()
+
+        result = self.runner.invoke(app, ["cmd", "add", "deploy"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual("deploy", calls.get("cmd_add_name"))
+
+    def test_second_cmd_subcommand_also_routes_correctly(self):
+        app, calls = self._build_app()
+
+        result = self.runner.invoke(app, ["list"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertTrue(calls.get("cmd_list_called", False))
+
+    def test_real_top_level_command_is_not_shadowed_by_cmd_group(self):
+        app, calls = self._build_app()
+
+        result = self.runner.invoke(app, ["status"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertTrue(calls.get("status_called", False))
+        self.assertNotIn("cmd_add_name", calls)
+
+    def test_shortcut_expansion_takes_priority_over_default_cmd_group(self):
+        # Guards the ordering in resolve_command: shortcuts must be checked
+        # before the default-to-cmd-group lookup, even if a shortcut key
+        # happens to collide with a cmd subcommand name.
+        app, calls = self._build_app()
+        original_shortcuts = AliasFallbackGroup._shortcut_commands
+        AliasFallbackGroup._shortcut_commands = {
+            **original_shortcuts,
+            "list": ["status"],
+        }
+        try:
+            result = self.runner.invoke(app, ["list"])
+        finally:
+            AliasFallbackGroup._shortcut_commands = original_shortcuts
+
+        self.assertEqual(0, result.exit_code)
+        self.assertTrue(calls.get("status_called", False))
+        self.assertNotIn("cmd_list_called", calls)
+
+    def test_name_not_in_cmd_group_falls_through_to_alias_fallback(self):
+        # Unrecognized names that aren't cmd subcommands should still hit
+        # the existing stored-command-alias fallback in get_command, not
+        # be swallowed by the new default-to-cmd-group check.
+        app, calls = self._build_app()
+
+        result = self.runner.invoke(app, ["deploy", "some-item"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertEqual("deploy", calls.get("alias"))
+        self.assertEqual("some-item", calls.get("item"))
+
+    def test_no_cmd_group_registered_does_not_break_resolution(self):
+        # If an app built with AliasFallbackGroup has no 'cmd' group at all,
+        # _is_default_cmd_subcommand must fail closed rather than error.
+        app, calls = self._build_app(with_cmd_group=False)
+
+        result = self.runner.invoke(app, ["status"])
+
+        self.assertEqual(0, result.exit_code)
+        self.assertTrue(calls.get("status_called", False))
