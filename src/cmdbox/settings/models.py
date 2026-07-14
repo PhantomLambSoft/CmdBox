@@ -100,6 +100,8 @@ class UiSettings:
     colors: UIStyle = UIStyle()
     pager_mode: str = "auto"  # auto | always | never
     pager_min_rows: int = 25
+    pager_page_step: int = 15
+    pager_line_step: int = 1
 
 
 @dataclass(frozen=True)
