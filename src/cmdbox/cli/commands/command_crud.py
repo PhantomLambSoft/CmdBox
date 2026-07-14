@@ -264,6 +264,13 @@ def list_cmds(
         Optional[int],
         typer.Option("--limit", "-l", help="The maximum number of results to return."),
     ] = None,
+    page: Annotated[
+        bool | None,
+        typer.Option(
+            "--page/--no-page",
+            help="Force or disable the interactive pager, overriding the pager mode in settings.",
+        ),
+    ] = None,
     fields: Annotated[
         list[str] | None,
         typer.Option(
@@ -279,17 +286,19 @@ def list_cmds(
     with the `--limit` option. The output fields can be customized with the `--field` option.
     """
     log.debug(
-        "cmd.list called. order=%s, tags=%s, limit=%s, fields=%s",
+        "cmd.list called. order=%s, tags=%s, limit=%s, fields=%s, page=%s",
         order,
         tags,
         limit,
         fields,
+        page,
     )
     command_handlers.run_list_command(
         limit=limit,
         order=order,
         tags=tags,
         fields=fields,
+        page=page,
         get_cmd_services=container.get_command_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
@@ -306,6 +315,13 @@ def search(
     term: Annotated[str, typer.Argument(help="The search term to use.")],
     limit: Annotated[
         Optional[int], typer.Option(help="The maximum number of results to return.")
+    ] = None,
+    page: Annotated[
+        bool | None,
+        typer.Option(
+            "--page/--no-page",
+            help="Force or disable the interactive pager, overriding the pager mode in settings.",
+        ),
     ] = None,
     search_fields: Annotated[
         list[str],
@@ -332,17 +348,19 @@ def search(
     `--field` option.
     """
     log.debug(
-        "cmd.search called. term=%s, limit=%s, search_fields=%s, fields=%s",
+        "cmd.search called. term=%s, limit=%s, search_fields=%s, fields=%s, page=%s",
         term,
         limit,
         search_fields,
         fields,
+        page,
     )
     command_handlers.run_search_command(
         term=term,
         limit=limit,
         search_fields=search_fields,
         fields=fields,
+        page=page,
         get_cmd_services=container.get_command_services,
         get_settings=container.get_settings,
         get_console=container.get_console,

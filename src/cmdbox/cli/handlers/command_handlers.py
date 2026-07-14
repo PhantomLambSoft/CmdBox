@@ -259,6 +259,7 @@ def run_update_command(
 def run_list_command(
     *,
     limit: int | None,
+    page: bool | None,
     order: str | None,
     tags: list[str] | None,
     fields: list[str] | None = None,
@@ -286,7 +287,7 @@ def run_list_command(
     rendered_cmd_list = render_command_list(
         cmds, title="Commands", fields=resolved_fields
     )
-    console.print(rendered_cmd_list)
+    console.print_paged(rendered_cmd_list, row_count=len(cmds), force=page)
 
 
 @log_action(__name__, "run_search_command")
@@ -294,6 +295,7 @@ def run_search_command(
     *,
     term: str,
     limit: int | None,
+    page: bool | None,
     search_fields: list[str] | None = None,
     fields: list[str] | None = None,
     get_cmd_services: Callable[[], CommandServices],
@@ -323,7 +325,7 @@ def run_search_command(
     rendered_cmd_list = render_command_list(
         cmds, title="Search Results", fields=output_fields
     )
-    console.print(rendered_cmd_list)
+    console.print_paged(rendered_cmd_list, row_count=len(cmds), force=page)
 
 
 @log_action(__name__, "run_delete_command")

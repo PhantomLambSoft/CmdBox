@@ -169,6 +169,13 @@ def list_vars(
         Optional[int],
         typer.Option("--limit", "-l", help="The maximum number of results to return."),
     ] = None,
+    page: Annotated[
+        bool | None,
+        typer.Option(
+            "--page/--no-page",
+            help="Force or disable the interactive pager, overriding the pager mode in settings.",
+        ),
+    ] = None,
     fields: Annotated[
         list[str] | None,
         typer.Option(
@@ -184,17 +191,19 @@ def list_vars(
     with the `--limit` option. The output fields can be customized with the `--field` option.
     """
     log.debug(
-        "var.list called. order=%s, tags=%s, limit=%s, fields=%s",
+        "var.list called. order=%s, tags=%s, limit=%s, fields=%s, page=%s",
         order,
         tags,
         limit,
         fields,
+        page,
     )
     variable_handlers.run_list_variables(
         order_by=order,
         tags=tags,
         limit=limit,
         fields=fields,
+        page=page,
         get_var_services=container.get_variable_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
@@ -211,6 +220,13 @@ def search(
     term: Annotated[str, typer.Argument(help="The search term to use.")],
     limit: Annotated[
         Optional[int], typer.Option(help="The maximum number of results to return.")
+    ] = None,
+    page: Annotated[
+        bool | None,
+        typer.Option(
+            "--page/--no-page",
+            help="Force or disable the interactive pager, overriding the pager mode in settings.",
+        ),
     ] = None,
     search_fields: Annotated[
         list[str],
@@ -237,15 +253,17 @@ def search(
     `--field` option.
     """
     log.debug(
-        "var.search called. term=%s, limit=%s, search_fields=%s, fields=%s",
+        "var.search called. term=%s, limit=%s, search_fields=%s, fields=%s, page=%s",
         term,
         limit,
         search_fields,
         fields,
+        page,
     )
     variable_handlers.run_search_variables(
         term=term,
         limit=limit,
+        page=page,
         search_fields=search_fields,
         fields=fields,
         get_var_services=container.get_variable_services,

@@ -151,6 +151,7 @@ def run_update_tag(
 def run_list_tags(
     *,
     limit: int | None,
+    page: bool | None,
     order_by: str | None,
     fields: list[str] | None = None,
     get_tag_services: Callable[[], TagServices],
@@ -175,7 +176,8 @@ def run_list_tags(
         aliases=settings.field_aliases.alias_map,
     )
 
-    console.print(render_tag_list(tags, title="Tags", fields=fields))
+    rendered_tag_list = render_tag_list(tags, title="Tags", fields=fields)
+    console.print_paged(rendered_tag_list, row_count=len(tags), force=page)
 
 
 @log_action(__name__, "run_search_tags")
@@ -183,6 +185,7 @@ def run_search_tags(
     *,
     term: str,
     limit: int | None,
+    page: bool | None,
     search_fields: list[str] | None = None,
     fields: list[str] | None = None,
     get_tag_services: Callable[[], TagServices],
@@ -209,7 +212,10 @@ def run_search_tags(
     if limit is None:
         limit = settings.default_fields.tag_list_limit
     tags = tag_service.search(term, limit=limit, fields=search_fields)
-    console.print(render_tag_list(tags, title="Search Results", fields=output_fields))
+    rendered_tag_list = render_tag_list(
+        tags, title="Search Results", fields=output_fields
+    )
+    console.print_paged(rendered_tag_list, row_count=len(tags), force=page)
 
 
 @log_action(__name__, "run_delete_tag")
