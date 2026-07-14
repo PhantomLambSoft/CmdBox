@@ -53,6 +53,8 @@ def get_console() -> ConsoleUI:
         use_color=_settings.ui.use_color,
         pager_mode=_settings.ui.pager_mode,
         pager_min_rows=_settings.ui.pager_min_rows,
+        pager_page_step=_settings.ui.pager_page_step,
+        pager_line_step=_settings.ui.pager_line_step,
     )
 
 

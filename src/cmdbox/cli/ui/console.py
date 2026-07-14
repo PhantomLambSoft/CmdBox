@@ -14,12 +14,16 @@ class ConsoleUI:
         use_color: bool = True,
         pager_mode: str = "auto",
         pager_min_rows: int = 25,
+        pager_page_step: int = 15,
+        pager_line_step: int = 1,
     ):
         self._console = Console(theme=theme, no_color=not use_color, highlight=False)
         self._theme = theme
         self._user_color = use_color
         self._pager_mode = pager_mode
         self._pager_min_rows = pager_min_rows
+        self._pager_page_step = pager_page_step
+        self._pager_line_step = pager_line_step
 
     def print(self, thing) -> None:
         self._console.print(thing)
@@ -46,7 +50,7 @@ class ConsoleUI:
             return
 
         ansi_text = self._render_to_ansi(renderable)
-        pager = Pager()
+        pager = Pager(page_step=self._pager_page_step, line_step=self._pager_line_step)
         pager.run_pager(ansi_text)
 
     def _should_page(self, *, row_count: int | None, force: bool | None) -> bool:
