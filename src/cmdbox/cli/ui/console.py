@@ -2,7 +2,7 @@ import io
 
 from rich.console import Console
 
-from cmdbox.cli.ui.pager import run_pager
+from cmdbox.cli.ui.pager import Pager
 
 
 class ConsoleUI:
@@ -46,7 +46,8 @@ class ConsoleUI:
             return
 
         ansi_text = self._render_to_ansi(renderable)
-        run_pager(ansi_text)
+        pager = Pager()
+        pager.run_pager(ansi_text)
 
     def _should_page(self, *, row_count: int | None, force: bool | None) -> bool:
         if force is not None:
