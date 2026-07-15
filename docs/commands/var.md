@@ -144,6 +144,21 @@ By default, only the name, value, and tags of each variable are displayed, and t
 The default fields and ordering can be adjusted in your settings, or by supplying additional options to the `list`
 subcommand.
 
+List can be filtered to only variables that have a specific tag.
+
+```console
+> cb var list --tag network
+```
+
+The `--tag` flag can be used multiple times to filter by multiple tags.
+
+```console
+> cb var list --tag network --tag work
+```
+
+!!! tip
+    When using multiple `--tag` flags, variables that feature any of those tags will be displayed.
+
 To change the order, use the `--order` flag and specify the field you want to order by.
 
 ```console
@@ -162,20 +177,8 @@ If you have a large number of variables, use the `--limit` flag to cap the numbe
 > cb var list --limit 10
 ```
 
-List can also be filtered to only variables that have a specific tag.
-
-```console
-> cb var list --tag network
-```
-
-The `--tag` flag can be used multiple times to filter by multiple tags.
-
-```console
-> cb var list --tag network --tag work
-```
-
-!!! tip
-    When using multiple `--tag` flags, variables that feature any of those tags will be displayed.
+Results are paged the same way `cmd list` results are. See [Paging output](cmd.md#paging-output) for keybindings
+and configuration. The `--page` and `--no-page` flags work the same way here.
  
 ---
 
@@ -215,7 +218,9 @@ As with `list`, you can limit the number of results using the `--limit` flag.
 > cb var search 192 --limit 3
 ```
 
- 
+Search results are paged the same way. See [Paging output](cmd.md#paging-output).
+
+
 ---
 
 ## `delete`
@@ -231,7 +236,7 @@ you want to remove.
 ```
 
 !!! warning
-This action cannot be undone.
+    This action cannot be undone.
  
 ---
 

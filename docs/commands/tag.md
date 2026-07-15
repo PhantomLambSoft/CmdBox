@@ -154,6 +154,9 @@ If you have a large number of tags, use the `--limit` flag to cap the number of 
 > cb tag list --limit 10
 ```
 
+Results are paged the same way `cmd list` results are. See [Paging output](cmd.md#paging-output) for keybindings
+and configuration. The `--page` and `--no-page` flags work the same way here.
+
  
 ---
 
@@ -193,7 +196,9 @@ As with `list`, you can limit the number of results using the `--limit` flag.
 > cb tag search docker --limit 5
 ```
 
- 
+Search results are paged the same way. See [Paging output](cmd.md#paging-output).
+
+
 ---
 
 ## `delete`
