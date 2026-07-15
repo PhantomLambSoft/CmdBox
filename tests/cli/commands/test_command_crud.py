@@ -121,6 +121,7 @@ class TestCommandCrud(unittest.TestCase):
         # Verify
         mock_run_list_command.assert_called_once_with(
             limit=limit,
+            page=None,
             order=order,
             tags=tags,
             fields=fields,
@@ -148,6 +149,7 @@ class TestCommandCrud(unittest.TestCase):
         mock_run_search_command.assert_called_once_with(
             term=term,
             limit=limit,
+            page=None,
             search_fields=search_fields,
             fields=fields,
             get_cmd_services=mock_container.get_command_services,

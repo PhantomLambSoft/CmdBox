@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -150,18 +150,25 @@ app.command("edit", hidden=True)(update)
 @cli_guard
 def list_tags(
     order: Annotated[
-        str,
+        Optional[str],
         typer.Option(
             "--order",
             "-o",
             help="The field to order the results by.",
             autocompletion=tag_field_options,
         ),
-    ] = "name",
+    ] = None,
     limit: Annotated[
-        int,
+        Optional[int],
         typer.Option("--limit", "-l", help="The maximum number of results to return."),
-    ] = 10,
+    ] = None,
+    page: Annotated[
+        bool | None,
+        typer.Option(
+            "--page/--no-page",
+            help="Force or disable the interactive pager, overriding the pager mode in settings.",
+        ),
+    ] = None,
     fields: Annotated[
         list[str] | None,
         typer.Option(
@@ -176,9 +183,16 @@ def list_tags(
     Displays all stored tags in a list format. The number of results can be limited
     with the `--limit` option. The output fields can be customized with the `--field` option.
     """
-    log.debug("tag.list called. order=%s, limit=%s, fields=%s", order, limit, fields)
+    log.debug(
+        "tag.list called. order=%s, limit=%s, fields=%s, page=%s",
+        order,
+        limit,
+        fields,
+        page,
+    )
     tag_handlers.run_list_tags(
         limit=limit,
+        page=page,
         fields=fields,
         order_by=order,
         get_tag_services=container.get_tag_services,
@@ -201,8 +215,15 @@ def search(
         ),
     ],
     limit: Annotated[
-        int, typer.Option(help="The maximum number of results to return.")
-    ] = 10,
+        Optional[int], typer.Option(help="The maximum number of results to return.")
+    ] = None,
+    page: Annotated[
+        bool | None,
+        typer.Option(
+            "--page/--no-page",
+            help="Force or disable the interactive pager, overriding the pager mode in settings.",
+        ),
+    ] = None,
     search_fields: Annotated[
         list[str],
         typer.Option(
@@ -228,15 +249,17 @@ def search(
     `--field` option.
     """
     log.debug(
-        "tag.search called. term=%s, limit=%s, search_fields=%s, fields=%s",
+        "tag.search called. term=%s, limit=%s, search_fields=%s, fields=%s, page=%s",
         term,
         limit,
         search_fields,
         fields,
+        page,
     )
     tag_handlers.run_search_tags(
         term=term,
         limit=limit,
+        page=page,
         search_fields=search_fields,
         fields=fields,
         get_tag_services=container.get_tag_services,

@@ -48,7 +48,14 @@ def get_settings() -> Settings:
 def get_console() -> ConsoleUI:
     _settings = get_settings()
     theme = build_theme(_settings)
-    return ConsoleUI(theme, use_color=_settings.ui.use_color)
+    return ConsoleUI(
+        theme,
+        use_color=_settings.ui.use_color,
+        pager_mode=_settings.ui.pager_mode,
+        pager_min_rows=_settings.ui.pager_min_rows,
+        pager_page_step=_settings.ui.pager_page_step,
+        pager_line_step=_settings.ui.pager_line_step,
+    )
 
 
 @lru_cache(maxsize=1)

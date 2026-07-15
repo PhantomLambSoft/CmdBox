@@ -150,8 +150,9 @@ def run_update_tag(
 @log_action(__name__, "run_list_tags")
 def run_list_tags(
     *,
-    limit: int,
-    order_by: str,
+    limit: int | None,
+    page: bool | None,
+    order_by: str | None,
     fields: list[str] | None = None,
     get_tag_services: Callable[[], TagServices],
     get_settings: Callable[[], Settings],
@@ -160,23 +161,31 @@ def run_list_tags(
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
+    settings = get_settings()
+
+    if limit is None:
+        limit = settings.default_fields.tag_list_limit
+    if order_by is None:
+        order_by = settings.default_fields.tag_default_order
+
     tags = tag_service.list_tags(limit=limit, order_by=order_by)
 
-    settings = get_settings()
     fields = get_display_field_resolver().resolve(
         fields,
         default_fields=settings.default_fields.tag_output,
         aliases=settings.field_aliases.alias_map,
     )
 
-    console.print(render_tag_list(tags, title="Tags", fields=fields))
+    rendered_tag_list = render_tag_list(tags, title="Tags", fields=fields)
+    console.print_paged(rendered_tag_list, row_count=len(tags), force=page)
 
 
 @log_action(__name__, "run_search_tags")
 def run_search_tags(
     *,
     term: str,
-    limit: int,
+    limit: int | None,
+    page: bool | None,
     search_fields: list[str] | None = None,
     fields: list[str] | None = None,
     get_tag_services: Callable[[], TagServices],
@@ -187,8 +196,8 @@ def run_search_tags(
 ) -> None:
     console = get_console()
     tag_service = get_tag_services()
-
     settings = get_settings()
+
     output_fields = get_display_field_resolver().resolve(
         fields,
         default_fields=settings.default_fields.tag_output,
@@ -200,8 +209,13 @@ def run_search_tags(
         aliases=settings.field_aliases.alias_map,
     )
 
+    if limit is None:
+        limit = settings.default_fields.tag_list_limit
     tags = tag_service.search(term, limit=limit, fields=search_fields)
-    console.print(render_tag_list(tags, title="Search Results", fields=output_fields))
+    rendered_tag_list = render_tag_list(
+        tags, title="Search Results", fields=output_fields
+    )
+    console.print_paged(rendered_tag_list, row_count=len(tags), force=page)
 
 
 @log_action(__name__, "run_delete_tag")

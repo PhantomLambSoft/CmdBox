@@ -161,8 +161,9 @@ def run_update_variable(
 @log_action(__name__, "run_list_variables")
 def run_list_variables(
     *,
-    limit: int,
-    order_by: str,
+    limit: int | None,
+    page: bool | None,
+    order_by: str | None,
     tags: list[str] | None,
     fields: list[str] | None = None,
     get_var_services: Callable[[], VariableServices],
@@ -172,16 +173,23 @@ def run_list_variables(
 ) -> None:
     console = get_console()
     var_service = get_var_services()
+    settings = get_settings()
+
+    if limit is None:
+        limit = settings.default_fields.variable_list_limit
+    if order_by is None:
+        order_by = settings.default_fields.variable_default_order
+
     vars_ = var_service.list_variables(limit=limit, order_by=order_by, tags=tags)
 
-    settings = get_settings()
     fields = get_display_field_resolver().resolve(
         fields,
         default_fields=settings.default_fields.variable_output,
         aliases=settings.field_aliases.alias_map,
     )
 
-    console.print(render_variable_list(vars_, title="Variables", fields=fields))
+    rendered_var_list = render_variable_list(vars_, title="Variables", fields=fields)
+    console.print_paged(rendered_var_list, row_count=len(vars_), force=page)
 
 
 @log_action(__name__, "run_search_variables")
@@ -189,6 +197,7 @@ def run_search_variables(
     *,
     term: str,
     limit: int,
+    page: bool | None,
     search_fields: list[str] | None = None,
     fields: list[str] | None = None,
     get_var_services: Callable[[], VariableServices],
@@ -212,10 +221,13 @@ def run_search_variables(
         aliases=settings.field_aliases.alias_map,
     )
 
+    if limit is None:
+        limit = settings.default_fields.variable_list_limit
     vars_ = var_service.search(term, limit=limit, fields=search_fields)
-    console.print(
-        render_variable_list(vars_, title="Search Results", fields=output_fields)
+    rendered_var_list = render_variable_list(
+        vars_, title="Search Results", fields=output_fields
     )
+    console.print_paged(rendered_var_list, row_count=len(vars_), force=page)
 
 
 @log_action(__name__, "run_delete_variable")

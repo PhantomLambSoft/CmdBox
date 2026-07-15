@@ -99,6 +99,37 @@ General user interface settings.
 Controls whether CmdBox uses colors and styles in terminal output. Set to `false` to disable all
 styling, which can be useful in environments that do not support ANSI color codes or when piping
 output to other tools.
+
+#### `pager_mode`
+
+**Default:** `"auto"`
+
+Controls when the interactive pager activates for `list` and `search` output. Accepts `"auto"`, `"always"`, or
+`"never"`.
+
+- `"auto"`: pages automatically once results exceed `pager_min_rows` (see below), but only when output is going
+  to a terminal.
+- `"always"`: always pages when output is going to a terminal, regardless of result count.
+- `"never"`: never pages automatically. `--pager` on the command line still opens it for that invocation.
+
+#### `pager_min_rows`
+
+**Default:** `25`
+
+The number of result rows that triggers the pager automatically when `pager_mode` is `"auto"`. Ignored for other
+modes.
+
+#### `pager_page_step`
+
+**Default:** `15`
+
+The number of lines scrolled per page when using `Ctrl+D`, `Ctrl+U`, `Page Down`, or `Page Up` inside the pager.
+
+#### `pager_line_step`
+
+**Default:** `1`
+
+The number of lines scrolled per keypress when using `j`, `k`, `↓`, or `↑` inside the pager.
  
 ---
 
@@ -187,14 +218,20 @@ Controls which fields are shown by default in output and search results. Each ke
 of field names. Any field available on the underlying model can be included — these are just the
 defaults. You can always request specific fields at runtime using the `--fields` flag.
 
-| Key | Default Fields |
-|-----|---------------|
-| `command_output` | `alias`, `template`, `description` |
-| `command_search` | `alias`, `template`, `description` |
-| `variable_output` | `name`, `value` |
-| `variable_search` | `name`, `value` |
-| `tag_output` | `name`, `description` |
-| `tag_search` | `name`, `description` |
+| Key                       | Default Fields                     |
+|---------------------------|------------------------------------|
+| `command_output`          | `alias`, `template`, `description` |
+| `command_search`          | `alias`, `template`, `description` |
+| `command_list_limit`      | `25`                               |
+| `command_default_order`   | `alias`                            |
+| `variable_output`         | `name`, `value`                    |
+| `variable_search`         | `name`, `value`                    |
+| `variable_list_limit`     | `25`                               |
+| `variable_default_order`  | `name`                             |
+| `tag_output`              | `name`, `description`              |
+| `tag_search`              | `name`, `description`              |
+| `tag_list_limit`          | `25`                               |
+| `tag_default_order`       | `name`                             |
 
  
 ---

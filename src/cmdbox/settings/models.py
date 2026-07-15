@@ -59,10 +59,16 @@ class DefaultFields:
     command_search: list[str] = field(
         default_factory=lambda: ["alias", "template", "description"]
     )
+    command_list_limit: int = 25
+    command_default_order: str = "alias"
     variable_output: list[str] = field(default_factory=lambda: ["name", "value"])
     variable_search: list[str] = field(default_factory=lambda: ["name", "value"])
+    variable_list_limit: int = 25
+    variable_default_order: str = "name"
     tag_output: list[str] = field(default_factory=lambda: ["name", "description"])
     tag_search: list[str] = field(default_factory=lambda: ["name", "description"])
+    tag_list_limit: int = 25
+    tag_default_order: str = "name"
 
 
 @dataclass(frozen=True)
@@ -92,6 +98,10 @@ class FieldAliases:
 class UiSettings:
     use_color: bool = True
     colors: UIStyle = UIStyle()
+    pager_mode: str = "auto"  # auto | always | never
+    pager_min_rows: int = 25
+    pager_page_step: int = 15
+    pager_line_step: int = 1
 
 
 @dataclass(frozen=True)

@@ -228,6 +228,9 @@ $ cb cmd list --order description
 
 ![Command list order by description output](../assets/cmd/cmd-list-order-by-description-output.svg)
 
+!!! tip
+    Default order for commands is `alias`, but this can be adjusted in the settings.
+
 To change the displayed fields, use the `--field` flag and specify the fields you want to display.
 
 ```console
@@ -235,13 +238,6 @@ $ cb cmd list --field alias --field template
 ```
 
 ![Command list alias template only output](../assets/cmd/cmd-list-alias-template-only-output.svg)
-
-If you have a large database of commands, you may only want to list some of them. For this, you can use the `--limit`
-flag.
-
-```console
-$ cb cmd list --limit 10
-```
 
 List can also be limited to only commands that feature a specific tag.
 
@@ -257,6 +253,52 @@ $ cb cmd list --tag dev --tag docker --tag production
 
 !!! tip
     When using multiple `--tag` flags, commands that feature any of those tags will be displayed.
+
+If you have a large database of commands, you may only want to list some of them. For this, you can use the `--limit`
+flag.
+
+```console
+$ cb cmd list --limit 10
+```
+
+!!! tip
+    Default limit is 25, but this can be adjusted in the settings.
+
+### Paging output
+
+If the results do not fit on one screen, CmdBox opens an interactive pager rather than printing everything to a
+long scrollback. By default this happens automatically once a result set exceeds a configurable number of rows.
+
+Inside the pager:
+
+| Key                    | Action               |
+|------------------------|----------------------|
+| `j` / `↓`              | Scroll down one line |
+| `k` / `↑`              | Scroll up one line   |
+| `Ctrl+D` / `Page Down` | Scroll down one page |
+| `Ctrl+U` / `Page Up`   | Scroll up one page   |
+| `g`                    | Jump to the top      |
+| `G`                    | Jump to the bottom   |
+| `q` / `Esc`            | Quit the pager       |
+
+These keybindings are also shown at the bottom of the pager itself.
+
+You can override the configured behavior for a single command using `--page` or `--no-page`.
+
+```console
+$ cb cmd list --page
+```
+
+```console
+$ cb cmd list --no-page
+```
+
+!!! note
+    The pager only activates when output is going to your terminal. Redirecting or piping output
+    (`cb cmd list > commands.txt`) never triggers the pager.
+
+    Paging behavior, including whether it is on by default and how many rows it takes to trigger it, can be
+    configured in [settings](settings.md#ui).
 
 ## `search`
 
@@ -292,6 +334,13 @@ As with the list command, you can also limit the number of results returned by u
 
 ```console
 $ cb cmd search pip --limit 3
+```
+
+Search results are paged the same way list results are. See [Paging output](#paging-output) above, the `--page`
+and `--no-page` flags are available on `search` as well.
+
+```console
+$ cb cmd search pip --page
 ```
 
 ## `delete`

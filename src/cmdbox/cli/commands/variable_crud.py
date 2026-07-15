@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -148,14 +148,14 @@ app.command("edit", hidden=True)(update)
 @cli_guard
 def list_vars(
     order: Annotated[
-        str,
+        Optional[str],
         typer.Option(
             "--order",
             "-o",
             help="The field to order the results by.",
             autocompletion=variable_field_options,
         ),
-    ] = "name",
+    ] = None,
     tags: Annotated[
         list[str],
         typer.Option(
@@ -166,9 +166,16 @@ def list_vars(
         ),
     ] = None,
     limit: Annotated[
-        int,
+        Optional[int],
         typer.Option("--limit", "-l", help="The maximum number of results to return."),
-    ] = 10,
+    ] = None,
+    page: Annotated[
+        bool | None,
+        typer.Option(
+            "--page/--no-page",
+            help="Force or disable the interactive pager, overriding the pager mode in settings.",
+        ),
+    ] = None,
     fields: Annotated[
         list[str] | None,
         typer.Option(
@@ -184,17 +191,19 @@ def list_vars(
     with the `--limit` option. The output fields can be customized with the `--field` option.
     """
     log.debug(
-        "var.list called. order=%s, tags=%s, limit=%s, fields=%s",
+        "var.list called. order=%s, tags=%s, limit=%s, fields=%s, page=%s",
         order,
         tags,
         limit,
         fields,
+        page,
     )
     variable_handlers.run_list_variables(
         order_by=order,
         tags=tags,
         limit=limit,
         fields=fields,
+        page=page,
         get_var_services=container.get_variable_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
@@ -210,8 +219,15 @@ app.command("ls", hidden=True)(list_vars)
 def search(
     term: Annotated[str, typer.Argument(help="The search term to use.")],
     limit: Annotated[
-        int, typer.Option(help="The maximum number of results to return.")
-    ] = 10,
+        Optional[int], typer.Option(help="The maximum number of results to return.")
+    ] = None,
+    page: Annotated[
+        bool | None,
+        typer.Option(
+            "--page/--no-page",
+            help="Force or disable the interactive pager, overriding the pager mode in settings.",
+        ),
+    ] = None,
     search_fields: Annotated[
         list[str],
         typer.Option(
@@ -237,15 +253,17 @@ def search(
     `--field` option.
     """
     log.debug(
-        "var.search called. term=%s, limit=%s, search_fields=%s, fields=%s",
+        "var.search called. term=%s, limit=%s, search_fields=%s, fields=%s, page=%s",
         term,
         limit,
         search_fields,
         fields,
+        page,
     )
     variable_handlers.run_search_variables(
         term=term,
         limit=limit,
+        page=page,
         search_fields=search_fields,
         fields=fields,
         get_var_services=container.get_variable_services,
