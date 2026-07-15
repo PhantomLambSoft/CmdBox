@@ -406,6 +406,7 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.return_value = "rendered_list"
         run_list_variables(
             limit=10,
+            page=None,
             order_by="name",
             tags=["t1"],
             fields=["f1"],
@@ -418,7 +419,7 @@ class TestVariableHandlers(unittest.TestCase):
             limit=10, order_by="name", tags=["t1"]
         )
         mock_render.assert_called_once_with(vars_, title="Variables", fields=["f1"])
-        self.mock_console.print.assert_called_with("rendered_list")
+        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=2, force=None)
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_list_variables_uses_correct_defaults_from_settings(self, mock_render):
@@ -431,6 +432,7 @@ class TestVariableHandlers(unittest.TestCase):
         ]
         run_list_variables(
             limit=10,
+            page=None,
             order_by="name",
             tags=["t1"],
             fields=None,
@@ -445,7 +447,7 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             vars_, title="Variables", fields=["default_field_one", "default_field_two"]
         )
-        self.mock_console.print.assert_called_with("rendered_list")
+        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=3, force=None)
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_list_variables_uses_all_keyword_correctly(self, mock_render):
@@ -454,6 +456,7 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.return_value = "rendered_list"
         run_list_variables(
             limit=10,
+            page=None,
             order_by="name",
             tags=["t1"],
             fields=["all"],
@@ -468,7 +471,7 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             vars_, title="Variables", fields=self.DISPLAY_FIELDS
         )
-        self.mock_console.print.assert_called_with("rendered_list")
+        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=2, force=None)
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_search_variables(self, mock_render):
@@ -478,6 +481,7 @@ class TestVariableHandlers(unittest.TestCase):
         run_search_variables(
             term="term",
             limit=5,
+            page=None,
             search_fields=["sf1"],
             fields=["f1"],
             get_var_services=self.get_var_services,
@@ -492,7 +496,7 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             vars_, title="Search Results", fields=["f1"]
         )
-        self.mock_console.print.assert_called_with("rendered_search")
+        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=1, force=None)
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_search_variables_uses_correct_defaults_from_settings(
@@ -512,6 +516,7 @@ class TestVariableHandlers(unittest.TestCase):
         run_search_variables(
             term="term",
             limit=5,
+            page=None,
             search_fields=None,
             fields=None,
             get_var_services=self.get_var_services,
@@ -530,7 +535,7 @@ class TestVariableHandlers(unittest.TestCase):
             title="Search Results",
             fields=["default_field_one", "default_field_two"],  # output fields
         )
-        self.mock_console.print.assert_called_with("rendered_search")
+        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=3, force=None)
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_search_variables_uses_all_keyword_correctly(self, mock_render):
@@ -540,6 +545,7 @@ class TestVariableHandlers(unittest.TestCase):
         run_search_variables(
             term="term",
             limit=5,
+            page=None,
             search_fields=["all"],
             fields=["all"],
             get_var_services=self.get_var_services,
@@ -554,7 +560,7 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             vars_, title="Search Results", fields=self.DISPLAY_FIELDS
         )
-        self.mock_console.print.assert_called_with("rendered_search")
+        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=1, force=None)
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_deleted")
     def test_run_delete_variable_success(self, mock_render):
