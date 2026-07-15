@@ -5,6 +5,11 @@
 ### Added
 - Unrecognized top-level commands now default to the `cmd` subcommand group, so `cb add ...` now works the same as
  `cb cmd add ...`. The `cmd` prefix is still supported also.
+- Paging to list and search commands for cmd, var, and tag.
+- New user defined defaults available in settings
+    - Limit for list and search
+    - Default order for list and search
+    - Pager functionality defaults
 
 ### Fixed
 - Duplicate shorthand flags on various commands
