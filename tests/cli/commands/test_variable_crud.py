@@ -105,6 +105,7 @@ class TestVariableCrud(unittest.TestCase):
             order_by=order,
             tags=tags,
             limit=limit,
+            page=None,
             fields=fields,
             get_var_services=mock_container.get_variable_services,
             get_settings=mock_container.get_settings,
@@ -130,6 +131,7 @@ class TestVariableCrud(unittest.TestCase):
         mock_run_search_variables.assert_called_once_with(
             term=term,
             limit=limit,
+            page=None,
             search_fields=search_fields,
             fields=fields,
             get_var_services=mock_container.get_variable_services,

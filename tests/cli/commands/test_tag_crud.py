@@ -95,6 +95,7 @@ class TestTagCrud(unittest.TestCase):
         # Verify
         mock_run_list_tags.assert_called_once_with(
             limit=limit,
+            page=None,
             fields=fields,
             order_by=order,
             get_tag_services=mock_container.get_tag_services,
@@ -121,6 +122,7 @@ class TestTagCrud(unittest.TestCase):
         mock_run_search_tags.assert_called_once_with(
             term=term,
             limit=limit,
+            page=None,
             search_fields=search_fields,
             fields=fields,
             get_tag_services=mock_container.get_tag_services,
