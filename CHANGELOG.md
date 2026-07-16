@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.2.0] - 2026-07-16
 
 ### Added
 - Unrecognized top-level commands now default to the `cmd` subcommand group, so `cb add ...` now works the same as
@@ -19,6 +19,7 @@
   `--clear-*` flag to reset them to null.
   - These params are no longer prompted for in cmd update's `--edit` mode.
 - `cb settings data-dir` not working on platforms other than Windows.
+
 
 ## [1.1.3] - 2026-07-08
 
