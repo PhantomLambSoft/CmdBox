@@ -119,7 +119,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_all_symbols_and_numbers_are_allowed_in_alias(self):
         """Commands are allowed to have symbols and numbers in their aliases."""
         self.repo.create(
-            alias="test-1!@#$%^&*()_+-=[]\;/.,<>?:{}|",
+            alias="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|",
             template="echo test",
             description="Test command",
         )
@@ -134,7 +134,7 @@ class TestCommandRepository(unittest.TestCase):
         """Commands are allowed to have weird characters in their templates."""
         self.repo.create(
             alias="test",
-            template="echo test!@#$%^&*()_+-=[]\;/.,<>?:{}",
+            template="echo test!@#$%^&*()_+-=[]\\;/.,<>?:{}",
             description="Test command",
         )
 
@@ -245,11 +245,11 @@ class TestCommandRepository(unittest.TestCase):
 
     def test_get_command_with_all_symbols_and_numbers_is_allowed(self):
         Command.create(
-            alias="test-1!@#$%^&*()_+-=[]\;/.,<>?:{}|",
+            alias="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|",
             template="echo test",
             description="Test command",
         )
-        self.repo.get_by_alias(alias="test-1!@#$%^&*()_+-=[]\;/.,<>?:{}|")
+        self.repo.get_by_alias(alias="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|")
 
     def test_get_command_allows_unicode_query(self):
         Command.create(alias="git-✨", template="echo test", description="Test command")
