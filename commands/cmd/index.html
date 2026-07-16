@@ -746,6 +746,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="list">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#paging-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paging output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1259,6 +1276,23 @@
     </span>
   </a>
   
+    <nav class="md-nav" aria-label="list">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#paging-output" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Paging output
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -1336,7 +1370,7 @@
 <ul>
 <li><a href="#add">add</a></li>
 <li><a href="#get">get</a></li>
-<li><a href="#edit">edit</a></li>
+<li><a href="#update">update</a></li>
 <li><a href="#list">list</a></li>
 <li><a href="#search">search</a></li>
 <li><a href="#delete">delete</a></li>
@@ -1344,6 +1378,13 @@
 <li><a href="#untag">untag</a></li>
 </ul>
 <p>Some of these subcommands also have aliases available. These will be discussed in the subcommands section.</p>
+<div class="admonition tip">
+<p class="admonition-title">Skipping the <code>cmd</code> prefix</p>
+<p>The <code>cmd</code> prefix is optional. <code>cb add prune-docker ...</code> works the same as <code>cb cmd add prune-docker ...</code>, and this
+applies to every subcommand on this page, including their aliases (<code>cb ls</code> works the same as <code>cb cmd list</code>).</p>
+<p>If you have a stored command whose alias happens to match one of these subcommand names, the shorthand will
+route to the <code>cmd</code> subcommand rather than running your stored command. Use <code>cb run &lt;alias&gt;</code> in that case.</p>
+</div>
 <h2 id="add"><code>add</code><a class="headerlink" href="#add" title="Permanent link">&para;</a></h2>
 <p>The <code>add</code> subcommand adds new commands to your CmdBox database.</p>
 <p>When creating a command, you only have to provide an alias. You will be prompted for the rest of the fields.</p>
@@ -1459,30 +1500,61 @@ should be separated by a comma with no spaces.</p>
 supply the flag multiple times.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>update<span class="w"> </span>api-start<span class="w"> </span>--env<span class="w"> </span><span class="nv">HOST</span><span class="o">=</span><span class="m">0</span>.0.0.0<span class="w"> </span>--env<span class="w"> </span><span class="nv">PORT</span><span class="o">=</span><span class="m">9090</span>
 </code></pre></div>
+<p>To remove a stored execution context value entirely, use the corresponding <code>--clear-*</code> flag instead of supplying a
+new value.</p>
+<table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>Clears</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>--clear-cwd</code></td>
+<td>Working directory</td>
+</tr>
+<tr>
+<td><code>--clear-shell</code></td>
+<td>Shell</td>
+</tr>
+<tr>
+<td><code>--clear-env</code></td>
+<td>Environment variables</td>
+</tr>
+<tr>
+<td><code>--clear-timeout</code></td>
+<td>Timeout</td>
+</tr>
+</tbody>
+</table>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>update<span class="w"> </span>deploy<span class="w"> </span>--clear-cwd<span class="w"> </span>--clear-timeout
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>A <code>--clear-*</code> flag cannot be combined with its corresponding value flag in the same command. For example,
+<code>--cwd "/some/path" --clear-cwd</code> will raise an error.</p>
+</div>
 <h3 id="edit-mode">Edit mode<a class="headerlink" href="#edit-mode" title="Permanent link">&para;</a></h3>
-<p>If you want to update the current value of any field without supplying a completely new value, you can use the <code>--edit</code>
-(or <code>-e</code>) flag. When using <code>--edit</code>, you will be prompted to update each field, and the prompt will be pre-filled with
-the current value.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>update<span class="w"> </span>prune-docker<span class="w"> </span>--edit
-<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
-<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="go">? Enter alias: prune-docker</span>
-<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="go">? Enter template: docker system prune</span>
-<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="go">? Enter description: Removes all stopped containers, dangling images, and unused networks.</span>
+<p>If you want to update the current value of <code>alias</code>, <code>template</code>, or <code>description</code> without supplying a completely new
+value, you can use the <code>--edit</code> (or <code>-e</code>) flag. When using <code>--edit</code>, you will be prompted to update each of these
+fields, and the prompt will be pre-filled with the current value.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>update<span class="w"> </span>prune-docker<span class="w"> </span>--edit
+<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
+<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">? Enter alias: prune-docker</span>
+<a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="go">? Enter template: docker system prune</span>
+<a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="go">? Enter description: Removes all stopped containers, dangling images, and unused networks.</span>
 </code></pre></div>
 <p>If you know you only want to update a specific field and you do not want to iterate through each field, you can specify
 which fields to update by using the <code>--edit-fields</code> flag.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>update<span class="w"> </span>prune-docker<span class="w"> </span>--edit<span class="w"> </span>--edit-fields<span class="w"> </span>description
-<a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a>
-<a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="go">? Enter description: Removes all stopped containers, dangling images, and unused networks.</span>
-</code></pre></div>
-<p>The <code>--edit-fields</code> flag also supports the execution context fields <code>cwd</code>, <code>shell</code>, and <code>timeout</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>update<span class="w"> </span>deploy<span class="w"> </span>--edit<span class="w"> </span>--edit-fields<span class="w"> </span>cwd
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>update<span class="w"> </span>prune-docker<span class="w"> </span>--edit<span class="w"> </span>--edit-fields<span class="w"> </span>description
 <a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>
-<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">? Working directory: /home/user/projects/myapp</span>
+<a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="go">? Enter description: Removes all stopped containers, dangling images, and unused networks.</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Environment variables (<code>env</code>) cannot be updated in edit mode. Use the <code>--env</code> flag directly instead.</p>
+<p>Execution context fields (<code>cwd</code>, <code>shell</code>, <code>env</code>, <code>timeout</code>) cannot be updated in edit mode. Use the flags described
+in <a href="#updating-execution-context">Updating execution context</a> instead.</p>
 </div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -1504,23 +1576,86 @@ command.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--order<span class="w"> </span>description
 </code></pre></div>
 <p><img alt="Command list order by description output" src="../../assets/cmd/cmd-list-order-by-description-output.svg" /></p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Default order for commands is <code>alias</code>, but this can be adjusted in the settings.</p>
+</div>
 <p>To change the displayed fields, use the <code>--field</code> flag and specify the fields you want to display.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--field<span class="w"> </span><span class="nb">alias</span><span class="w"> </span>--field<span class="w"> </span>template
 </code></pre></div>
 <p><img alt="Command list alias template only output" src="../../assets/cmd/cmd-list-alias-template-only-output.svg" /></p>
-<p>If you have a large database of commands, you may only want to list some of them. For this, you can use the <code>--limit</code>
-flag.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
-</code></pre></div>
 <p>List can also be limited to only commands that feature a specific tag.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--tag<span class="w"> </span>dev
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--tag<span class="w"> </span>dev
 </code></pre></div>
 <p>The <code>--tag</code> flag can be used multiple times to list commands that feature multiple tags.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--tag<span class="w"> </span>dev<span class="w"> </span>--tag<span class="w"> </span>docker<span class="w"> </span>--tag<span class="w"> </span>production
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--tag<span class="w"> </span>dev<span class="w"> </span>--tag<span class="w"> </span>docker<span class="w"> </span>--tag<span class="w"> </span>production
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>When using multiple <code>--tag</code> flags, commands that feature any of those tags will be displayed.</p>
+</div>
+<p>If you have a large database of commands, you may only want to list some of them. For this, you can use the <code>--limit</code>
+flag.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--limit<span class="w"> </span><span class="m">10</span>
+</code></pre></div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>Default limit is 25, but this can be adjusted in the settings.</p>
+</div>
+<h3 id="paging-output">Paging output<a class="headerlink" href="#paging-output" title="Permanent link">&para;</a></h3>
+<p>If the results do not fit on one screen, CmdBox opens an interactive pager rather than printing everything to a
+long scrollback. By default this happens automatically once a result set exceeds a configurable number of rows.</p>
+<p>Inside the pager:</p>
+<table>
+<thead>
+<tr>
+<th>Key</th>
+<th>Action</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>j</code> / <code>↓</code></td>
+<td>Scroll down one line</td>
+</tr>
+<tr>
+<td><code>k</code> / <code>↑</code></td>
+<td>Scroll up one line</td>
+</tr>
+<tr>
+<td><code>Ctrl+D</code> / <code>Page Down</code></td>
+<td>Scroll down one page</td>
+</tr>
+<tr>
+<td><code>Ctrl+U</code> / <code>Page Up</code></td>
+<td>Scroll up one page</td>
+</tr>
+<tr>
+<td><code>g</code></td>
+<td>Jump to the top</td>
+</tr>
+<tr>
+<td><code>G</code></td>
+<td>Jump to the bottom</td>
+</tr>
+<tr>
+<td><code>q</code> / <code>Esc</code></td>
+<td>Quit the pager</td>
+</tr>
+</tbody>
+</table>
+<p>These keybindings are also shown at the bottom of the pager itself.</p>
+<p>You can override the configured behavior for a single command using <code>--page</code> or <code>--no-page</code>.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--page
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>list<span class="w"> </span>--no-page
+</code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The pager only activates when output is going to your terminal. Redirecting or piping output
+(<code>cb cmd list &gt; commands.txt</code>) never triggers the pager.</p>
+<p>Paging behavior, including whether it is on by default and how many rows it takes to trigger it, can be
+configured in <a href="../settings/#ui">settings</a>.</p>
 </div>
 <h2 id="search"><code>search</code><a class="headerlink" href="#search" title="Permanent link">&para;</a></h2>
 <div class="admonition tip">
@@ -1529,19 +1664,23 @@ flag.</p>
 </div>
 <p>While <code>list</code> lets you filter your commands by tag, search lets you filter your commands by any of the available fields.
 By default, search is limited to the alias, template, and description fields.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>search<span class="w"> </span>pip
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>search<span class="w"> </span>pip
 </code></pre></div>
 <p><img alt="Command search output" src="../../assets/cmd/cmd-search-output.svg" /></p>
 <p>Using the <code>--in</code> flag, you can limit your search to only the fields you want to search in.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>search<span class="w"> </span>listening<span class="w"> </span>--in<span class="w"> </span>description
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>search<span class="w"> </span>listening<span class="w"> </span>--in<span class="w"> </span>description
 </code></pre></div>
 <p><img alt="Command search in description output" src="../../assets/cmd/cmd-search-in-description-output.svg" /></p>
 <p>And if you only want to see certain fields in the results output, you can use the <code>--field</code> flag.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>search<span class="w"> </span>listening<span class="w"> </span>--in<span class="w"> </span>description<span class="w"> </span>--field<span class="w"> </span><span class="nb">alias</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>search<span class="w"> </span>listening<span class="w"> </span>--in<span class="w"> </span>description<span class="w"> </span>--field<span class="w"> </span><span class="nb">alias</span>
 </code></pre></div>
 <p><img alt="Command search field alias output" src="../../assets/cmd/cmd-search-field-alias-output.svg" /></p>
 <p>As with the list command, you can also limit the number of results returned by using the <code>--limit</code> flag.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>search<span class="w"> </span>pip<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>search<span class="w"> </span>pip<span class="w"> </span>--limit<span class="w"> </span><span class="m">3</span>
+</code></pre></div>
+<p>Search results are paged the same way list results are. See <a href="#paging-output">Paging output</a> above, the <code>--page</code>
+and <code>--no-page</code> flags are available on <code>search</code> as well.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>search<span class="w"> </span>pip<span class="w"> </span>--page
 </code></pre></div>
 <h2 id="delete"><code>delete</code><a class="headerlink" href="#delete" title="Permanent link">&para;</a></h2>
 <div class="admonition tip">
@@ -1550,12 +1689,12 @@ By default, search is limited to the alias, template, and description fields.</p
 </div>
 <p>The <code>delete</code> command is used to remove a command from your database. It only takes the alias of the command you want
 to remove.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>delete<span class="w"> </span>prune-docker
+<div class="highlight"><pre><span></span><code><a id="__codelineno-27-1" name="__codelineno-27-1" href="#__codelineno-27-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>delete<span class="w"> </span>prune-docker
 </code></pre></div>
 <h2 id="tag"><code>tag</code><a class="headerlink" href="#tag" title="Permanent link">&para;</a></h2>
 <p>The <code>tag</code> command is used to add tags to a command.</p>
 <p>To add a tag, supply the command with the alias of the command you want to tag, followed by the name of the tag.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-25-1" name="__codelineno-25-1" href="#__codelineno-25-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>tag<span class="w"> </span>pip-outdated<span class="w"> </span>dev
+<div class="highlight"><pre><span></span><code><a id="__codelineno-28-1" name="__codelineno-28-1" href="#__codelineno-28-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>tag<span class="w"> </span>pip-outdated<span class="w"> </span>dev
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Autocomplete</p>
@@ -1563,7 +1702,7 @@ to remove.</p>
 </div>
 <h2 id="untag"><code>untag</code><a class="headerlink" href="#untag" title="Permanent link">&para;</a></h2>
 <p>Untag works the same as <code>tag</code>.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-26-1" name="__codelineno-26-1" href="#__codelineno-26-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>untag<span class="w"> </span>pip-outdated<span class="w"> </span>dev
+<div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>untag<span class="w"> </span>pip-outdated<span class="w"> </span>dev
 </code></pre></div>
 
 

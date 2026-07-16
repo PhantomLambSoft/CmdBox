@@ -1247,6 +1247,26 @@ intended as a convenience command for users who want quick access to their setti
 <p>Controls whether CmdBox uses colors and styles in terminal output. Set to <code>false</code> to disable all
 styling, which can be useful in environments that do not support ANSI color codes or when piping
 output to other tools.</p>
+<h4 id="pager_mode"><code>pager_mode</code><a class="headerlink" href="#pager_mode" title="Permanent link">&para;</a></h4>
+<p><strong>Default:</strong> <code>"auto"</code></p>
+<p>Controls when the interactive pager activates for <code>list</code> and <code>search</code> output. Accepts <code>"auto"</code>, <code>"always"</code>, or
+<code>"never"</code>.</p>
+<ul>
+<li><code>"auto"</code>: pages automatically once results exceed <code>pager_min_rows</code> (see below), but only when output is going
+  to a terminal.</li>
+<li><code>"always"</code>: always pages when output is going to a terminal, regardless of result count.</li>
+<li><code>"never"</code>: never pages automatically. <code>--pager</code> on the command line still opens it for that invocation.</li>
+</ul>
+<h4 id="pager_min_rows"><code>pager_min_rows</code><a class="headerlink" href="#pager_min_rows" title="Permanent link">&para;</a></h4>
+<p><strong>Default:</strong> <code>25</code></p>
+<p>The number of result rows that triggers the pager automatically when <code>pager_mode</code> is <code>"auto"</code>. Ignored for other
+modes.</p>
+<h4 id="pager_page_step"><code>pager_page_step</code><a class="headerlink" href="#pager_page_step" title="Permanent link">&para;</a></h4>
+<p><strong>Default:</strong> <code>15</code></p>
+<p>The number of lines scrolled per page when using <code>Ctrl+D</code>, <code>Ctrl+U</code>, <code>Page Down</code>, or <code>Page Up</code> inside the pager.</p>
+<h4 id="pager_line_step"><code>pager_line_step</code><a class="headerlink" href="#pager_line_step" title="Permanent link">&para;</a></h4>
+<p><strong>Default:</strong> <code>1</code></p>
+<p>The number of lines scrolled per keypress when using <code>j</code>, <code>k</code>, <code>↓</code>, or <code>↑</code> inside the pager.</p>
 <hr />
 <h3 id="uicolors"><code>[ui.colors]</code><a class="headerlink" href="#uicolors" title="Permanent link">&para;</a></h3>
 <p>Controls the colors and text styles used throughout CmdBox's output. Each key corresponds to a
@@ -1456,6 +1476,14 @@ defaults. You can always request specific fields at runtime using the <code>--fi
 <td><code>alias</code>, <code>template</code>, <code>description</code></td>
 </tr>
 <tr>
+<td><code>command_list_limit</code></td>
+<td><code>25</code></td>
+</tr>
+<tr>
+<td><code>command_default_order</code></td>
+<td><code>alias</code></td>
+</tr>
+<tr>
 <td><code>variable_output</code></td>
 <td><code>name</code>, <code>value</code></td>
 </tr>
@@ -1464,12 +1492,28 @@ defaults. You can always request specific fields at runtime using the <code>--fi
 <td><code>name</code>, <code>value</code></td>
 </tr>
 <tr>
+<td><code>variable_list_limit</code></td>
+<td><code>25</code></td>
+</tr>
+<tr>
+<td><code>variable_default_order</code></td>
+<td><code>name</code></td>
+</tr>
+<tr>
 <td><code>tag_output</code></td>
 <td><code>name</code>, <code>description</code></td>
 </tr>
 <tr>
 <td><code>tag_search</code></td>
 <td><code>name</code>, <code>description</code></td>
+</tr>
+<tr>
+<td><code>tag_list_limit</code></td>
+<td><code>25</code></td>
+</tr>
+<tr>
+<td><code>tag_default_order</code></td>
+<td><code>name</code></td>
 </tr>
 </tbody>
 </table>

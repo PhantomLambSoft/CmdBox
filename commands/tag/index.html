@@ -1300,6 +1300,8 @@ additional options to the <code>list</code> subcommand.</p>
 <p>If you have a large number of tags, use the <code>--limit</code> flag to cap the number of results.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="go">&gt; cb tag list --limit 10</span>
 </code></pre></div>
+<p>Results are paged the same way <code>cmd list</code> results are. See <a href="../cmd/#paging-output">Paging output</a> for keybindings
+and configuration. The <code>--page</code> and <code>--no-page</code> flags work the same way here.</p>
 <hr />
 <h2 id="search"><code>search</code><a class="headerlink" href="#search" title="Permanent link">&para;</a></h2>
 <div class="admonition tip">
@@ -1322,6 +1324,7 @@ field. By default, search looks across all fields.</p>
 <p>As with <code>list</code>, you can limit the number of results using the <code>--limit</code> flag.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="go">&gt; cb tag search docker --limit 5</span>
 </code></pre></div>
+<p>Search results are paged the same way. See <a href="../cmd/#paging-output">Paging output</a>.</p>
 <hr />
 <h2 id="delete"><code>delete</code><a class="headerlink" href="#delete" title="Permanent link">&para;</a></h2>
 <div class="admonition tip">
