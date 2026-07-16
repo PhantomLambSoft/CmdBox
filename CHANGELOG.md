@@ -18,6 +18,7 @@
   - `cwd`, `env`, `shell`, and `timeout`, could not be set back to null once they were set. Each param now has a
   `--clear-*` flag to reset them to null.
   - These params are no longer prompted for in cmd update's `--edit` mode.
+- `cb settings data-dir` not working on platforms other than Windows.
 
 ## [1.1.3] - 2026-07-08
 
