@@ -1,5 +1,7 @@
 import logging
 import os
+import platform
+import subprocess
 from typing import Callable
 
 import typer
@@ -69,4 +71,10 @@ def run_open_data_dir(
         console = get_console()
         console.print(APP_DATA_DIR)
         return
-    os.startfile(APP_DATA_DIR)
+    system = platform.system()
+    if system == "Windows":
+        os.startfile(APP_DATA_DIR)
+    elif system == "Darwin":
+        subprocess.run(["open", str(APP_DATA_DIR)], check=True)
+    else:
+        subprocess.run(["xdg-open", str(APP_DATA_DIR)], check=True)
