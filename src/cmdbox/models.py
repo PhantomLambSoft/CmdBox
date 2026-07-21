@@ -28,6 +28,56 @@ class BaseModel(Model):
         database = db
 
 
+class Profile(BaseModel):
+    """
+    Represents a named profile, a container that commands and variables
+    can be scoped to, and settings can be scoped to via a per-profile
+    settings file.
+
+    Attributes:
+        name (CharField): The unique name of the profile.
+        description (CharField): An optional description of the profile.
+            Defaults to None.
+        date_created (DateTimeField): The date and time when the profile
+            was created. Defaults to the current date and time.
+        last_used (DateTimeField): The date and time when the profile
+            was last used. Defaults to None.
+    """
+
+    name = CharField(unique=True)
+    description = CharField(null=True, default=None)
+    date_created = DateTimeField(default=datetime.now)
+    last_used = DateTimeField(null=True, default=None)
+
+
+class ProfileState(BaseModel):
+    """
+    Represents the state of active profiles for various system configurations.
+
+    The ProfileState class is used to track and manage the active profiles for
+    commands, variables, and settings. It is designed to ensure consistency by
+    keeping references to the currently active profiles within a system. This
+    class extends the BaseModel to integrate seamlessly with the application's
+    database logic and ORM tools.
+
+    Attributes:
+        active_command_profile (ForeignKeyField): Reference to the active command
+            profile. Prevents deletion when referenced by this field.
+        active_variable_profile (ForeignKeyField): Reference to the active variable
+            profile. Prevents deletion when referenced by this field.
+        active_settings_profile (ForeignKeyField): Reference to the active settings
+            profile. Prevents deletion when referenced by this field.
+    """
+
+    active_command_profile = ForeignKeyField(Profile, backref="+", on_delete="RESTRICT")
+    active_variable_profile = ForeignKeyField(
+        Profile, backref="+", on_delete="RESTRICT"
+    )
+    active_settings_profile = ForeignKeyField(
+        Profile, backref="+", on_delete="RESTRICT"
+    )
+
+
 class Command(BaseModel):
     """
     Represents a command model.
@@ -61,6 +111,7 @@ class Command(BaseModel):
     last_updated = DateTimeField(default=datetime.now)
     used = IntegerField(default=0)
     last_used = DateTimeField(null=True, default=None)
+    profile = ForeignKeyField(Profile, backref="commands", on_delete="CASCADE")
 
 
 class Variable(BaseModel):
@@ -79,6 +130,7 @@ class Variable(BaseModel):
     value = CharField()
     date_created = DateTimeField(default=datetime.now)
     last_updated = DateTimeField(default=datetime.now)
+    profile = ForeignKeyField(Profile, backref="variables", on_delete="CASCADE")
 
 
 class Tag(BaseModel):
@@ -162,4 +214,13 @@ class CommandHistory(BaseModel):
         )
 
 
-ALL_MODELS = [Command, Variable, Tag, CommandTag, VariableTag, CommandHistory]
+ALL_MODELS = [
+    Profile,
+    ProfileState,
+    Command,
+    Variable,
+    Tag,
+    CommandTag,
+    VariableTag,
+    CommandHistory,
+]
