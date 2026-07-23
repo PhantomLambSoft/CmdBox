@@ -66,3 +66,4 @@ nav:
         - Overview: concepts/index.md
         - Quoting and Templates: concepts/quoting.md
     - FAQ: faq.md
+    - Comparisons: comparisons.md
