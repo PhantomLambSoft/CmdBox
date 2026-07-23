@@ -17,6 +17,25 @@ through shell history, hunting through notes, or searching online every time.
 CmdBox gives every command a short, memorable alias. Run it instantly. No retyping, no
 searching, no forgetting.
 
+CmdBox isn't a replacement for shell scripting. It's a replacement for the growing pile of aliases and one-off functions
+most terminal users accumulate for commands they run often but don't want to memorize, retype, or maintain as shell 
+functions or scripts.
+
+### How CmdBox Compares
+
+|                                                                  | Alias | Shell function                | CmdBox                   |
+|------------------------------------------------------------------|-------|-------------------------------|--------------------------|
+| Named (non-positional) parameters                                | No    | No                            | Yes                      |
+| Values shared across multiple commands                           | No    | No, unless duplicated         | Yes, via saved variables |
+| Invocable from any shell without a matching per-shell definition | No    | No                            | Yes                      |
+| Searchable, taggable                                             | No    | No                            | Yes                      |
+| Scoped execution history with rerun                              | No    | No                            | Yes                      |
+| Real scripting logic (loops, conditionals)                       | No    | Yes                           | No                       |
+| No installation required                                         | Yes   | Yes                           | No                       |
+
+
+See the [full comparison here](https://phantomlambsoft.github.io/CmdBox/comparisons/) for more details.
+
 ---
 
 ## Features
