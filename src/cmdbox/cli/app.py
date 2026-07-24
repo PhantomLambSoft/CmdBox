@@ -104,6 +104,7 @@ def common(
 ) -> None:
     if test:
         get_db(testing=True)
+        ensure_schema()
 
     try:
         settings = container.get_settings()
@@ -122,8 +123,6 @@ def common(
         f"startup: test={test}, verbose={verbose}, debug={debug}, file_logs={file_logs}"
     )
     log.debug(f"file_logging={log_config.file_enabled} path={log_config.file_path}")
-
-    ensure_schema()
 
     if test:
         console = container.get_console()
