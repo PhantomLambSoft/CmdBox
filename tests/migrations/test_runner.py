@@ -15,10 +15,12 @@ class TestMigrationRunner(unittest.TestCase):
     @patch("cmdbox.migrations.runner.set_user_version")
     @patch("cmdbox.migrations.runner.get_current_version")
     @patch("cmdbox.migrations.runner.get_user_version")
+    @patch("cmdbox.migrations.runner.is_empty_database")
     @patch("cmdbox.migrations.runner.SqliteDatabase")
     def test_ensure_migrated_stamps_fresh_database(
         self,
         mock_sqlite_db,
+        mock_is_empty_database,
         mock_get_user_version,
         mock_get_current_version,
         mock_set_user_version,
@@ -29,11 +31,13 @@ class TestMigrationRunner(unittest.TestCase):
         db = MagicMock()
         mock_sqlite_db.return_value = db
         mock_get_user_version.return_value = 0
+        mock_is_empty_database.return_value = True
         mock_get_current_version.return_value = 4
         mock_datetime.now.return_value.strftime.return_value = "20260101_120000"
 
         runner.ensure_migrated("db.sqlite")
 
+        mock_is_empty_database.assert_called_once_with(db)
         mock_sqlite_db.assert_called_once_with("db.sqlite")
         self.assertEqual(2, db.connect.call_count)
         self.assertEqual(2, db.close.call_count)
@@ -169,7 +173,7 @@ class TestMigrationRunner(unittest.TestCase):
         runner.migrate(
             1,
             original_db,
-            migrations={1: migration_fn},
+            migrations={2: migration_fn},
             timestamp="20260101_142500",
         )
 
@@ -281,3 +285,137 @@ class TestMigrationRunner(unittest.TestCase):
         backup_dir.__truediv__.assert_called_once_with("state_v5_20260101_160100.bak")
         db_path.rename.assert_called_once_with(bak_path)
         self.assertEqual(bak_path, result)
+
+    @patch("cmdbox.migrations.runner.migrate")
+    @patch("cmdbox.migrations.runner.datetime")
+    @patch("cmdbox.migrations.runner.load_migrations")
+    @patch("cmdbox.migrations.runner.get_current_version")
+    @patch("cmdbox.migrations.runner.get_user_version")
+    @patch("cmdbox.migrations.runner.is_empty_database")
+    @patch("cmdbox.migrations.runner.SqliteDatabase")
+    def test_ensure_migrated_treats_unstamped_existing_database_as_v1(
+        self,
+        mock_sqlite_db,
+        mock_is_empty_database,
+        mock_get_user_version,
+        mock_get_current_version,
+        mock_load_migrations,
+        mock_datetime,
+        mock_migrate,
+    ):
+        db = MagicMock()
+        mock_sqlite_db.return_value = db
+        mock_get_user_version.return_value = 0
+        mock_is_empty_database.return_value = False
+        mock_get_current_version.return_value = 2
+        mock_load_migrations.return_value = {1: MagicMock()}
+        mock_datetime.now.return_value.strftime.return_value = "20260101_170000"
+
+        runner.ensure_migrated("db.sqlite")
+
+        mock_is_empty_database.assert_called_once_with(db)
+        mock_migrate.assert_called_once_with(
+            1, Path("db.sqlite"), mock_load_migrations.return_value, "20260101_170000"
+        )
+
+    def test_is_empty_database_returns_true_when_no_user_tables(self):
+        db = MagicMock()
+        cursor = MagicMock()
+        cursor.fetchone.return_value = (0,)
+        db.execute_sql.return_value = cursor
+
+        result = runner.is_empty_database(db)
+
+        self.assertTrue(result)
+        db.execute_sql.assert_called_once_with(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+        )
+
+    def test_is_empty_database_returns_false_when_user_tables_exist(self):
+        db = MagicMock()
+        cursor = MagicMock()
+        cursor.fetchone.return_value = (3,)
+        db.execute_sql.return_value = cursor
+
+        result = runner.is_empty_database(db)
+
+        self.assertFalse(result)
+
+    @patch("cmdbox.migrations.runner.importlib.import_module")
+    @patch("cmdbox.migrations.runner.pkgutil.iter_modules")
+    def test_load_migrations_scans_versions_subpackage_not_top_level(
+        self, mock_iter_modules, mock_import_module
+    ):
+        # Deliberately not mocking the versions package itself: this is the
+        # exact bug that shipped, iter_modules was called against the top-level
+        # migrations package instead of migrations.versions, and a fully mocked
+        # test can't distinguish "scanned the right path" from "scanned nothing."
+        import cmdbox.migrations.versions as versions_pkg
+
+        mock_iter_modules.return_value = []
+
+        runner.load_migrations()
+
+        scanned_path = mock_iter_modules.call_args[0][0]
+        self.assertEqual(list(versions_pkg.__path__), list(scanned_path))
+
+    @patch("cmdbox.migrations.runner.backup_db")
+    @patch("cmdbox.migrations.runner.set_user_version")
+    @patch("cmdbox.migrations.runner.SqliteDatabase")
+    @patch("cmdbox.migrations.runner.Path.rename")
+    @patch("cmdbox.migrations.runner.Path.unlink")
+    @patch("cmdbox.migrations.runner.Path.exists")
+    def test_migrate_removes_stale_new_file_before_migrating(
+        self,
+        mock_exists,
+        mock_unlink,
+        mock_rename,
+        mock_sqlite_db,
+        mock_set_user_version,
+        mock_backup_db,
+    ):
+        original_db = Path("C:\\tmp\\commands.sqlite")
+        migration_fn = MagicMock()
+        new_db = MagicMock()
+        mock_sqlite_db.return_value = new_db
+        mock_exists.return_value = True
+
+        runner.migrate(
+            1,
+            original_db,
+            migrations={2: migration_fn},
+            timestamp="20260101_142500",
+        )
+
+        mock_unlink.assert_called_once_with()
+        migration_fn.assert_called_once()
+
+    @patch("cmdbox.migrations.runner.backup_db")
+    @patch("cmdbox.migrations.runner.set_user_version")
+    @patch("cmdbox.migrations.runner.SqliteDatabase")
+    @patch("cmdbox.migrations.runner.Path.rename")
+    @patch("cmdbox.migrations.runner.Path.unlink")
+    @patch("cmdbox.migrations.runner.Path.exists")
+    def test_migrate_skips_unlink_when_no_stale_new_file(
+        self,
+        mock_exists,
+        mock_unlink,
+        mock_rename,
+        mock_sqlite_db,
+        mock_set_user_version,
+        mock_backup_db,
+    ):
+        original_db = Path("C:\\tmp\\commands.sqlite")
+        migration_fn = MagicMock()
+        new_db = MagicMock()
+        mock_sqlite_db.return_value = new_db
+        mock_exists.return_value = False
+
+        runner.migrate(
+            1,
+            original_db,
+            migrations={2: migration_fn},
+            timestamp="20260101_142500",
+        )
+
+        mock_unlink.assert_not_called()
