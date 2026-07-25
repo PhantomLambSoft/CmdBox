@@ -1,5 +1,12 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- Migration runner not migrating the database correctly.
+
+
 ## [1.2.0] - 2026-07-16
 
 ### Added
