@@ -5,6 +5,7 @@ from datetime import datetime
 from peewee import IntegrityError
 
 from .base_repository import BaseRepository
+from .profile_repository import ProfileRepository
 from .validators import CommandValidator
 from .errors import (
     ValidationError,
@@ -17,15 +18,16 @@ from .errors import (
 )
 from .results import TagAttachResult, TagDetachResult
 from cmdbox.database import db
-from cmdbox.models import Command, Tag, CommandTag
+from cmdbox.models import Command, Tag, CommandTag, Profile
 
 
 class CommandRepository(BaseRepository[Command]):
 
     model = Command
 
-    def __init__(self, validator: CommandValidator | None = None):
+    def __init__(self, validator: CommandValidator | None = None, profile_repository: ProfileRepository | None = None):
         self.validator = validator or CommandValidator()
+        self.profile_repo = profile_repository or ProfileRepository()
 
     def create(
         self,
@@ -36,6 +38,7 @@ class CommandRepository(BaseRepository[Command]):
         shell: str | None = None,
         env: dict[str, str] | None = None,
         timeout: int | None = None,
+        profile: Profile | int | None = None,
     ) -> Command:
         """
         Validates and creates a new Command object based on provided input parameters.
@@ -48,6 +51,8 @@ class CommandRepository(BaseRepository[Command]):
             shell (str | None): Shell to use for command execution.
             env (dict[str, str] | None): Environment variables to set for command execution.
             timeout (int | None): Number of seconds before the process is killed.
+            profile (Profile | int | None): The profile the command is created under. Defaults
+                to the currently active command profile if not provided.
 
         Returns:
             Command: The created Command object.
@@ -61,6 +66,8 @@ class CommandRepository(BaseRepository[Command]):
         self.validator.validate_create(
             alias=alias, template=template, description=description
         )
+        if profile is None:
+            profile = self.profile_repo.get_state().active_command_profile_id
         try:
             return Command.create(
                 alias=alias,
@@ -70,6 +77,7 @@ class CommandRepository(BaseRepository[Command]):
                 shell=shell,
                 env=json.dumps(env) if env else None,
                 timeout=timeout,
+                profile=profile,
             )
         except IntegrityError as exc:
             if alias is not None and self._is_unique_alias_violation(exc):
