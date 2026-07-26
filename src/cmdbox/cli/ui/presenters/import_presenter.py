@@ -10,7 +10,6 @@ from cmdbox.cli.ui.primitives import (
 )
 from cmdbox.services.import_service import ImportResult
 
-
 ACTION_ICONS: dict[str, tuple[str, str]] = {
     "create": ("+", "status.success"),
     "skip": ("~", "ui.muted"),

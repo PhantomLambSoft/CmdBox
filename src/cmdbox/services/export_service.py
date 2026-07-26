@@ -14,7 +14,6 @@ from cmdbox.models import Command, Variable
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.common.io import atomic_write_text
 
-
 _EXPORT_LIMIT = 10_000
 
 

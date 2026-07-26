@@ -575,7 +575,9 @@ class TestCommandHandlers(unittest.TestCase):
             limit=10, order_by="name", tags=["t1"]
         )
         mock_render.assert_called_once_with(cmds, title="Commands", fields=["f1"])
-        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=2, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=2, force=None
+        )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
     def test_run_list_commands_uses_correct_defaults_from_settings(self, mock_render):
@@ -603,7 +605,9 @@ class TestCommandHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             cmds, title="Commands", fields=["test_field_one", "test_field_two"]
         )
-        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=3, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=3, force=None
+        )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
     def test_run_list_command_uses_all_keyword_correctly(self, mock_render):
@@ -627,7 +631,9 @@ class TestCommandHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             cmds, title="Commands", fields=self.DISPLAY_FIELDS
         )
-        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=3, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=3, force=None
+        )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
     def test_run_search_command(self, mock_render):
@@ -650,7 +656,9 @@ class TestCommandHandlers(unittest.TestCase):
             "term", limit=5, fields=["sf1"]
         )
         mock_render.assert_called_once_with(cmds, title="Search Results", fields=["f1"])
-        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=1, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=1, force=None
+        )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_list")
     def test_run_search_commands_uses_correct_defaults_from_settings(self, mock_render):
@@ -711,7 +719,9 @@ class TestCommandHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             cmds, title="Search Results", fields=self.DISPLAY_FIELDS
         )
-        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=1, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=1, force=None
+        )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_deleted")
     def test_run_delete_command_success(self, mock_render):

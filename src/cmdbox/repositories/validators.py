@@ -291,7 +291,9 @@ class ProfileValidator:
         self.validate_name(name)
         self.validate_description(description)
 
-    def validate_update(self, *, name: str | None = None, description: str | None = None) -> None:
+    def validate_update(
+        self, *, name: str | None = None, description: str | None = None
+    ) -> None:
         if name is not None:
             self.validate_name(name)
         if description is not None:

@@ -121,7 +121,6 @@ class AmbiguousHistoryIdEntryError(CmdboxError):
 
 
 class UnknownProfileError(CmdboxError):
-
     """
     Exception raised when attempting to switch to a profile that cannot be found
     by name in the database.
@@ -135,7 +134,6 @@ class UnknownProfileError(CmdboxError):
 
 
 class ProfileConflictError(CmdboxError):
-
     """
     Exception raised when attempting to create a profile with a name that
     already exists.
@@ -149,7 +147,6 @@ class ProfileConflictError(CmdboxError):
 
 
 class ProfileNotEmptyError(CmdboxError):
-
     """
     Exception raised when attempting to delete a profile that still contains
     commands or variables without using '--force'.
@@ -169,7 +166,6 @@ class ProfileNotEmptyError(CmdboxError):
 
 
 class ActiveProfileDeleteError(CmdboxError):
-
     """
     Exception raised when attempting to delete a profile that is currently active for
     commands, variables, or settings.

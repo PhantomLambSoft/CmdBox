@@ -178,13 +178,15 @@ class ProfileRepository(BaseRepository):
             raise ProfileNotEmptyError(
                 name=profile.name,
                 command_count=command_count,
-                variable_count=variable_count
+                variable_count=variable_count,
             )
 
         profile.delete_instance(recursive=force)
         return True
 
-    def list_all(self, order_by: str | Sequence[str] = "name", limit: int = 25) -> list[Profile]:
+    def list_all(
+        self, order_by: str | Sequence[str] = "name", limit: int = 25
+    ) -> list[Profile]:
         """
         Retrieves a list of all Profile objects from the database with optional ordering and
         limiting of results.
@@ -206,7 +208,9 @@ class ProfileRepository(BaseRepository):
         Args:
             profile_id (int): The unique identifier of the profile to update.
         """
-        Profile.update(last_used=datetime.now()).where(Profile.id == profile_id).execute()
+        Profile.update(last_used=datetime.now()).where(
+            Profile.id == profile_id
+        ).execute()
 
     def get_state(self) -> ProfileState:
         """

@@ -93,7 +93,9 @@ def migrate(version: int, path: Path, migrations: dict, timestamp: str) -> None:
 
     new_path = path.parent / (path.name + ".new")
     if new_path.exists():
-        log.debug("removing stale .new file from previous migration attempt: %s", new_path)
+        log.debug(
+            "removing stale .new file from previous migration attempt: %s", new_path
+        )
         new_path.unlink()
 
     log.info("Migrating database v%d -> v%d...", version, target)
