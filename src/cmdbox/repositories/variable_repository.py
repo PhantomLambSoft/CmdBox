@@ -12,6 +12,7 @@ from .errors import (
     UpdateError,
     UnknownVariableError,
 )
+from .profile_repository import ProfileRepository
 from .validators import VariableValidator
 from .results import TagAttachResult, TagDetachResult
 from cmdbox.database import db
@@ -21,16 +22,18 @@ from cmdbox.models import Variable, Tag, VariableTag
 class VariableRepository(BaseRepository[Variable]):
     model = Variable
 
-    def __init__(self, validator: VariableValidator | None = None):
+    def __init__(self, validator: VariableValidator | None = None, profile_repository: ProfileRepository | None = None):
         self.validator = validator or VariableValidator()
+        self.profile_repository = profile_repository
 
-    def create(self, name: str, value: str) -> Variable:
+    def create(self, name: str, value: str, profile: int | None = None) -> Variable:
         """
         Validates and creates a new Variable object based on provided input parameters.
 
         Args:
             name (str): Unique identifier for the variable to be created.
             value (str): The value that will be subbed for the name when executing.
+            profile (int | None): The profile to associate the variable with.
 
         Returns:
             Variable: The created Variable object.
@@ -42,8 +45,10 @@ class VariableRepository(BaseRepository[Variable]):
         """
         name = name.strip() if name else None
         self.validator.validate_create(name=name, value=value)
+        if profile is None:
+            profile = self.profile_repository.get_state().active_variable_profile_id
         try:
-            return Variable.create(name=name, value=value)
+            return Variable.create(name=name, value=value, profile=profile)
         except IntegrityError as exc:
             if name is not None and self._is_unique_name_violation(exc):
                 raise NameConflictError(name=name) from exc
