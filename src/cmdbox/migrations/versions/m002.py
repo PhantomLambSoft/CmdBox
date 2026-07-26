@@ -88,6 +88,13 @@ def migrate(old_db_path: str, new_db_path: str) -> None:
                     "SELECT id, name, value, date_created, last_updated, ? FROM old.variable",
                     (default_profile.id,),
                 )
+                new_db.execute_sql(
+                    "INSERT INTO command_history "
+                    "(id, alias, template, resolved, variables_used, exit_code, ran_at, profile_id) "
+                    "SELECT id, alias, template, resolved, variables_used, exit_code, ran_at, ? "
+                    "FROM old.command_history",
+                    (default_profile.id,),
+                )
             finally:
                 new_db.execute_sql("DETACH DATABASE old")
 
