@@ -118,3 +118,68 @@ class AmbiguousHistoryIdEntryError(CmdboxError):
         super().__init__(
             f"ID prefix '{prefix}' matches multiple history entries. Use more ID characters."
         )
+
+
+class UnknownProfileError(CmdboxError):
+
+    """
+    Exception raised when attempting to switch to a profile that cannot be found
+    by name in the database.
+
+    Attributes:
+        name (str): The name of the profile that could not be found.
+    """
+
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Profile '{name}' not found.")
+
+
+class ProfileConflictError(CmdboxError):
+
+    """
+    Exception raised when attempting to create a profile with a name that
+    already exists.
+
+    Attributes:
+        name (str): The name of the profile that caused the conflict.
+    """
+
+    def __init__(self, name: str) -> None:
+        super().__init__(f"Profile '{name}' already exists.")
+
+
+class ProfileNotEmptyError(CmdboxError):
+
+    """
+    Exception raised when attempting to delete a profile that still contains
+    commands or variables without using '--force'.
+
+    Attributes:
+        name (str): The name of the profile that is not empty.
+        command_count (int): The number of commands in the profile.
+        variable_count (int): The number of variables in the profile.
+    """
+
+    def __init__(self, name: str, command_count: int, variable_count: int) -> None:
+        super().__init__(
+            f"Profile '{name}' still has {command_count} command(s) and "
+            f"{variable_count} variable(s). Use --force to delete them along "
+            f"with the profile."
+        )
+
+
+class ActiveProfileDeleteError(CmdboxError):
+
+    """
+    Exception raised when attempting to delete a profile that is currently active for
+    commands, variables, or settings.
+
+    Attributes:
+        name (str): The name of the profile that is currently active.
+    """
+
+    def __init__(self, name: str) -> None:
+        super().__init__(
+            f"Profile '{name}' is currently active and cannot be deleted. "
+            f"Switch to a different profile first."
+        )
