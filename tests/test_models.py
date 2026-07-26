@@ -28,6 +28,7 @@ class TestCommandModel(unittest.TestCase):
             alias="deploy",
             template="echo Deploying",
             description="Deployment command",
+            profile=1
         )
         cmd = Command.get(alias=command.alias)
         self.assertEqual(Command.select().count(), 1)
@@ -41,6 +42,7 @@ class TestCommandModel(unittest.TestCase):
             template="echo Building",
             description="Build command",
             last_used=datetime.now(),
+            profile=1
         )
         with self.assertRaises(Exception):
             Command.create(
@@ -48,6 +50,7 @@ class TestCommandModel(unittest.TestCase):
                 template="echo Build again",
                 description="Duplicate alias",
                 last_used=datetime.now(),
+                profile=1
             )
 
     def test_update_command_usage(self):
@@ -59,6 +62,7 @@ class TestCommandModel(unittest.TestCase):
             description="Run tests",
             used=5,
             last_used=init_date,
+            profile=1
         )
         command.used += 1
         command.last_used = datetime.now()
@@ -75,12 +79,14 @@ class TestCommandModel(unittest.TestCase):
             template="echo Building",
             description="Build command",
             last_used=datetime.now(),
+            profile=1,
         )
         test_command = Command.create(
             alias="run",
             template="echo run command",
             description="Run command",
             last_used=datetime.now(),
+            profile=1
         )
         with self.assertRaises(Exception):
             test_command.alias = "build"
@@ -93,6 +99,7 @@ class TestCommandModel(unittest.TestCase):
             template="echo Removing",
             description="Temporary command",
             last_used=datetime.now(),
+            profile=1,
         )
         self.assertEqual(Command.select().count(), 1)
         Command.delete().where(Command.id == command.id).execute()
@@ -121,6 +128,7 @@ class TestVariableModule(unittest.TestCase):
         variable = Variable.create(
             name="test_variable",
             value="test_value",
+            profile=1,
         )
         var = Variable.get(name=variable.name)
         self.assertEqual(Variable.select().count(), 1)
@@ -131,11 +139,13 @@ class TestVariableModule(unittest.TestCase):
         Variable.create(
             name="test_variable",
             value="test_value",
+            profile=1,
         )
         with self.assertRaises(Exception):
             Variable.create(
                 name="test_variable",
                 value="test_value_2",
+                profile=1,
             )
 
     def test_update_variable(self):
@@ -143,6 +153,7 @@ class TestVariableModule(unittest.TestCase):
         var = Variable.create(
             name="test_variable",
             value="test_value",
+            profile=1,
         )
         var.value = "new_value"
         var.save()
@@ -154,10 +165,12 @@ class TestVariableModule(unittest.TestCase):
         Variable.create(
             name="test_variable",
             value="test_value",
+            profile=1,
         )
         var = Variable.create(
             name="new_name",
             value="new_value",
+            profile=1,
         )
         with self.assertRaises(Exception):
             var.name = "test_variable"
@@ -168,6 +181,7 @@ class TestVariableModule(unittest.TestCase):
         var = Variable.create(
             name="test_variable",
             value="test_value",
+            profile=1,
         )
         self.assertEqual(Variable.select().count(), 1)
         Variable.delete().where(Variable.id == var.id).execute()
@@ -238,7 +252,7 @@ class TestCommandTagModule(unittest.TestCase):
         Command.delete().execute()
         Tag.delete().execute()
         self.command = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         self.tag = Tag.create(name="test_tag", description="Test tag")
 
@@ -275,7 +289,7 @@ class TestVariableTagModule(unittest.TestCase):
         VariableTag.delete().execute()
         Variable.delete().execute()
         Tag.delete().execute()
-        self.variable = Variable.create(name="test_variable", value="test_value")
+        self.variable = Variable.create(name="test_variable", value="test_value", profile=1)
         self.tag = Tag.create(name="test_tag", description="Test tag")
 
     def test_create_variable_tag(self):
