@@ -271,3 +271,52 @@ class TagValidator:
             raise ValidationError(
                 f"Description is too long. Maximum length is {self.config.max_description_length}."
             )
+
+
+@dataclass(frozen=True)
+class ProfileValidatorConfig:
+
+    # No reserved names for profiles since they can't produce conflicts.
+
+    max_name_length: int = 100
+    max_description_length: int = 100
+
+
+class ProfileValidator:
+
+    def __init__(self, config: ProfileValidatorConfig | None = None):
+        self.config = config or ProfileValidatorConfig()
+
+    def validate_create(self, *, name: str, description: str | None = None) -> None:
+        self.validate_name(name)
+        self.validate_description(description)
+
+    def validate_update(self, *, name: str | None = None, description: str | None = None) -> None:
+        if name is not None:
+            self.validate_name(name)
+        if description is not None:
+            self.validate_description(description)
+
+    def validate_name(self, name: str) -> None:
+        if not name:
+            raise ValidationError("Profile name cannot be empty.")
+
+        stripped = name.strip()
+        if not stripped:
+            raise ValidationError("Profile name cannot contain only whitespace.")
+
+        if " " in stripped:
+            raise ValidationError("Profile name cannot contain spaces.")
+
+        if len(stripped) > self.config.max_name_length:
+            raise ValidationError(
+                f"Profile name '{stripped}' is too long. Maximum length is {self.config.max_name_length}."
+            )
+
+    def validate_description(self, description: str | None) -> None:
+        if not description:
+            return
+        if len(description) > self.config.max_description_length:
+            raise ValidationError(
+                f"Description is too long. Maximum length is {self.config.max_description_length}."
+            )
