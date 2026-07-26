@@ -100,7 +100,7 @@ class Command(BaseModel):
         last_used (DateTimeField): Timestamp indicating when the command was last used.
     """
 
-    alias = CharField(unique=True)
+    alias = CharField()
     template = TextField()
     description = TextField(null=True, default=None)
     cwd = CharField(null=True, default=None)
@@ -112,6 +112,9 @@ class Command(BaseModel):
     used = IntegerField(default=0)
     last_used = DateTimeField(null=True, default=None)
     profile = ForeignKeyField(Profile, backref="commands", on_delete="CASCADE")
+
+    class Meta:
+        indexes = ((("alias", "profile"), True),)
 
 
 class Variable(BaseModel):
@@ -126,11 +129,14 @@ class Variable(BaseModel):
         value (CharField): The value associated with the configuration variable.
     """
 
-    name = CharField(unique=True)
+    name = CharField()
     value = CharField()
     date_created = DateTimeField(default=datetime.now)
     last_updated = DateTimeField(default=datetime.now)
     profile = ForeignKeyField(Profile, backref="variables", on_delete="CASCADE")
+
+    class Meta:
+        indexes = ((("name", "profile"), True),)
 
 
 class Tag(BaseModel):
@@ -205,12 +211,14 @@ class CommandHistory(BaseModel):
     variables_used = TextField(null=True)  # JSON: {"name": "Homer"} or null
     exit_code = IntegerField(null=True)
     ran_at = DateTimeField(default=datetime.now)
+    profile = ForeignKeyField(Profile, backref="history", on_delete="CASCADE")
 
     class Meta:
         table_name = "command_history"
         indexes = (
             (("alias",), False),
             (("ran_at",), False),
+            (("profile",), False),
         )
 
 
