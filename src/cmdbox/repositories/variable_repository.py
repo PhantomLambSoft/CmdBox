@@ -24,7 +24,7 @@ class VariableRepository(BaseRepository[Variable]):
 
     def __init__(self, validator: VariableValidator | None = None, profile_repository: ProfileRepository | None = None):
         self.validator = validator or VariableValidator()
-        self.profile_repository = profile_repository
+        self.profile_repository = profile_repository or ProfileRepository()
 
     def create(self, name: str, value: str, profile: int | None = None) -> Variable:
         """
