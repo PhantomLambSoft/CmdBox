@@ -1,5 +1,7 @@
 import json
 import unittest
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 from peewee import DoesNotExist
 
@@ -34,23 +36,24 @@ class TestCommandRepository(unittest.TestCase):
         Command.delete().execute()
         Tag.delete().execute()
         CommandTag.delete().execute()
-        self.repo = CommandRepository()
+        profile_repo = MagicMock(get_state=MagicMock(return_value=SimpleNamespace(active_command_profile_id=1)))
+        self.repo = CommandRepository(profile_repository=profile_repo)
 
     def _create_command_group(self):
         self.cmd_one = Command.create(
-            alias="test", template="echo e", description="Orangutan aligator"
+            alias="test", template="echo e", description="Orangutan aligator", profile=1
         )
         self.cmd_two = Command.create(
-            alias="test2", template="echo d", description="Harpsichord aligator"
+            alias="test2", template="echo d", description="Harpsichord aligator", profile=1
         )
         self.cmd_three = Command.create(
-            alias="test3", template="echo c", description="Aligator aligator"
+            alias="test3", template="echo c", description="Aligator aligator", profile=1
         )
         self.cmd_four = Command.create(
-            alias="test4", template="echo b", description="Zebra aligator"
+            alias="test4", template="echo b", description="Zebra aligator", profile=1
         )
         self.cmd_five = Command.create(
-            alias="test5", template="echo a", description="Length aligator gator"
+            alias="test5", template="echo a", description="Length aligator gator", profile=1
         )
 
     def _tag_command_group(self):
@@ -86,7 +89,7 @@ class TestCommandRepository(unittest.TestCase):
 
     def test_create_duplicate_alias_raises_exception(self):
         """Command should not be created if an alias already exists."""
-        Command.create(alias="test", template="echo test", description="Test command")
+        Command.create(alias="test", template="echo test", description="Test command", profile=1)
         with self.assertRaises(AliasConflictError):
             self.repo.create(
                 alias="test", template="echo test", description="Test command"
@@ -107,7 +110,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_duplicate_template_is_allowed(self):
         """Commands are allowed to have duplicate templates."""
         self.repo.create(alias="test", template="echo test", description="Test command")
-        Command.create(alias="test2", template="echo test", description="Test command")
+        Command.create(alias="test2", template="echo test", description="Test command", profile=1)
 
     def test_duplicate_description_is_allowed(self):
         """Commands are allowed to have duplicate descriptions."""
@@ -213,33 +216,33 @@ class TestCommandRepository(unittest.TestCase):
     def test_get_command_by_alias(self):
         """Test retrieving a command by its alias."""
         command = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         self.assertEqual(command, self.repo.get_by_alias(alias="test"))
 
     def test_get_by_alias_raises_exception_if_not_found(self):
         """None should be returned if no command is found with the given alias."""
-        Command.create(alias="test", template="echo test", description="Test command")
+        Command.create(alias="test", template="echo test", description="Test command", profile=1)
         with self.assertRaises(UnknownAliasError):
             self.assertIsNone(self.repo.get_by_alias(alias="test_two"))
 
     def test_alias_capitalization_does_not_affect_result(self):
         """Command aliases should be case-insensitive."""
         command = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         self.assertEqual(command, self.repo.get_by_alias(alias="TesT"))
 
     def test_get_by_blank_alias_raises_exception(self):
         """A blank alias should be treated as an unknown alias."""
-        Command.create(alias="test", template="echo test", description="Test command")
+        Command.create(alias="test", template="echo test", description="Test command", profile=1)
         with self.assertRaises(UnknownAliasError):
             self.assertIsNone(self.repo.get_by_alias(alias=""))
 
     def test_get_by_other_fields_does_not_work(self):
         """Commands should only be fetched by alias"""
         template = "echo test"
-        Command.create(alias="test", template=template, description="Test command")
+        Command.create(alias="test", template=template, description="Test command", profile=1)
         with self.assertRaises(UnknownAliasError):
             self.assertIsNone(self.repo.get_by_alias(alias=template))
 
@@ -248,22 +251,23 @@ class TestCommandRepository(unittest.TestCase):
             alias="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|",
             template="echo test",
             description="Test command",
+            profile=1
         )
         self.repo.get_by_alias(alias="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|")
 
     def test_get_command_allows_unicode_query(self):
-        Command.create(alias="git-✨", template="echo test", description="Test command")
+        Command.create(alias="git-✨", template="echo test", description="Test command", profile=1)
         self.repo.get_by_alias(alias="git-✨")
 
     def test_get_command_by_id(self):
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         command = self.repo.get_by_id(cmd.id)
         self.assertEqual(cmd, command)
 
     def test_get_command_by_id_raises_error_for_nonexistent_id(self):
-        Command.create(alias="test", template="echo test", description="Test command")
+        Command.create(alias="test", template="echo test", description="Test command", profile=1)
         with self.assertRaises(UnknownCommandError):
             self.repo.get_by_id(cmd_id=999)
 
@@ -274,7 +278,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_update_command_alias(self):
         """Test updating the alias of a command."""
         command = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         cmd = self.repo.update(command=command, alias="new_test")
         self.assertEqual("new_test", Command.get(Command.alias == "new_test").alias)
@@ -283,10 +287,10 @@ class TestCommandRepository(unittest.TestCase):
     def test_update_alias_to_duplicate_not_allowed(self):
         """Updating a command alias to a duplicate should raise an exception."""
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         Command.create(
-            alias="new_test", template="echo test", description="Test command"
+            alias="new_test", template="echo test", description="Test command", profile=1
         )
         with self.assertRaises(AliasConflictError):
             self.repo.update(command=cmd, alias="new_test")
@@ -294,7 +298,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_update_alias_to_itself_does_not_throw_exception(self):
         """Updating a command alias to itself should not raise an exception and should not change the command."""
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         self.repo.update(command=cmd, alias="test")
         self.assertIsNotNone(Command.get(Command.alias == "test"))
@@ -302,7 +306,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_update_command_template_works(self):
         """Test updating the template of a command."""
         command = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         cmd = self.repo.update(command=command, template="echo new test")
         self.assertEqual("echo new test", Command.get(Command.alias == "test").template)
@@ -316,7 +320,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_updating_template_to_blank_string_raises_exception(self):
         """Updating a command template to an empty string should raise an exception."""
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         with self.assertRaises(ValidationError):
             self.repo.update(command=cmd, template="")
@@ -327,7 +331,7 @@ class TestCommandRepository(unittest.TestCase):
         Commands are allowed to have duplicate templates.
         """
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         self.repo.update(command=cmd, template="echo new test")
         self.assertEqual("echo new test", Command.get(Command.alias == "test").template)
@@ -335,7 +339,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_updating_command_description_works(self):
         """Test updating the description of a command."""
         command = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         cmd = self.repo.update(command=command, description="New description")
         self.assertEqual(
@@ -346,21 +350,21 @@ class TestCommandRepository(unittest.TestCase):
     def test_updating_command_to_remove_description_is_allowed(self):
         """Updating a command to remove its description should not raise an exception."""
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         self.repo.update(command=cmd, description="")
         self.assertEqual("", Command.get(Command.alias == "test").description)
 
     def test_update_with_no_fields_throws_exception(self):
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         with self.assertRaises(UpdateError):
             self.repo.update(command=cmd)
 
     def test_update_with_invalid_field_throws_exception(self):
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         with self.assertRaises(ValidationError):
             self.repo.update(command=cmd, invalid_field="nonexistent_field")
@@ -368,7 +372,7 @@ class TestCommandRepository(unittest.TestCase):
     def test_update_with_white_space_in_middle_of_alias_is_not_allowed(self):
         """Aliases with whitespace should be throw validation error."""
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         with self.assertRaises(ValidationError):
             self.repo.update(command=cmd, alias="test2 test")
@@ -378,42 +382,42 @@ class TestCommandRepository(unittest.TestCase):
     ):
         """Aliases with whitespace should be throw validation error."""
         cmd = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         self.repo.update(command=cmd, alias=" test2 ")
         self.assertEqual("test2", Command.get(Command.id == cmd.id).alias)
 
     def test_update_cwd_works(self):
-        command = Command.create(alias="test", template="echo test")
+        command = Command.create(alias="test", template="echo test", profile=1)
         self.repo.update(command=command, cwd="/new/path")
         self.assertEqual("/new/path", Command.get(Command.id == command.id).cwd)
 
     def test_update_shell_works(self):
-        command = Command.create(alias="test", template="echo test")
+        command = Command.create(alias="test", template="echo test", profile=1)
         self.repo.update(command=command, shell="zsh")
         self.assertEqual("zsh", Command.get(Command.id == command.id).shell)
 
     def test_update_env_serializes_to_json(self):
-        command = Command.create(alias="test", template="echo test")
+        command = Command.create(alias="test", template="echo test", profile=1)
         env = {"NODE_ENV": "production"}
         self.repo.update(command=command, env=env)
         stored = Command.get(Command.id == command.id)
         self.assertEqual(env, json.loads(stored.env))
 
     def test_update_timeout_works(self):
-        command = Command.create(alias="test", template="echo test")
+        command = Command.create(alias="test", template="echo test", profile=1)
         self.repo.update(command=command, timeout=60)
         self.assertEqual(60, Command.get(Command.id == command.id).timeout)
 
     def test_update_env_with_multiple_keys_serializes_all(self):
-        command = Command.create(alias="test", template="echo test")
+        command = Command.create(alias="test", template="echo test", profile=1)
         env = {"FOO": "bar", "BAZ": "qux", "NODE_ENV": "production"}
         self.repo.update(command=command, env=env)
         stored = Command.get(Command.id == command.id)
         self.assertEqual(env, json.loads(stored.env))
 
     def test_update_existing_cwd_to_new_value(self):
-        command = Command.create(alias="test", template="echo test", cwd="/old/path")
+        command = Command.create(alias="test", template="echo test", cwd="/old/path", profile=1)
         self.repo.update(command=command, cwd="/new/path")
         self.assertEqual("/new/path", Command.get(Command.id == command.id).cwd)
 
@@ -422,6 +426,7 @@ class TestCommandRepository(unittest.TestCase):
             alias="test",
             template="echo test",
             env=json.dumps({"FOO": "original"}),
+            profile=1,
         )
         self.repo.update(command=command, env={"FOO": "updated", "BAR": "new"})
         stored = Command.get(Command.id == command.id)
@@ -429,7 +434,7 @@ class TestCommandRepository(unittest.TestCase):
 
     def test_update_context_fields_do_not_affect_other_fields(self):
         command = Command.create(
-            alias="test", template="echo test", description="original desc"
+            alias="test", template="echo test", description="original desc", profile=1
         )
         self.repo.update(command=command, cwd="/new/path", timeout=10)
         stored = Command.get(Command.id == command.id)
@@ -438,7 +443,7 @@ class TestCommandRepository(unittest.TestCase):
         self.assertEqual("echo test", stored.template)
 
     def test_record_use_updates_command_usage(self):
-        command = Command.create(alias="test", template="echo test")
+        command = Command.create(alias="test", template="echo test", profile=1)
         self.assertEqual(0, command.used)
         self.assertIsNone(command.last_used)
         self.repo.record_use(command.id)
@@ -447,7 +452,7 @@ class TestCommandRepository(unittest.TestCase):
         self.assertIsNotNone(stored.last_used)
 
     def test_record_use_increments_correctly_from_non_zero(self):
-        command = Command.create(alias="test", template="echo test")
+        command = Command.create(alias="test", template="echo test", profile=1)
         command.used = 35
         command.save()
         self.assertEqual(35, command.used)
@@ -457,7 +462,7 @@ class TestCommandRepository(unittest.TestCase):
 
     def test_primary_field_raises_exception_on_none_value(self):
         command = Command.create(
-            alias="test", template="echo test", description="Test command"
+            alias="test", template="echo test", description="Test command", profile=1
         )
         with self.assertRaises(UpdateError):
             self.repo.update(command=command, alias=None)
@@ -472,6 +477,7 @@ class TestCommandRepository(unittest.TestCase):
             cwd="path/to/dir",
             shell="cmd",
             timeout=10,
+            profile=1,
         )
         cmd = self.repo.update(command=command, cwd=None, shell=None, timeout=None)
         self.assertEqual(None, Command.get(Command.alias == "test").cwd)
@@ -701,11 +707,12 @@ class TestCommandTagging(unittest.TestCase):
         Tag.delete().execute()
         Command.delete().execute()
         CommandTag.delete().execute()
-        self.repo = CommandRepository()
+        profile_repo = MagicMock(get_state=MagicMock(return_value=SimpleNamespace(active_command_profile_id=1)))
+        self.repo = CommandRepository(profile_repository=profile_repo)
 
     def _create_cmd_tags(self):
-        self.cmd_one = Command.create(alias="cmd_one", template="echo Command one")
-        self.cmd_two = Command.create(alias="cmd_two", template="echo Command two")
+        self.cmd_one = Command.create(alias="cmd_one", template="echo Command one", profile=1)
+        self.cmd_two = Command.create(alias="cmd_two", template="echo Command two", profile=1)
         self.tag_one = Tag.create(name="tag_one", description="Tag One Description")
         self.tag_two = Tag.create(name="tag_two", description="Tag Two Description")
         self.cmd_tag_one = CommandTag.create(command=self.cmd_one, tag=self.tag_one)
@@ -717,7 +724,7 @@ class TestCommandTagging(unittest.TestCase):
     # =================================================================================
 
     def test_add_tag(self):
-        cmd = Command.create(alias="test_cmd", template="echo test")
+        cmd = Command.create(alias="test_cmd", template="echo test", profile=1)
         tag = Tag.create(name="test_tag", description="test_description")
         results = self.repo.add_tags(command=cmd, tags=[tag])
         cmd_tag = CommandTag.get(command=cmd, tag=tag)
@@ -726,7 +733,7 @@ class TestCommandTagging(unittest.TestCase):
         self.assertEqual(0, len(results.existing))
 
     def test_add_multiple_tags(self):
-        cmd = Command.create(alias="test_cmd", template="echo test")
+        cmd = Command.create(alias="test_cmd", template="echo test", profile=1)
         tag1 = Tag.create(name="test_tag1", description="test_description1")
         tag2 = Tag.create(name="test_tag2", description="test_description2")
         results = self.repo.add_tags(command=cmd, tags=[tag1, tag2])
@@ -739,7 +746,7 @@ class TestCommandTagging(unittest.TestCase):
         self.assertEqual(0, len(results.existing))
 
     def test_mixed_tagging_of_existing_and_new_works_correctly(self):
-        cmd = Command.create(alias="test_cmd", template="echo test")
+        cmd = Command.create(alias="test_cmd", template="echo test", profile=1)
         tag1 = Tag.create(name="test_tag1", description="test_description1")
         cmd_tag1 = CommandTag.create(command=cmd, tag=tag1)
         tag2 = Tag.create(name="test_tag2", description="test_description2")
@@ -748,13 +755,13 @@ class TestCommandTagging(unittest.TestCase):
         self.assertEqual(1, len(results.existing))
 
     def test_add_tag_with_no_tags_does_nothing(self):
-        cmd = Command.create(alias="test_cmd", template="echo test")
+        cmd = Command.create(alias="test_cmd", template="echo test", profile=1)
         results = self.repo.add_tags(command=cmd, tags=[])
         self.assertEqual(0, len(results.added))
         self.assertEqual(0, len(results.existing))
 
     def test_add_tag_with_non_existent_tag_raises_exception(self):
-        cmd = Command.create(alias="test_cmd", template="echo test")
+        cmd = Command.create(alias="test_cmd", template="echo test", profile=1)
         with self.assertRaises(TagAttachError):
             self.repo.add_tags(command=cmd, tags=[None])
 
@@ -764,7 +771,7 @@ class TestCommandTagging(unittest.TestCase):
             self.repo.add_tags(command=None, tags=[tag])
 
     def test_double_tagging_does_not_raise_error(self):
-        cmd = Command.create(alias="test_cmd", template="echo test")
+        cmd = Command.create(alias="test_cmd", template="echo test", profile=1)
         tag = Tag.create(name="test_tag")
         cmd_tag = CommandTag.create(command=cmd, tag=tag)
 
@@ -774,7 +781,7 @@ class TestCommandTagging(unittest.TestCase):
         self.assertEqual("test_tag", results.existing[0])
 
     def test_add_tag_is_atomic_and_no_tags_are_added_if_one_fails(self):
-        cmd = Command.create(alias="test_cmd", template="echo test")
+        cmd = Command.create(alias="test_cmd", template="echo test", profile=1)
         tag = Tag.create(name="test_tag")
         with self.assertRaises(TagAttachError):
             self.repo.add_tags(command=cmd, tags=[tag, None])
