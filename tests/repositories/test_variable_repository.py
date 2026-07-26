@@ -8,7 +8,6 @@ from cmdbox.database import db, get_db, ensure_schema
 from cmdbox.repositories.errors import (
     ValidationError,
     NameConflictError,
-    UnknownNameError,
     UpdateError,
     TagAttachError,
     TagDetachError,
@@ -35,8 +34,8 @@ class TestVariableRepository(unittest.TestCase):
         Variable.delete().execute()
         Tag.delete().execute()
         VariableTag.delete().execute()
-        profile_repo = MagicMock(get_state=MagicMock(return_value=SimpleNamespace(active_variable_profile_id=1)))
-        self.repo = VariableRepository(profile_repository=profile_repo)
+        self.profile_repo = MagicMock(get_state=MagicMock(return_value=SimpleNamespace(active_variable_profile_id=1)))
+        self.repo = VariableRepository(profile_repository=self.profile_repo)
 
     def _create_variable_group(self):
         self.var_one = Variable.create(name="test1", value="test_value_e Antelope Bee", profile=1)
@@ -106,6 +105,19 @@ class TestVariableRepository(unittest.TestCase):
 
     def test_unicode_characters_are_allowed_in_variable_value(self):
         self.repo.create(name="test", value="git-✨")
+
+    def test_create_with_profile(self):
+        """Variable should be created with the provided profile."""
+        var = self.repo.create(name="test", value="test_value", profile=2)
+        self.assertEqual(2, var.profile_id)
+        self.profile_repo.get_state.assert_not_called()
+
+    def test_create_uses_active_profile_by_default(self):
+        """Variable should be created with the active profile if none is provided."""
+        # The mock in setUp returns 1 as active_variable_profile_id
+        var = self.repo.create(name="test", value="test_value")
+        self.assertEqual(1, var.profile_id)
+        self.profile_repo.get_state.assert_called_once()
 
     def test_whitespace_in_middle_of_variable_name_is_not_allowed(self):
         with self.assertRaises(ValidationError):

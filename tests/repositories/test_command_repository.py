@@ -36,8 +36,8 @@ class TestCommandRepository(unittest.TestCase):
         Command.delete().execute()
         Tag.delete().execute()
         CommandTag.delete().execute()
-        profile_repo = MagicMock(get_state=MagicMock(return_value=SimpleNamespace(active_command_profile_id=1)))
-        self.repo = CommandRepository(profile_repository=profile_repo)
+        self.profile_repo = MagicMock(get_state=MagicMock(return_value=SimpleNamespace(active_command_profile_id=1)))
+        self.repo = CommandRepository(profile_repository=self.profile_repo)
 
     def _create_command_group(self):
         self.cmd_one = Command.create(
@@ -111,6 +111,23 @@ class TestCommandRepository(unittest.TestCase):
         """Commands are allowed to have duplicate templates."""
         self.repo.create(alias="test", template="echo test", description="Test command")
         Command.create(alias="test2", template="echo test", description="Test command", profile=1)
+
+    def test_create_with_profile(self):
+        """Command should be created with the provided profile."""
+        command = self.repo.create(
+            alias="test", template="echo test", profile=2
+        )
+        self.assertEqual(2, command.profile_id)
+        self.profile_repo.get_state.assert_not_called()
+
+    def test_create_uses_active_profile_by_default(self):
+        """Command should be created with the active profile if none is provided."""
+        # The mock in setUp returns 1 as active_command_profile_id
+        command = self.repo.create(
+            alias="test", template="echo test"
+        )
+        self.assertEqual(1, command.profile_id)
+        self.profile_repo.get_state.assert_called_once()
 
     def test_duplicate_description_is_allowed(self):
         """Commands are allowed to have duplicate descriptions."""
