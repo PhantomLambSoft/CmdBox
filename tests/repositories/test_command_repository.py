@@ -731,6 +731,60 @@ class TestCommandRepository(unittest.TestCase):
             Command.get(Command.id == self.cmd_two)
             Command.get(Command.id == self.cmd_five)
 
+    # =================================================================================
+    # SECTION: PROFILE SCOPING TESTS
+    # =================================================================================
+
+    def test_same_alias_allowed_in_different_profiles(self):
+        """The same alias can exist in two different profiles without conflict."""
+        Command.create(alias="deploy", template="echo one", profile=1)
+        command = self.repo.create(alias="deploy", template="echo two", profile=2)
+        self.assertEqual(2, command.profile_id)
+        self.assertEqual(2, Command.select().where(Command.alias == "deploy").count())
+
+    def test_get_by_alias_only_finds_command_in_active_profile(self):
+        Command.create(alias="deploy", template="echo two", profile=2)
+        with self.assertRaises(UnknownAliasError):
+            self.repo.get_by_alias(alias="deploy")
+
+    def test_get_by_alias_with_explicit_profile_overrides_active(self):
+        other = Command.create(alias="deploy", template="echo two", profile=2)
+        command = self.repo.get_by_alias(alias="deploy", profile=2)
+        self.assertEqual(other, command)
+
+    def test_list_all_only_returns_active_profile_commands(self):
+        self._create_command_group()
+        Command.create(alias="other-profile-cmd", template="echo x", profile=2)
+        commands = self.repo.list_all()
+        self.assertEqual(5, len(commands))
+
+    def test_list_all_with_explicit_profile_returns_only_that_profile(self):
+        self._create_command_group()
+        other = Command.create(alias="other-profile-cmd", template="echo x", profile=2)
+        commands = self.repo.list_all(profile=2)
+        self.assertEqual([other], commands)
+
+    def test_list_by_tag_only_returns_active_profile_commands(self):
+        self._create_command_group()
+        self._tag_command_group()
+        other = Command.create(alias="other-profile-cmd", template="echo x", profile=2)
+        other_tag = CommandTag.create(command=other, tag=self.tag_one)
+        cmds = self.repo.list_by_tag([self.tag_one])
+        self.assertEqual(2, len(cmds))
+        self.assertFalse(other in cmds)
+
+    def test_search_only_returns_active_profile_commands(self):
+        self._create_command_group()
+        Command.create(alias="test-other", template="echo test", profile=2)
+        commands = self.repo.search("test")
+        self.assertEqual(5, len(commands))
+
+    def test_search_with_explicit_profile_returns_only_that_profile(self):
+        self._create_command_group()
+        other = Command.create(alias="test-other", template="echo test", profile=2)
+        commands = self.repo.search("test", profile=2)
+        self.assertEqual([other], commands)
+
 
 class TestCommandTagging(unittest.TestCase):
 

@@ -414,6 +414,50 @@ class TestVariableRepository(unittest.TestCase):
             Variable.get(Variable.id == self.var_two)
             Variable.get(Variable.id == self.var_five)
 
+    # =================================================================================
+    # SECTION: PROFILE SCOPING TESTS
+    # =================================================================================
+
+    def test_same_name_allowed_in_different_profiles(self):
+        Variable.create(name="host", value="10.0.0.1", profile=1)
+        var = self.repo.create(name="host", value="10.0.0.2", profile=2)
+        self.assertEqual(2, var.profile_id)
+        self.assertEqual(2, Variable.select().where(Variable.name == "host").count())
+
+    def test_get_by_name_only_finds_variable_in_active_profile(self):
+        Variable.create(name="host", value="10.0.0.2", profile=2)
+        var = self.repo.get_by_name("host")
+        self.assertIsNone(var)
+
+    def test_get_by_name_with_explicit_profile_overrides_active(self):
+        other = Variable.create(name="host", value="10.0.0.2", profile=2)
+        var = self.repo.get_by_name("host", profile=2)
+        self.assertEqual(other, var)
+
+    def test_list_all_only_returns_active_profile_variables(self):
+        self._create_variable_group()
+        Variable.create(name="other-profile-var", value="x", profile=2)
+        vars = self.repo.list_all()
+        self.assertEqual(5, len(vars))
+
+    def test_list_all_with_explicit_profile_returns_only_that_profile(self):
+        self._create_variable_group()
+        other = Variable.create(name="other-profile-var", value="x", profile=2)
+        vars = self.repo.list_all(profile=2)
+        self.assertEqual([other], vars)
+
+    def test_search_only_returns_active_profile_variables(self):
+        self._create_variable_group()
+        Variable.create(name="test-other", value="test", profile=2)
+        vars = self.repo.search("test")
+        self.assertEqual(5, len(vars))
+
+    def test_search_with_explicit_profile_returns_only_that_profile(self):
+        self._create_variable_group()
+        other = Variable.create(name="test-other", value="test", profile=2)
+        vars = self.repo.search("test", profile=2)
+        self.assertEqual([other], vars)
+
 
 class TestVariableTagging(unittest.TestCase):
 

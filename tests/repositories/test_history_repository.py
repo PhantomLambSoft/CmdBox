@@ -246,3 +246,73 @@ class TestHistoryRepository(unittest.TestCase):
         self.assertEqual(
             {first.id, second.id}, {row.id for row in CommandHistory.select()}
         )
+
+    # =================================================================================
+    # SECTION: PROFILE SCOPING TESTS
+    # =================================================================================
+
+    def test_get_recent_only_returns_active_profile_entries(self):
+        now = datetime.now()
+        self._create_entry("p1-entry", "deploy", now)
+        CommandHistory.create(
+            id="p2-entry",
+            alias="deploy",
+            template="echo hi",
+            resolved="echo hi",
+            variables_used=None,
+            exit_code=0,
+            ran_at=now,
+            profile=2,
+        )
+        actual = self.repo.get_recent()
+        self.assertEqual(["p1-entry"], [row.id for row in actual])
+
+    def test_get_recent_with_explicit_profile_returns_only_that_profile(self):
+        now = datetime.now()
+        self._create_entry("p1-entry", "deploy", now)
+        CommandHistory.create(
+            id="p2-entry",
+            alias="deploy",
+            template="echo hi",
+            resolved="echo hi",
+            variables_used=None,
+            exit_code=0,
+            ran_at=now,
+            profile=2,
+        )
+        actual = self.repo.get_recent(profile=2)
+        self.assertEqual(["p2-entry"], [row.id for row in actual])
+
+    def test_get_by_id_does_not_find_entry_in_other_profile(self):
+        CommandHistory.create(
+            id="p2-entry",
+            alias="deploy",
+            template="echo hi",
+            resolved="echo hi",
+            variables_used=None,
+            exit_code=0,
+            ran_at=datetime.now(),
+            profile=2,
+        )
+        with self.assertRaises(UnknownHistoryEntryError):
+            self.repo.get_by_id("p2-entry")
+
+    def test_apply_retention_does_not_cross_profiles_with_same_alias(self):
+        now = datetime.now()
+        oldest = self._create_entry("p1-old", "deploy", now - timedelta(minutes=2))
+        newest = self._create_entry("p1-new", "deploy", now - timedelta(minutes=1))
+        other_profile_entry = CommandHistory.create(
+            id="p2-entry",
+            alias="deploy",
+            template="echo hi",
+            resolved="echo hi",
+            variables_used=None,
+            exit_code=0,
+            ran_at=now,
+            profile=2,
+        )
+
+        self.repo._apply_retention(alias="deploy", profile=1, limit=1)
+
+        remaining_ids = {row.id for row in CommandHistory.select()}
+        self.assertEqual({newest.id, other_profile_entry.id}, remaining_ids)
