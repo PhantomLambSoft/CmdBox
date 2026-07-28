@@ -25,7 +25,11 @@ class CommandRepository(BaseRepository[Command]):
 
     model = Command
 
-    def __init__(self, validator: CommandValidator | None = None, profile_repository: ProfileRepository | None = None):
+    def __init__(
+        self,
+        validator: CommandValidator | None = None,
+        profile_repository: ProfileRepository | None = None,
+    ):
         self.validator = validator or CommandValidator()
         self.profile_repo = profile_repository or ProfileRepository()
 
@@ -84,7 +88,7 @@ class CommandRepository(BaseRepository[Command]):
                 raise AliasConflictError(alias=alias) from exc
             raise
 
-    def get_by_alias(self, alias: str) -> Command:
+    def get_by_alias(self, alias: str, profile: Profile | int | None = None) -> Command:
         """
         Retrieves a Command instance by its alias.
 
@@ -94,6 +98,8 @@ class CommandRepository(BaseRepository[Command]):
 
         Args:
             alias (str): The alias of the Command being searched for.
+            profile (Profile | int | None): The profile to which the command belongs.
+                If None, the active profile is used.
 
         Returns:
             Command: The Command instance that matches the provided alias.
@@ -101,18 +107,24 @@ class CommandRepository(BaseRepository[Command]):
         Raises:
             UnknownAliasError: If no Command is found with the provided alias.
         """
+        if profile is None:
+            profile = self.profile_repo.get_state().active_command_profile_id
         alias = alias.lower()
-        cmd = Command.get_or_none(Command.alias == alias)
+        cmd = Command.get_or_none(
+            (Command.alias == alias) & (Command.profile == profile)
+        )
         if cmd is None:
             raise UnknownAliasError(alias=alias)
         return cmd
 
-    def get_by_id(self, cmd_id: int) -> Command:
+    def get_by_id(self, cmd_id: int, profile: Profile | int | None = None) -> Command:
         """
         Retrieves a command by its ID.
 
         Args:
             cmd_id (int): The ID of the command to retrieve.
+            profile (Profile | int | None): The profile to which the command belongs.
+                If None, the active profile is used.
 
         Returns:
             Command: The Command instance with the specified ID.
@@ -120,7 +132,9 @@ class CommandRepository(BaseRepository[Command]):
         Raises:
             UnknownCommandError: If no Command is found with the provided ID.
         """
-        cmd = Command.get_or_none(Command.id == cmd_id)
+        if profile is None:
+            profile = self.profile_repo.get_state().active_command_profile_id
+        cmd = Command.get_or_none((Command.id == cmd_id) & (Command.profile == profile))
         if cmd is None:
             raise UnknownCommandError(cmd_id=cmd_id)
         return cmd
@@ -287,7 +301,10 @@ class CommandRepository(BaseRepository[Command]):
         return TagDetachResult(removed=removed, not_attached=not_attached)
 
     def list_all(
-        self, order_by: str | Sequence[str] = "alias", limit: int = 25
+        self,
+        order_by: str | Sequence[str] = "alias",
+        limit: int = 25,
+        profile: Profile | int | None = None,
     ) -> list[Command]:
         """
         Lists all Command objects from the database, optionally ordered by specified fields.
@@ -296,19 +313,28 @@ class CommandRepository(BaseRepository[Command]):
             order_by (str | Sequence[str]): A string or sequence of strings indicating the field(s)
                 by which the Command objects should be ordered. Defaults to "name".
             limit (int): The maximum number of Command objects to return. Defaults to 25.
+            profile (Profile | int | None): The profile to filter commands by. Defaults to None.
 
         Returns:
             list[Command]: A list of Command objects retrieved from the database,
                 sorted based on the specified ordering criteria.
         """
         ordering = self._resolve_ordering(order_by)
-        return list(Command.select().order_by(*ordering).limit(limit))
+        if profile is None:
+            profile = self.profile_repo.get_state().active_command_profile_id
+        return list(
+            Command.select()
+            .where(Command.profile == profile)
+            .order_by(*ordering)
+            .limit(limit)
+        )
 
     def list_by_tag(
         self,
         tags: Sequence[Tag],
         order_by: str | Sequence[str] = "alias",
         limit: int = 25,
+        profile: Profile | int | None = None,
     ) -> list[Command]:
         """
         Fetches a list of commands filtered by specified tags and ordered by specific
@@ -325,6 +351,7 @@ class CommandRepository(BaseRepository[Command]):
                 the commands. Defaults to "alias".
             limit (int, optional): The maximum number of commands to retrieve. Defaults
                 to 25.
+            profile (Profile | int | None): The profile to filter commands by. Defaults to None.
 
         Returns:
             list[Command]: A list of `Command` objects that meet the specified filters
@@ -332,8 +359,13 @@ class CommandRepository(BaseRepository[Command]):
         """
         if not tags:
             return []
+        if profile is None:
+            profile = self.profile_repo.get_state().active_command_profile_id
         commands = (
-            Command.select().join(CommandTag).where(CommandTag.tag << tags).distinct()
+            Command.select()
+            .join(CommandTag)
+            .where((CommandTag.tag << tags) & (Command.profile == profile))
+            .distinct()
         )
         ordering = self._resolve_ordering(order_by)
         return list(commands.order_by(*ordering).limit(limit))
@@ -343,6 +375,7 @@ class CommandRepository(BaseRepository[Command]):
         query: str,
         fields: str | Sequence[str] | None = ("alias", "template", "description"),
         limit: int = 25,
+        profile: Profile | int | None = None,
     ) -> list[Command]:
         """
         Searches for commands matching the given query across specified fields.
@@ -358,6 +391,7 @@ class CommandRepository(BaseRepository[Command]):
                 default, searches within "name" and "description". Can be a single field
                 name as a string or a sequence of field names.
             limit (int): The maximum number of results to return. Defaults to 25.
+            profile (Profile | int | None): The profile to filter commands by. Defaults to None.
 
         Returns:
             list[Command]: A list of Command objects matching the search query, sorted
@@ -366,7 +400,15 @@ class CommandRepository(BaseRepository[Command]):
         Raises:
             ValueError: If any provided field does not exist on the Command model.
         """
-        return self._search(query, "alias", fields, limit)
+        if profile is None:
+            profile = self.profile_repo.get_state().active_command_profile_id
+        return self._search(
+            query,
+            secondary_ordering="alias",
+            fields=fields,
+            limit=limit,
+            extra_condition=(Command.profile == profile),
+        )
 
     def delete(self, command: Command) -> bool:
         """

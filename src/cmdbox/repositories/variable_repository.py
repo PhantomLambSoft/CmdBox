@@ -16,13 +16,17 @@ from .profile_repository import ProfileRepository
 from .validators import VariableValidator
 from .results import TagAttachResult, TagDetachResult
 from cmdbox.database import db
-from cmdbox.models import Variable, Tag, VariableTag
+from cmdbox.models import Variable, Tag, VariableTag, Profile
 
 
 class VariableRepository(BaseRepository[Variable]):
     model = Variable
 
-    def __init__(self, validator: VariableValidator | None = None, profile_repository: ProfileRepository | None = None):
+    def __init__(
+        self,
+        validator: VariableValidator | None = None,
+        profile_repository: ProfileRepository | None = None,
+    ):
         self.validator = validator or VariableValidator()
         self.profile_repository = profile_repository or ProfileRepository()
 
@@ -54,7 +58,9 @@ class VariableRepository(BaseRepository[Variable]):
                 raise NameConflictError(name=name) from exc
             raise
 
-    def get_by_name(self, name: str) -> Variable | None:
+    def get_by_name(
+        self, name: str, profile: Profile | int | None = None
+    ) -> Variable | None:
         """
         Retrieves a Variable instance by its name.
 
@@ -64,15 +70,26 @@ class VariableRepository(BaseRepository[Variable]):
 
         Args:
             name (str): The name of the variable to search for.
+            profile (Profile | int | None, optional): The profile ID or profile
+                instance to filter the search by. If not provided, the active
+                variable profile ID is used.
 
         Returns:
             Variable | None: The `Variable` instance if found, otherwise `None`.
         """
+        if profile is None:
+            profile = self.profile_repository.get_state().active_variable_profile_id
         name = name.lower()
-        return Variable.get_or_none(Variable.name == name)
+        return Variable.get_or_none(
+            (Variable.name == name) & (Variable.profile == profile)
+        )
 
-    def get_by_id(self, var_id: int) -> Variable:
-        var = Variable.get_or_none(Variable.id == var_id)
+    def get_by_id(self, var_id: int, profile: Profile | int | None = None) -> Variable:
+        if profile is None:
+            profile = self.profile_repository.get_state().active_variable_profile_id
+        var = Variable.get_or_none(
+            (Variable.id == var_id) & (Variable.profile == profile)
+        )
         if var is None:
             raise UnknownVariableError(var_id=var_id)
         return var
@@ -220,7 +237,10 @@ class VariableRepository(BaseRepository[Variable]):
         return TagDetachResult(removed=removed, not_attached=not_attached)
 
     def list_all(
-        self, order_by: str | Sequence[str] = "name", limit: int = 25
+        self,
+        order_by: str | Sequence[str] = "name",
+        limit: int = 25,
+        profile: Profile | int | None = None,
     ) -> list[Variable]:
         """
         Lists all variables from the database, optionally ordered by specified fields.
@@ -229,19 +249,28 @@ class VariableRepository(BaseRepository[Variable]):
             order_by (str | Sequence[str]): A string or sequence of strings indicating the field(s)
                 by which the variables should be ordered. Defaults to "name".
             limit (int): The maximum number of variables to return. Defaults to 25.
+            profile (Profile | int | None): The profile to filter variables by. Defaults to None.
 
         Returns:
             List[Variable]: A list of Variable objects retrieved from the database,
                 sorted based on the specified ordering criteria.
         """
         ordering = self._resolve_ordering(order_by)
-        return list(Variable.select().order_by(*ordering).limit(limit))
+        if profile is None:
+            profile = self.profile_repository.get_state().active_variable_profile_id
+        return list(
+            Variable.select()
+            .where(Variable.profile == profile)
+            .order_by(*ordering)
+            .limit(limit)
+        )
 
     def list_by_tag(
         self,
         tags: Sequence[Tag],
         order_by: str | Sequence[str] = "name",
         limit: int = 25,
+        profile: Profile | int | None = None,
     ) -> list[Variable]:
         """
         Fetches a list of variables filtered by specified tags and ordered by specific
@@ -256,6 +285,7 @@ class VariableRepository(BaseRepository[Variable]):
             order_by (str | Sequence[str]): Criteria to order the resulting variable
                 list. Defaults to "name".
             limit (int): The maximum number of variables to return. Defaults to 25.
+            profile (Profile | int | None): The profile to filter variables by. Defaults to None.
 
         Returns:
             list[Variable]: A list of `Variable` objects matching the tags and ordered as
@@ -265,10 +295,12 @@ class VariableRepository(BaseRepository[Variable]):
             UnknownTagError: If one or more provided tags do not exist in the database.
         """
         ordering = self._resolve_ordering(order_by)
+        if profile is None:
+            profile = self.profile_repository.get_state().active_variable_profile_id
         return list(
             Variable.select()
             .join(VariableTag)
-            .where(VariableTag.tag << tags)
+            .where((VariableTag.tag << tags) & (Variable.profile == profile))
             .order_by(*ordering)
             .distinct()
             .limit(limit)
@@ -279,6 +311,7 @@ class VariableRepository(BaseRepository[Variable]):
         query: str,
         fields: str | Sequence[str] | None = ("name", "value"),
         limit: int = 25,
+        profile: Profile | int | None = None,
     ) -> list[Variable]:
         """
         Searches for variables matching the given query across specified fields.
@@ -293,6 +326,7 @@ class VariableRepository(BaseRepository[Variable]):
                 default, searches within "name". Can be a single field name as a string
                 or a sequence of field names.
             limit (int): The maximum number of results to return. Defaults to 25.
+            profile (Profile | int | None): The profile to filter variables by. Defaults to None.
 
         Returns:
             list[Variable]: A list of Variable objects matching the search query, sorted
@@ -301,8 +335,15 @@ class VariableRepository(BaseRepository[Variable]):
         Raises:
             ValueError: If any provided field does not exist on the Variable model.
         """
+
+        if profile is None:
+            profile = self.profile_repository.get_state().active_variable_profile_id
         return self._search(
-            query, secondary_ordering="name", fields=fields, limit=limit
+            query,
+            secondary_ordering="name",
+            fields=fields,
+            limit=limit,
+            extra_condition=(Variable.profile == profile),
         )
 
     def delete(self, variable: Variable) -> bool:
