@@ -34,17 +34,29 @@ class TestVariableRepository(unittest.TestCase):
         Variable.delete().execute()
         Tag.delete().execute()
         VariableTag.delete().execute()
-        self.profile_repo = MagicMock(get_state=MagicMock(return_value=SimpleNamespace(active_variable_profile_id=1)))
+        self.profile_repo = MagicMock(
+            get_state=MagicMock(
+                return_value=SimpleNamespace(active_variable_profile_id=1)
+            )
+        )
         self.repo = VariableRepository(profile_repository=self.profile_repo)
 
     def _create_variable_group(self):
-        self.var_one = Variable.create(name="test1", value="test_value_e Antelope Bee", profile=1)
-        self.var_two = Variable.create(name="test2", value="test_value_d Zebra Bee", profile=1)
+        self.var_one = Variable.create(
+            name="test1", value="test_value_e Antelope Bee", profile=1
+        )
+        self.var_two = Variable.create(
+            name="test2", value="test_value_d Zebra Bee", profile=1
+        )
         self.var_three = Variable.create(
             name="test3", value="test_value_c Kangaroo Bee", profile=1
         )
-        self.var_four = Variable.create(name="test4", value="test_value_b Bee Bee Bee", profile=1)
-        self.var_five = Variable.create(name="test5", value="test_value_a Bee Goldfish", profile=1)
+        self.var_four = Variable.create(
+            name="test4", value="test_value_b Bee Bee Bee", profile=1
+        )
+        self.var_five = Variable.create(
+            name="test5", value="test_value_a Bee Goldfish", profile=1
+        )
 
     def _tag_variable_group(self):
         self.tag_one = Tag.create(name="tag_one")
@@ -155,7 +167,9 @@ class TestVariableRepository(unittest.TestCase):
         self.assertIsNone(var)
 
     def test_get_by_all_symbols_is_allowed(self):
-        Variable.create(name="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|", value="test_value", profile=1)
+        Variable.create(
+            name="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|", value="test_value", profile=1
+        )
         self.repo.get_by_name("test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|")
 
     def test_get_by_unicode_characters_is_allowed(self):

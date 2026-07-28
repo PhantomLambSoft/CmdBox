@@ -33,23 +33,23 @@ class TestProfileRepository(unittest.TestCase):
         Variable.delete().execute()
         ProfileState.delete().execute()
         Profile.delete().execute()
-        
+
         # ProfileState needs exactly one row for get_state() to work if it's supposed to exist.
         # But wait, how is ProfileState initialized in the real app?
-        # Usually by migrations or first run. 
+        # Usually by migrations or first run.
         # In ProfileRepository.get_state(), it calls ProfileState.select().get()
         # This will fail if no row exists.
-        
+
         self.repo = ProfileRepository()
-        
-        # Create a default profile to initialize ProfileState if needed, 
+
+        # Create a default profile to initialize ProfileState if needed,
         # though usually migrations should handle it.
         # Let's see if we need to manually create the state row.
         self.default_profile = Profile.create(name="default")
         self.state = ProfileState.create(
             active_command_profile=self.default_profile,
             active_variable_profile=self.default_profile,
-            active_settings_profile=self.default_profile
+            active_settings_profile=self.default_profile,
         )
 
     def _create_profile_group(self):
@@ -121,7 +121,7 @@ class TestProfileRepository(unittest.TestCase):
         profile = self.repo.create(name="old_name")
         updated = self.repo.update(profile, name="new_name")
         self.assertEqual("new_name", updated.name)
-        
+
         # Verify in DB
         retrieved = Profile.get_by_id(profile.id)
         self.assertEqual("new_name", retrieved.name)
@@ -164,10 +164,10 @@ class TestProfileRepository(unittest.TestCase):
     def test_delete_non_empty_profile_raises_exception(self):
         profile = self.repo.create(name="not_empty")
         Command.create(alias="cmd", template="echo", profile=profile)
-        
+
         with self.assertRaises(ProfileNotEmptyError):
             self.repo.delete(profile)
-            
+
         # Verify profile still exists
         self.assertIsNotNone(Profile.get_or_none(Profile.name == "not_empty"))
 
@@ -175,32 +175,34 @@ class TestProfileRepository(unittest.TestCase):
         profile = self.repo.create(name="not_empty")
         Command.create(alias="cmd", template="echo", profile=profile)
         Variable.create(name="var", value="val", profile=profile)
-        
+
         result = self.repo.delete(profile, force=True)
         self.assertTrue(result)
         self.assertIsNone(Profile.get_or_none(Profile.name == "not_empty"))
         # Verify cascaded deletion
         self.assertEqual(0, Command.select().where(Command.profile == profile).count())
-        self.assertEqual(0, Variable.select().where(Variable.profile == profile).count())
+        self.assertEqual(
+            0, Variable.select().where(Variable.profile == profile).count()
+        )
 
     def test_delete_active_command_profile_raises_exception(self):
         profile = self.repo.create(name="active")
         self.repo.set_active_command_profile(profile)
-        
+
         with self.assertRaises(ActiveProfileDeleteError):
             self.repo.delete(profile)
 
     def test_delete_active_variable_profile_raises_exception(self):
         profile = self.repo.create(name="active")
         self.repo.set_active_variable_profile(profile)
-        
+
         with self.assertRaises(ActiveProfileDeleteError):
             self.repo.delete(profile)
 
     def test_delete_active_settings_profile_raises_exception(self):
         profile = self.repo.create(name="active")
         self.repo.set_active_settings_profile(profile)
-        
+
         with self.assertRaises(ActiveProfileDeleteError):
             self.repo.delete(profile)
 
@@ -231,9 +233,9 @@ class TestProfileRepository(unittest.TestCase):
     def test_record_use(self):
         profile = self.repo.create(name="test")
         self.assertIsNone(profile.last_used)
-        
+
         self.repo.record_use(profile.id)
-        
+
         updated = self.repo.get_by_id(profile.id)
         self.assertIsNotNone(updated.last_used)
 
@@ -249,20 +251,20 @@ class TestProfileRepository(unittest.TestCase):
     def test_set_active_command_profile(self):
         new_profile = self.repo.create(name="new")
         self.repo.set_active_command_profile(new_profile)
-        
+
         state = self.repo.get_state()
         self.assertEqual(new_profile.id, state.active_command_profile_id)
 
     def test_set_active_variable_profile(self):
         new_profile = self.repo.create(name="new")
         self.repo.set_active_variable_profile(new_profile)
-        
+
         state = self.repo.get_state()
         self.assertEqual(new_profile.id, state.active_variable_profile_id)
 
     def test_set_active_settings_profile(self):
         new_profile = self.repo.create(name="new")
         self.repo.set_active_settings_profile(new_profile)
-        
+
         state = self.repo.get_state()
         self.assertEqual(new_profile.id, state.active_settings_profile_id)

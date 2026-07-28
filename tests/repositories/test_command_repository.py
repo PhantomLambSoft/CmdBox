@@ -36,7 +36,11 @@ class TestCommandRepository(unittest.TestCase):
         Command.delete().execute()
         Tag.delete().execute()
         CommandTag.delete().execute()
-        self.profile_repo = MagicMock(get_state=MagicMock(return_value=SimpleNamespace(active_command_profile_id=1)))
+        self.profile_repo = MagicMock(
+            get_state=MagicMock(
+                return_value=SimpleNamespace(active_command_profile_id=1)
+            )
+        )
         self.repo = CommandRepository(profile_repository=self.profile_repo)
 
     def _create_command_group(self):
@@ -44,7 +48,10 @@ class TestCommandRepository(unittest.TestCase):
             alias="test", template="echo e", description="Orangutan aligator", profile=1
         )
         self.cmd_two = Command.create(
-            alias="test2", template="echo d", description="Harpsichord aligator", profile=1
+            alias="test2",
+            template="echo d",
+            description="Harpsichord aligator",
+            profile=1,
         )
         self.cmd_three = Command.create(
             alias="test3", template="echo c", description="Aligator aligator", profile=1
@@ -53,7 +60,10 @@ class TestCommandRepository(unittest.TestCase):
             alias="test4", template="echo b", description="Zebra aligator", profile=1
         )
         self.cmd_five = Command.create(
-            alias="test5", template="echo a", description="Length aligator gator", profile=1
+            alias="test5",
+            template="echo a",
+            description="Length aligator gator",
+            profile=1,
         )
 
     def _tag_command_group(self):
@@ -89,7 +99,9 @@ class TestCommandRepository(unittest.TestCase):
 
     def test_create_duplicate_alias_raises_exception(self):
         """Command should not be created if an alias already exists."""
-        Command.create(alias="test", template="echo test", description="Test command", profile=1)
+        Command.create(
+            alias="test", template="echo test", description="Test command", profile=1
+        )
         with self.assertRaises(AliasConflictError):
             self.repo.create(
                 alias="test", template="echo test", description="Test command"
@@ -110,22 +122,20 @@ class TestCommandRepository(unittest.TestCase):
     def test_duplicate_template_is_allowed(self):
         """Commands are allowed to have duplicate templates."""
         self.repo.create(alias="test", template="echo test", description="Test command")
-        Command.create(alias="test2", template="echo test", description="Test command", profile=1)
+        Command.create(
+            alias="test2", template="echo test", description="Test command", profile=1
+        )
 
     def test_create_with_profile(self):
         """Command should be created with the provided profile."""
-        command = self.repo.create(
-            alias="test", template="echo test", profile=2
-        )
+        command = self.repo.create(alias="test", template="echo test", profile=2)
         self.assertEqual(2, command.profile_id)
         self.profile_repo.get_state.assert_not_called()
 
     def test_create_uses_active_profile_by_default(self):
         """Command should be created with the active profile if none is provided."""
         # The mock in setUp returns 1 as active_command_profile_id
-        command = self.repo.create(
-            alias="test", template="echo test"
-        )
+        command = self.repo.create(alias="test", template="echo test")
         self.assertEqual(1, command.profile_id)
         self.profile_repo.get_state.assert_called_once()
 
@@ -239,7 +249,9 @@ class TestCommandRepository(unittest.TestCase):
 
     def test_get_by_alias_raises_exception_if_not_found(self):
         """None should be returned if no command is found with the given alias."""
-        Command.create(alias="test", template="echo test", description="Test command", profile=1)
+        Command.create(
+            alias="test", template="echo test", description="Test command", profile=1
+        )
         with self.assertRaises(UnknownAliasError):
             self.assertIsNone(self.repo.get_by_alias(alias="test_two"))
 
@@ -252,14 +264,18 @@ class TestCommandRepository(unittest.TestCase):
 
     def test_get_by_blank_alias_raises_exception(self):
         """A blank alias should be treated as an unknown alias."""
-        Command.create(alias="test", template="echo test", description="Test command", profile=1)
+        Command.create(
+            alias="test", template="echo test", description="Test command", profile=1
+        )
         with self.assertRaises(UnknownAliasError):
             self.assertIsNone(self.repo.get_by_alias(alias=""))
 
     def test_get_by_other_fields_does_not_work(self):
         """Commands should only be fetched by alias"""
         template = "echo test"
-        Command.create(alias="test", template=template, description="Test command", profile=1)
+        Command.create(
+            alias="test", template=template, description="Test command", profile=1
+        )
         with self.assertRaises(UnknownAliasError):
             self.assertIsNone(self.repo.get_by_alias(alias=template))
 
@@ -268,12 +284,14 @@ class TestCommandRepository(unittest.TestCase):
             alias="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|",
             template="echo test",
             description="Test command",
-            profile=1
+            profile=1,
         )
         self.repo.get_by_alias(alias="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|")
 
     def test_get_command_allows_unicode_query(self):
-        Command.create(alias="git-✨", template="echo test", description="Test command", profile=1)
+        Command.create(
+            alias="git-✨", template="echo test", description="Test command", profile=1
+        )
         self.repo.get_by_alias(alias="git-✨")
 
     def test_get_command_by_id(self):
@@ -284,7 +302,9 @@ class TestCommandRepository(unittest.TestCase):
         self.assertEqual(cmd, command)
 
     def test_get_command_by_id_raises_error_for_nonexistent_id(self):
-        Command.create(alias="test", template="echo test", description="Test command", profile=1)
+        Command.create(
+            alias="test", template="echo test", description="Test command", profile=1
+        )
         with self.assertRaises(UnknownCommandError):
             self.repo.get_by_id(cmd_id=999)
 
@@ -307,7 +327,10 @@ class TestCommandRepository(unittest.TestCase):
             alias="test", template="echo test", description="Test command", profile=1
         )
         Command.create(
-            alias="new_test", template="echo test", description="Test command", profile=1
+            alias="new_test",
+            template="echo test",
+            description="Test command",
+            profile=1,
         )
         with self.assertRaises(AliasConflictError):
             self.repo.update(command=cmd, alias="new_test")
@@ -434,7 +457,9 @@ class TestCommandRepository(unittest.TestCase):
         self.assertEqual(env, json.loads(stored.env))
 
     def test_update_existing_cwd_to_new_value(self):
-        command = Command.create(alias="test", template="echo test", cwd="/old/path", profile=1)
+        command = Command.create(
+            alias="test", template="echo test", cwd="/old/path", profile=1
+        )
         self.repo.update(command=command, cwd="/new/path")
         self.assertEqual("/new/path", Command.get(Command.id == command.id).cwd)
 
@@ -724,12 +749,20 @@ class TestCommandTagging(unittest.TestCase):
         Tag.delete().execute()
         Command.delete().execute()
         CommandTag.delete().execute()
-        profile_repo = MagicMock(get_state=MagicMock(return_value=SimpleNamespace(active_command_profile_id=1)))
+        profile_repo = MagicMock(
+            get_state=MagicMock(
+                return_value=SimpleNamespace(active_command_profile_id=1)
+            )
+        )
         self.repo = CommandRepository(profile_repository=profile_repo)
 
     def _create_cmd_tags(self):
-        self.cmd_one = Command.create(alias="cmd_one", template="echo Command one", profile=1)
-        self.cmd_two = Command.create(alias="cmd_two", template="echo Command two", profile=1)
+        self.cmd_one = Command.create(
+            alias="cmd_one", template="echo Command one", profile=1
+        )
+        self.cmd_two = Command.create(
+            alias="cmd_two", template="echo Command two", profile=1
+        )
         self.tag_one = Tag.create(name="tag_one", description="Tag One Description")
         self.tag_two = Tag.create(name="tag_two", description="Tag Two Description")
         self.cmd_tag_one = CommandTag.create(command=self.cmd_one, tag=self.tag_one)

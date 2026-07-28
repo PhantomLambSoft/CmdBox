@@ -28,7 +28,7 @@ class TestCommandModel(unittest.TestCase):
             alias="deploy",
             template="echo Deploying",
             description="Deployment command",
-            profile=1
+            profile=1,
         )
         cmd = Command.get(alias=command.alias)
         self.assertEqual(Command.select().count(), 1)
@@ -42,7 +42,7 @@ class TestCommandModel(unittest.TestCase):
             template="echo Building",
             description="Build command",
             last_used=datetime.now(),
-            profile=1
+            profile=1,
         )
         with self.assertRaises(Exception):
             Command.create(
@@ -50,7 +50,7 @@ class TestCommandModel(unittest.TestCase):
                 template="echo Build again",
                 description="Duplicate alias",
                 last_used=datetime.now(),
-                profile=1
+                profile=1,
             )
 
     def test_update_command_usage(self):
@@ -62,7 +62,7 @@ class TestCommandModel(unittest.TestCase):
             description="Run tests",
             used=5,
             last_used=init_date,
-            profile=1
+            profile=1,
         )
         command.used += 1
         command.last_used = datetime.now()
@@ -86,7 +86,7 @@ class TestCommandModel(unittest.TestCase):
             template="echo run command",
             description="Run command",
             last_used=datetime.now(),
-            profile=1
+            profile=1,
         )
         with self.assertRaises(Exception):
             test_command.alias = "build"
@@ -289,7 +289,9 @@ class TestVariableTagModule(unittest.TestCase):
         VariableTag.delete().execute()
         Variable.delete().execute()
         Tag.delete().execute()
-        self.variable = Variable.create(name="test_variable", value="test_value", profile=1)
+        self.variable = Variable.create(
+            name="test_variable", value="test_value", profile=1
+        )
         self.tag = Tag.create(name="test_tag", description="Test tag")
 
     def test_create_variable_tag(self):

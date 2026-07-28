@@ -419,7 +419,9 @@ class TestVariableHandlers(unittest.TestCase):
             limit=10, order_by="name", tags=["t1"]
         )
         mock_render.assert_called_once_with(vars_, title="Variables", fields=["f1"])
-        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=2, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=2, force=None
+        )
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_list_variables_uses_correct_defaults_from_settings(self, mock_render):
@@ -447,7 +449,9 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             vars_, title="Variables", fields=["default_field_one", "default_field_two"]
         )
-        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=3, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=3, force=None
+        )
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_list_variables_uses_all_keyword_correctly(self, mock_render):
@@ -471,7 +475,9 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             vars_, title="Variables", fields=self.DISPLAY_FIELDS
         )
-        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=2, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=2, force=None
+        )
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_search_variables(self, mock_render):
@@ -496,7 +502,9 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             vars_, title="Search Results", fields=["f1"]
         )
-        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=1, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=1, force=None
+        )
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_search_variables_uses_correct_defaults_from_settings(
@@ -535,7 +543,9 @@ class TestVariableHandlers(unittest.TestCase):
             title="Search Results",
             fields=["default_field_one", "default_field_two"],  # output fields
         )
-        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=3, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=3, force=None
+        )
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_list")
     def test_run_search_variables_uses_all_keyword_correctly(self, mock_render):
@@ -560,7 +570,9 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             vars_, title="Search Results", fields=self.DISPLAY_FIELDS
         )
-        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=1, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=1, force=None
+        )
 
     @patch("cmdbox.cli.handlers.variable_handlers.render_variable_deleted")
     def test_run_delete_variable_success(self, mock_render):

@@ -1,5 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 from cmdbox.database import db, ensure_schema, get_db
 from cmdbox.models import ALL_MODELS, CommandHistory
@@ -24,7 +26,12 @@ class TestHistoryRepository(unittest.TestCase):
 
     def setUp(self):
         CommandHistory.delete().execute()
-        self.repo = HistoryRepository()
+        self.profile_repo = MagicMock(
+            get_state=MagicMock(
+                return_value=SimpleNamespace(active_command_profile_id=1)
+            )
+        )
+        self.repo = HistoryRepository(profile_repository=self.profile_repo)
 
     def _create_entry(
         self,
@@ -42,6 +49,7 @@ class TestHistoryRepository(unittest.TestCase):
             variables_used=None,
             exit_code=0,
             ran_at=ran_at,
+            profile=1,
         )
 
     def test_record_creates_history_entry_with_serialized_variables(self):
@@ -216,7 +224,7 @@ class TestHistoryRepository(unittest.TestCase):
         newest = self._create_entry("keep-3", "deploy", now - timedelta(minutes=1))
         self._create_entry("other-alias", "build", now)
 
-        self.repo._apply_retention(alias="deploy", limit=2)
+        self.repo._apply_retention(alias="deploy", limit=2, profile=1)
 
         self.assertEqual(
             {middle.id, newest.id, "other-alias"},
@@ -231,9 +239,9 @@ class TestHistoryRepository(unittest.TestCase):
         first = self._create_entry("a", "deploy", now - timedelta(minutes=1))
         second = self._create_entry("b", "deploy", now)
 
-        self.repo._apply_retention(alias="deploy", limit=0)
-        self.repo._apply_retention(alias="deploy", limit=-1)
-        self.repo._apply_retention(alias="deploy", limit=None)
+        self.repo._apply_retention(alias="deploy", limit=0, profile=1)
+        self.repo._apply_retention(alias="deploy", limit=-1, profile=1)
+        self.repo._apply_retention(alias="deploy", limit=None, profile=1)
 
         self.assertEqual(
             {first.id, second.id}, {row.id for row in CommandHistory.select()}
