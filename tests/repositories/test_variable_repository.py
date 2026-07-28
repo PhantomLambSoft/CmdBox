@@ -476,7 +476,12 @@ class TestVariableTagging(unittest.TestCase):
         Tag.delete().execute()
         Variable.delete().execute()
         VariableTag.delete().execute()
-        self.repo = VariableRepository()
+        profile_repo = MagicMock(
+            get_state=MagicMock(
+                return_value=SimpleNamespace(active_command_profile_id=1)
+            )
+        )
+        self.repo = VariableRepository(profile_repository=profile_repo)
 
     def _create_var_tags(self):
         self.var_one = Variable.create(name="var_one", value="Value one", profile=1)
