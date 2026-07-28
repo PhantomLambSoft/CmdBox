@@ -11,6 +11,7 @@ from cmdbox.core.fields import (
     TAG_SEARCH_FIELDS,
 )
 from cmdbox.repositories.history_repository import HistoryRepository
+from cmdbox.repositories.profile_repository import ProfileRepository
 from cmdbox.services.export_service import ExportService
 from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.history_service import HistoryService
@@ -30,11 +31,13 @@ from cmdbox.runtime.executor import Executor
 from cmdbox.services.command_services import CommandServices
 from cmdbox.services.run_service import RunService
 from cmdbox.services.tag_services import TagServices
+from cmdbox.services.profile_services import ProfileServices
 
 
 @lru_cache(maxsize=1)
 def get_settings_service() -> SettingsService:
-    config_path = get_app_data_dir() / "config.toml"
+    profile_service = get_profile_service()
+    config_path = profile_service.resolve_settings_path(get_app_data_dir())
     repo = SettingsRepository(config_path)
     settings = SettingsService(repo)
     return settings
@@ -77,6 +80,11 @@ def get_tag_repo() -> TagRepository:
 def get_history_repo() -> HistoryRepository:
     get_db()
     return HistoryRepository()
+
+
+@lru_cache(maxsize=1)
+def get_profile_repo() -> ProfileRepository:
+    return ProfileRepository()
 
 
 @lru_cache(maxsize=1)
@@ -133,6 +141,11 @@ def get_history_service() -> HistoryService:
         repo=get_history_repo(),
         get_settings=get_settings,
     )
+
+
+@lru_cache(maxsize=1)
+def get_profile_service() -> ProfileServices:
+    return ProfileServices(profile_repository=get_profile_repo())
 
 
 @lru_cache(maxsize=1)
