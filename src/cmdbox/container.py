@@ -63,12 +63,14 @@ def get_console() -> ConsoleUI:
 
 @lru_cache(maxsize=1)
 def get_command_repo() -> CommandRepository:
-    return CommandRepository()
+    profile_repo = get_profile_repo()
+    return CommandRepository(profile_repo)
 
 
 @lru_cache(maxsize=1)
 def get_variable_repo() -> VariableRepository:
-    return VariableRepository()
+    profile_repo = get_profile_repo()
+    return VariableRepository(profile_repo)
 
 
 @lru_cache(maxsize=1)
@@ -79,7 +81,8 @@ def get_tag_repo() -> TagRepository:
 @lru_cache(maxsize=1)
 def get_history_repo() -> HistoryRepository:
     get_db()
-    return HistoryRepository()
+    profile_repo = get_profile_repo()
+    return HistoryRepository(profile_repo)
 
 
 @lru_cache(maxsize=1)

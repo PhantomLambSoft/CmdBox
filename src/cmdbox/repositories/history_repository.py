@@ -12,8 +12,8 @@ from cmdbox.repositories.profile_repository import ProfileRepository
 
 class HistoryRepository:
 
-    def __init__(self, profile_repository: ProfileRepository | None = None) -> None:
-        self.profile_repository = profile_repository or ProfileRepository()
+    def __init__(self, profile_repository: ProfileRepository) -> None:
+        self.profile_repository = profile_repository
 
     def record(
         self,

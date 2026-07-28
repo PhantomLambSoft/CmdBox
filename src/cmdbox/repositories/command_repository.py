@@ -27,11 +27,11 @@ class CommandRepository(BaseRepository[Command]):
 
     def __init__(
         self,
+        profile_repository: ProfileRepository,
         validator: CommandValidator | None = None,
-        profile_repository: ProfileRepository | None = None,
     ):
+        self.profile_repo = profile_repository
         self.validator = validator or CommandValidator()
-        self.profile_repo = profile_repository or ProfileRepository()
 
     def create(
         self,
@@ -48,6 +48,7 @@ class CommandRepository(BaseRepository[Command]):
         Validates and creates a new Command object based on provided input parameters.
 
         Args:
+            alias (str): Unique identifier for the command to be created.
             alias (str): Unique identifier for the command to be created.
             template (str): Template string associated with the command.
             description (str | None): Optional description of the command.
