@@ -65,12 +65,6 @@ def migrate(old_db_path: str, new_db_path: str) -> None:
                     "INSERT INTO variabletag (id, variable_id, tag_id, date_created) "
                     "SELECT id, variable_id, tag_id, date_created FROM old.variabletag"
                 )
-                new_db.execute_sql(
-                    "INSERT INTO command_history "
-                    "(id, alias, template, resolved, variables_used, exit_code, ran_at) "
-                    "SELECT id, alias, template, resolved, variables_used, exit_code, ran_at "
-                    "FROM old.command_history"
-                )
 
                 # Command and variable pick up the new profile_id column, set
                 # to the default profile created above.
