@@ -87,6 +87,7 @@ def get_history_repo() -> HistoryRepository:
 
 @lru_cache(maxsize=1)
 def get_profile_repo() -> ProfileRepository:
+    get_db()
     return ProfileRepository()
 
 
