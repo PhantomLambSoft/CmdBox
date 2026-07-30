@@ -164,19 +164,19 @@ class ProfileServices:
         profile = self._repo.get_by_name(name)
         return self._repo.set_active_settings_profile(profile)
 
-    def get_status(self) -> ProfileState:
+    def get_status(self) -> ProfileStatus:
         """
         Retrieves the current state of the profile.
 
         This method gathers active command, variable, and settings profiles from the
-        repository's state and constructs a `ProfileState` instance with this information.
+        repository's state and constructs a `ProfileStatus` instance with this information.
 
         Returns:
-            ProfileState: An object encapsulating the current command, variable,
+            ProfileStatus: An object encapsulating the current command, variable,
             and settings profiles.
         """
         state = self._repo.get_state()
-        return ProfileState(
+        return ProfileStatus(
             command_profile=state.active_command_profile,
             variable_profile=state.active_variable_profile,
             settings_profile=state.active_settings_profile,

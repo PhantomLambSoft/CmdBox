@@ -163,7 +163,7 @@ class TestProfileServices(unittest.TestCase):
 
         result = self.services.get_status()
 
-        self.assertIsInstance(result, ProfileState)
+        self.assertIsInstance(result, ProfileStatus)
         self.assertEqual("cmd", result.command_profile)
         self.assertEqual("var", result.variable_profile)
         self.assertEqual("settings", result.settings_profile)
