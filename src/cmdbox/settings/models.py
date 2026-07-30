@@ -69,6 +69,12 @@ class DefaultFields:
     tag_search: list[str] = field(default_factory=lambda: ["name", "description"])
     tag_list_limit: int = 25
     tag_default_order: str = "name"
+    profile_output: list[str] = field(
+        default_factory=lambda: ["name", "description", "date_created"]
+    )
+    profile_search: list[str] = field(default_factory=lambda: ["name", "description"])
+    profile_list_limit: int = 20
+    profile_default_order: str = "name"
 
 
 @dataclass(frozen=True)
