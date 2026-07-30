@@ -1,4 +1,9 @@
-from cmdbox.models import Command, Variable, Tag
+from cmdbox.models import Profile, Command, Variable, Tag
+
+
+def profile_field_options(incomplete: str) -> list[str]:
+    fields = Profile._meta.sorted_field_names
+    return [field for field in fields if field.startswith(incomplete)]
 
 
 def command_field_options(incomplete: str) -> list[str]:
