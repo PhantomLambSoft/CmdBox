@@ -7,6 +7,7 @@ from cmdbox.cli.handlers.profile_handler import (
     run_get_profile,
     run_update_profile,
     run_list_profiles,
+    run_search_profiles,
     run_delete_profile,
     run_switch_command_profile,
     run_switch_variable_profile,
@@ -14,9 +15,27 @@ from cmdbox.cli.handlers.profile_handler import (
     run_switch_profile,
     run_profile_status,
 )
+from cmdbox.services.field_selection import FieldSelectionResolver
 
 
 class TestProfileHandler(unittest.TestCase):
+
+    DISPLAY_FIELDS = [
+        "f1",
+        "f2",
+        "test_field_one",
+        "test_field_two",
+        "test_field_three",
+        "test_field_four",
+    ]
+    SEARCH_FIELDS = [
+        "sf1",
+        "sf2",
+        "test_field_one",
+        "test_field_two",
+        "test_field_three",
+        "test_field_four",
+    ]
 
     def setUp(self):
         self.mock_profile_services = MagicMock()
@@ -25,6 +44,12 @@ class TestProfileHandler(unittest.TestCase):
         self.get_profile_services = lambda: self.mock_profile_services
         self.get_console = lambda: self.mock_console
         self.get_settings = lambda: self.mock_settings
+        self.get_display_field_resolver = lambda: FieldSelectionResolver(
+            self.DISPLAY_FIELDS
+        )
+        self.get_search_field_resolver = lambda: FieldSelectionResolver(
+            self.SEARCH_FIELDS
+        )
 
     @patch("cmdbox.cli.handlers.profile_handler.render_profile_created")
     @patch("cmdbox.cli.handlers.profile_handler.prompt_for_name")
@@ -260,7 +285,31 @@ class TestProfileHandler(unittest.TestCase):
         profiles = ["p1", "p2"]
         self.mock_profile_services.list_profiles.return_value = profiles
         mock_render.return_value = "rendered_list"
-        self.mock_settings.default_fields.tag_list_limit = 10
+        run_list_profiles(
+            limit=88,
+            page=None,
+            order_by="goose",
+            fields=["f2"],
+            get_profile_services=self.get_profile_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+        )
+        self.mock_profile_services.list_profiles.assert_called_with(
+            limit=88, order_by="goose"
+        )
+        mock_render.assert_called_once_with(profiles, title="Profiles", fields=["f2"])
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=2, force=None
+        )
+
+    @patch("cmdbox.cli.handlers.profile_handler.render_profile_list")
+    def test_run_list_profiles_uses_correct_defaults_from_settings(self, mock_render):
+        profiles = ["p1", "p2"]
+        self.mock_profile_services.list_profiles.return_value = profiles
+        mock_render.return_value = "rendered_list"
+        self.mock_settings.default_fields.profile_list_limit = 10
+        self.mock_settings.default_fields.profile_default_order = "name"
         run_list_profiles(
             limit=None,
             page=None,
@@ -269,6 +318,7 @@ class TestProfileHandler(unittest.TestCase):
             get_profile_services=self.get_profile_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_profile_services.list_profiles.assert_called_with(
             limit=10, order_by="name"
@@ -276,6 +326,123 @@ class TestProfileHandler(unittest.TestCase):
         mock_render.assert_called_once_with(profiles, title="Profiles", fields=["f1"])
         self.mock_console.print_paged.assert_called_with(
             "rendered_list", row_count=2, force=None
+        )
+
+    @patch("cmdbox.cli.handlers.profile_handler.render_profile_list")
+    def test_run_list_profiles_uses_all_keyword_correctly(self, mock_render):
+        """
+        Supplying 'all' keyword in fields argument should mean that all available fields
+        are displayed.
+        """
+        profiles = ["p1", "p2"]
+        self.mock_profile_services.list_profiles.return_value = profiles
+        mock_render.return_value = "rendered_list"
+        run_list_profiles(
+            limit=25,
+            page=None,
+            order_by="name",
+            fields=["all"],
+            get_profile_services=self.get_profile_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+        )
+        self.mock_profile_services.list_profiles.assert_called_with(
+            limit=25, order_by="name"
+        )
+        mock_render.assert_called_once_with(
+            profiles, title="Profiles", fields=self.DISPLAY_FIELDS
+        )
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=2, force=None
+        )
+
+    @patch("cmdbox.cli.handlers.profile_handler.render_profile_list")
+    def test_run_search_profile(self, mock_render):
+        profiles = ["p1", "p2"]
+        self.mock_profile_services.search.return_value = profiles
+        mock_render.return_value = "rendered_search"
+        run_search_profiles(
+            term="term",
+            limit=25,
+            page=None,
+            search_fields=["sf1"],
+            fields=["f2"],
+            get_profile_services=self.get_profile_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
+        )
+        self.mock_profile_services.search.assert_called_with(
+            "term", limit=25, fields=["sf1"]
+        )
+        mock_render.assert_called_once_with(profiles, title="Profiles", fields=["f2"])
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=2, force=None
+        )
+
+    @patch("cmdbox.cli.handlers.profile_handler.render_profile_list")
+    def test_run_search_uses_correct_defaults_from_settings(self, mock_render):
+        profiles = ["p1", "p2"]
+        self.mock_profile_services.search.return_value = profiles
+        mock_render.return_value = "rendered_search"
+        self.mock_settings.default_fields.profile_output = [
+            "test_field_one",
+            "test_field_two",
+        ]
+        self.mock_settings.default_fields.profile_search = [
+            "test_field_three",
+            "test_field_four",
+        ]
+        self.mock_settings.default_fields.profile_list_limit = 8
+        run_search_profiles(
+            term="term",
+            limit=None,
+            page=None,
+            search_fields=None,
+            fields=None,
+            get_profile_services=self.get_profile_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
+        )
+        self.mock_profile_services.search.assert_called_with(
+            "term", limit=8, fields=["test_field_three", "test_field_four"]
+        )
+        mock_render.assert_called_once_with(
+            profiles, title="Profiles", fields=["test_field_one", "test_field_two"]
+        )
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=2, force=None
+        )
+
+    @patch("cmdbox.cli.handlers.profile_handler.render_profile_list")
+    def test_run_search_profile_uses_all_keyword_correctly(self, mock_render):
+        profiles = ["p1", "p2"]
+        self.mock_profile_services.search.return_value = profiles
+        mock_render.return_value = "rendered_search"
+        run_search_profiles(
+            term="term",
+            limit=25,
+            page=None,
+            search_fields=["all"],
+            fields=["all"],
+            get_profile_services=self.get_profile_services,
+            get_settings=self.get_settings,
+            get_console=self.get_console,
+            get_display_field_resolver=self.get_display_field_resolver,
+            get_search_field_resolver=self.get_search_field_resolver,
+        )
+        self.mock_profile_services.search.assert_called_with(
+            "term", limit=25, fields=self.SEARCH_FIELDS
+        )
+        mock_render.assert_called_once_with(
+            profiles, title="Profiles", fields=self.DISPLAY_FIELDS
+        )
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=2, force=None
         )
 
     @patch("cmdbox.cli.handlers.profile_handler.render_profile_deleted")

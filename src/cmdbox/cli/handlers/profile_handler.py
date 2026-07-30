@@ -23,6 +23,7 @@ from cmdbox.cli.ui.presenters.profile_presenter import (
 )
 from cmdbox.cli.prompts.validators import NameValidator
 from cmdbox.cli.ui.console import ConsoleUI
+from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.profile_services import ProfileServices
 from cmdbox.settings.models import Settings
 from cmdbox.logging_setup.log_decorators import log_action
@@ -158,22 +159,69 @@ def run_list_profiles(
     get_profile_services: Callable[[], ProfileServices],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
+    get_display_field_resolver: Callable[[], FieldSelectionResolver],
 ) -> None:
     console = get_console()
     profile_service = get_profile_services()
     settings = get_settings()
 
     if limit is None:
-        limit = settings.default_fields.tag_list_limit  # see note below
+        limit = settings.default_fields.profile_list_limit
     if order_by is None:
-        order_by = "name"
+        order_by = settings.default_fields.profile_default_order
 
     profiles = profile_service.list_profiles(limit=limit, order_by=order_by)
+
+    fields = get_display_field_resolver().resolve(
+        fields,
+        default_fields=settings.default_fields.profile_search,
+        aliases=settings.field_aliases.alias_map,
+    )
 
     rendered_profile_list = render_profile_list(
         profiles, title="Profiles", fields=fields
     )
     console.print_paged(rendered_profile_list, row_count=len(profiles), force=page)
+
+
+@log_action(__name__, "run_search_profiles")
+def run_search_profiles(
+    *,
+    term: str,
+    limit: int | None,
+    page: bool | None,
+    search_fields: list[str] | None = None,
+    fields: list[str] | None = None,
+    get_profile_services: Callable[[], ProfileServices],
+    get_settings: Callable[[], Settings],
+    get_console: Callable[[], ConsoleUI],
+    get_display_field_resolver: Callable[[], FieldSelectionResolver],
+    get_search_field_resolver: Callable[[], FieldSelectionResolver],
+) -> None:
+    console = get_console()
+    profile_service = get_profile_services()
+    settings = get_settings()
+
+    if limit is None:
+        limit = settings.default_fields.profile_list_limit
+
+    output_fields = get_display_field_resolver().resolve(
+        fields,
+        default_fields=settings.default_fields.profile_output,
+        aliases=settings.field_aliases.alias_map,
+    )
+    search_fields = get_search_field_resolver().resolve(
+        search_fields,
+        default_fields=settings.default_fields.profile_search,
+        aliases=settings.field_aliases.alias_map,
+    )
+
+    profiles = profile_service.search(term, limit=limit, fields=search_fields)
+
+    rendered_profiles = render_profile_list(
+        profiles, title="Profiles", fields=output_fields
+    )
+    console.print_paged(rendered_profiles, row_count=len(profiles), force=page)
 
 
 @log_action(__name__, "run_delete_profile")
