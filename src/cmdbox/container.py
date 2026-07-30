@@ -9,6 +9,8 @@ from cmdbox.core.fields import (
     VARIABLE_SEARCH_FIELDS,
     TAG_DISPLAY_FIELDS,
     TAG_SEARCH_FIELDS,
+    PROFILE_DISPLAY_FIELDS,
+    PROFILE_SEARCH_FIELDS,
 )
 from cmdbox.repositories.history_repository import HistoryRepository
 from cmdbox.repositories.profile_repository import ProfileRepository
@@ -167,6 +169,16 @@ def get_import_service() -> ImportService:
         var_service=get_variable_services(),
         tag_service=get_tag_services(),
     )
+
+
+@lru_cache(maxsize=1)
+def get_profile_display_field_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=PROFILE_DISPLAY_FIELDS)
+
+
+@lru_cache(maxsize=1)
+def get_profile_search_field_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=PROFILE_SEARCH_FIELDS)
 
 
 @lru_cache(maxsize=1)
