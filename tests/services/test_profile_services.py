@@ -156,9 +156,9 @@ class TestProfileServices(unittest.TestCase):
 
     def test_get_status(self):
         state = MagicMock()
-        state.active_command_profile = "cmd"
-        state.active_variable_profile = "var"
-        state.active_settings_profile = "settings"
+        state.active_command_profile.name = "cmd"
+        state.active_variable_profile.name = "var"
+        state.active_settings_profile.name = "settings"
         self.mock_repo.get_state.return_value = state
 
         result = self.services.get_status()
