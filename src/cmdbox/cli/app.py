@@ -20,6 +20,7 @@ from .commands.settings import app as settings_app
 from .commands.history import app as history_app
 from .commands.export import app as export_app
 from .commands.import_ import app as import_app
+from .commands.profile_crud import app as profile_crud_app
 
 app = typer.Typer(
     name="cb",
@@ -46,6 +47,11 @@ app.add_typer(
 )
 app.add_typer(
     import_app, name="import", help="Import commands and variables from a JSON file."
+)
+app.add_typer(
+    profile_crud_app,
+    name="profile",
+    help="CRUD operations and switching operations for profiles.",
 )
 
 
