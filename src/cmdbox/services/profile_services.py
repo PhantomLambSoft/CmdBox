@@ -16,9 +16,9 @@ class ProfileStatus:
     or linked, providing a way to check consistency across these profiles.
 
     Attributes:
-        command_profile (str): The command profile status.
-        variable_profile (str): The variable profile status.
-        settings_profile (str): The settings profile status.
+        command_profile (str): The name of the current command profile.
+        variable_profile (str): The name of the current variable profile.
+        settings_profile (str): The name of the current settings profile.
     """
 
     command_profile: str
@@ -200,9 +200,9 @@ class ProfileServices:
         """
         state = self._repo.get_state()
         return ProfileStatus(
-            command_profile=state.active_command_profile,
-            variable_profile=state.active_variable_profile,
-            settings_profile=state.active_settings_profile,
+            command_profile=state.active_command_profile.name,
+            variable_profile=state.active_variable_profile.name,
+            settings_profile=state.active_settings_profile.name,
         )
 
     def resolve_settings_path(
