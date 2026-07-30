@@ -201,6 +201,33 @@ class ProfileRepository(BaseRepository):
         ordering = self._resolve_ordering(order_by)
         return list(Profile.select().order_by(*ordering).limit(limit))
 
+    def search(
+        self,
+        query: str,
+        fields: str | Sequence[str] | None = ("name", "description"),
+        limit: int = 25,
+    ) -> list[Profile]:
+        """
+        Searches for profiles based on a given query and specified fields, returning a list of
+        profiles that match the search criteria. The search operation is limited by the provided
+        limit parameter and uses "name" as the secondary ordering criterion.
+
+        Args:
+            query (str): The search query string used to find matching profiles.
+            fields (str | Sequence[str] | None): The fields to search within. Defaults to
+                ("name", "description") if not provided.
+            limit (int): The maximum number of profiles to return. Defaults to 25.
+
+        Returns:
+            list[Profile]: A list of Profile objects that match the search query.
+        """
+        return self._search(
+            query,
+            secondary_ordering="name",
+            fields=fields,
+            limit=limit,
+        )
+
     def record_use(self, profile_id: int) -> None:
         """
         Records the usage of a profile by updating its last used timestamp.

@@ -134,6 +134,29 @@ class ProfileServices:
         """
         return self._repo.list_all(order_by=order_by, limit=limit)
 
+    def search(
+        self, query: str, fields: str | Sequence[str] | None = None, limit: int = 25
+    ) -> list[Profile]:
+        """
+        Performs a search operation to retrieve profiles matching the given query and specified fields.
+
+        This method searches through a repository of profiles using the provided query, retrieves
+        the fields specified, and limits the number of results based on the `limit` parameter. It is
+        designed to facilitate efficient querying of profiles through customizable parameters.
+
+        Args:
+            query (str): The search term used to find matching profiles.
+            fields (str | Sequence[str] | None): The fields to include in the search. Accepts a single string, a sequence of strings,
+                or None, which defaults to "name" and "description" fields if unspecified.
+            limit (int): The maximum number of profiles to return, defaulting to 25.
+
+        Returns:
+            list[Profile]: A list of profiles matching the query, based on the specified fields and limit.
+        """
+        if not fields:
+            fields = ("name", "description")
+        return self._repo.search(query, fields=fields, limit=limit)
+
     def switch_profile(self, name: str) -> ProfileState:
         """
         Switches the current active profile to the specified profile by name.
