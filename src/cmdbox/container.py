@@ -123,7 +123,12 @@ def get_command_services() -> CommandServices:
     get_db()
     cmd_repo = get_command_repo()
     tag_repo = get_tag_repo()
-    return CommandServices(command_repository=cmd_repo, tag_repository=tag_repo)
+    profile_repo = get_profile_repo()
+    return CommandServices(
+        command_repository=cmd_repo,
+        tag_repository=tag_repo,
+        profile_repository=profile_repo,
+    )
 
 
 @lru_cache(maxsize=1)
@@ -131,7 +136,12 @@ def get_variable_services() -> VariableServices:
     get_db()
     var_repo = get_variable_repo()
     tag_repo = get_tag_repo()
-    return VariableServices(variable_repository=var_repo, tag_repository=tag_repo)
+    profile_repo = get_profile_repo()
+    return VariableServices(
+        variable_repository=var_repo,
+        tag_repository=tag_repo,
+        profile_repository=profile_repo,
+    )
 
 
 @lru_cache(maxsize=1)
