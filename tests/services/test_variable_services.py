@@ -355,6 +355,68 @@ class TestVariableServices(unittest.TestCase):
             query, fields=fields, limit=10, profile=mock_profile
         )
 
+    def test_move_variable(self):
+        name = "test-var"
+        target_profile_name = "target-profile"
+        source_profile = MagicMock(spec=Profile)
+        target_profile = MagicMock(spec=Profile)
+        var = MagicMock(spec=Variable)
+        updated_var = MagicMock(spec=Variable)
+
+        self.mock_profile_repo.get_by_name.side_effect = [
+            source_profile,
+            target_profile,
+        ]
+        self.mock_repo.get_by_name.return_value = var
+        self.mock_repo.update.return_value = updated_var
+
+        result = self.services.move_variable(
+            name, target_profile_name, profile="source-profile"
+        )
+
+        self.assertEqual(updated_var, result)
+        self.mock_repo.get_by_name.assert_called_once_with(name, profile=source_profile)
+        self.mock_profile_repo.get_by_name.assert_any_call("source-profile")
+        self.mock_profile_repo.get_by_name.assert_any_call(target_profile_name)
+        self.mock_repo.update.assert_called_once_with(var, profile=target_profile)
+
+    @patch("cmdbox.services.variable_services.db")
+    def test_copy_variable(self, mock_db):
+        name = "test-var"
+        target_profile_name = "target-profile"
+        source_profile = MagicMock(spec=Profile)
+        target_profile = MagicMock(spec=Profile)
+        source_tag = MagicMock(spec=Tag)
+        source_var = MagicMock(spec=Variable)
+        source_var.name = name
+        source_var.value = "test-value"
+        source_var.tags = [MagicMock(tag=source_tag)]
+
+        copy_var = MagicMock(spec=Variable)
+        copy_var.id = 456
+        expected_var = MagicMock(spec=Variable)
+
+        self.mock_profile_repo.get_by_name.side_effect = [
+            source_profile,
+            target_profile,
+        ]
+        self.mock_repo.get_by_name.return_value = source_var
+        self.mock_repo.create.return_value = copy_var
+        self.mock_repo.get_by_id.return_value = expected_var
+
+        result = self.services.copy_variable(
+            name, target_profile_name, profile="source-profile"
+        )
+
+        self.assertEqual(expected_var, result)
+        self.mock_repo.get_by_name.assert_called_once_with(name, profile=source_profile)
+        self.mock_repo.create.assert_called_once_with(
+            name=name, value=source_var.value, profile=target_profile
+        )
+        self.mock_repo.add_tags.assert_called_once_with(copy_var, [source_tag])
+        self.mock_repo.get_by_id.assert_called_once_with(copy_var.id)
+        mock_db.atomic.assert_called_once()
+
     def test_get_tags_internal(self):
         tag_names = ["tag1", "tag2"]
         tags = [MagicMock(spec=Tag), MagicMock(spec=Tag)]

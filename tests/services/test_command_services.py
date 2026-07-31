@@ -454,6 +454,84 @@ class TestCommandServices(unittest.TestCase):
             query, fields=fields, limit=20, profile=mock_profile
         )
 
+    def test_move_command(self):
+        alias = "test-cmd"
+        target_profile_name = "target-profile"
+        source_profile = MagicMock(spec=Profile)
+        target_profile = MagicMock(spec=Profile)
+        cmd = MagicMock(spec=Command)
+        updated_cmd = MagicMock(spec=Command)
+
+        self.mock_profile_repo.get_by_name.side_effect = [
+            source_profile,
+            target_profile,
+        ]
+        self.mock_repo.get_by_alias.return_value = cmd
+        self.mock_repo.update.return_value = updated_cmd
+
+        result = self.services.move_command(
+            alias, target_profile_name, profile="source-profile"
+        )
+
+        self.assertEqual(updated_cmd, result)
+        self.mock_repo.get_by_alias.assert_called_once_with(
+            alias, profile=source_profile
+        )
+        self.mock_profile_repo.get_by_name.assert_any_call("source-profile")
+        self.mock_profile_repo.get_by_name.assert_any_call(target_profile_name)
+        self.mock_repo.update.assert_called_once_with(cmd, profile=target_profile)
+
+    @patch("cmdbox.services.command_services.db")
+    def test_copy_command(self, mock_db):
+        alias = "test-cmd"
+        target_profile_name = "target-profile"
+        source_profile = MagicMock(spec=Profile)
+        target_profile = MagicMock(spec=Profile)
+        source_tag = MagicMock(spec=Tag)
+        source_cmd = MagicMock(spec=Command)
+        source_cmd.alias = alias
+        source_cmd.template = "echo hello"
+        source_cmd.description = "desc"
+        source_cmd.cwd = "/tmp"
+        source_cmd.shell = "/bin/bash"
+        source_cmd.env = '{"KEY": "VALUE"}'
+        source_cmd.timeout = 30
+        source_cmd.tags = [MagicMock(tag=source_tag)]
+
+        copy_cmd = MagicMock(spec=Command)
+        copy_cmd.id = 456
+        expected_cmd = MagicMock(spec=Command)
+
+        self.mock_profile_repo.get_by_name.side_effect = [
+            source_profile,
+            target_profile,
+        ]
+        self.mock_repo.get_by_alias.return_value = source_cmd
+        self.mock_repo.create.return_value = copy_cmd
+        self.mock_repo.get_by_id.return_value = expected_cmd
+
+        result = self.services.copy_command(
+            alias, target_profile_name, profile="source-profile"
+        )
+
+        self.assertEqual(expected_cmd, result)
+        self.mock_repo.get_by_alias.assert_called_once_with(
+            alias, profile=source_profile
+        )
+        self.mock_repo.create.assert_called_once_with(
+            alias=alias,
+            template=source_cmd.template,
+            description=source_cmd.description,
+            cwd=source_cmd.cwd,
+            shell=source_cmd.shell,
+            env={"KEY": "VALUE"},
+            timeout=source_cmd.timeout,
+            profile=target_profile,
+        )
+        self.mock_repo.add_tags.assert_called_once_with(copy_cmd, [source_tag])
+        self.mock_repo.get_by_id.assert_called_once_with(copy_cmd.id)
+        mock_db.atomic.assert_called_once()
+
     def test_get_tags_internal(self):
         # Setup
         tag_names = ["tag1", "tag2"]
