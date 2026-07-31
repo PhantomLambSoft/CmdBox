@@ -30,7 +30,9 @@ class VariableRepository(BaseRepository[Variable]):
         self.profile_repository = profile_repository
         self.validator = validator or VariableValidator()
 
-    def create(self, name: str, value: str, profile: int | None = None) -> Variable:
+    def create(
+        self, name: str, value: str, profile: Profile | int | None = None
+    ) -> Variable:
         """
         Validates and creates a new Variable object based on provided input parameters.
 
