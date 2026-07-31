@@ -1,9 +1,10 @@
 from typing import Sequence
 
-from cmdbox.models import Tag, Command
+from cmdbox.models import Tag, Command, Profile
 from cmdbox.repositories.command_repository import CommandRepository
 from cmdbox.database import db
 from cmdbox.repositories.errors import UnknownAliasError
+from cmdbox.repositories.profile_repository import ProfileRepository
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
 from cmdbox.repositories.tag_repository import TagRepository
 
@@ -20,13 +21,21 @@ class CommandServices:
     Attributes:
         command_repository (CommandRepository): Repository for managing command records.
         tag_repository (TagRepository): Repository for managing tag-related operations.
+        profile_repository (ProfileRepository): Repository for managing profile-related operations.
     """
 
     def __init__(
-        self, command_repository: CommandRepository, tag_repository: TagRepository
+        self,
+        command_repository: CommandRepository,
+        tag_repository: TagRepository,
+        profile_repository: ProfileRepository,
     ):
         self._repo = command_repository
         self._tag_repo = tag_repository
+        self._profile_repo = profile_repository
+
+    def resolve_profile(self, profile: str | None) -> Profile | None:
+        return self._profile_repo.get_by_name(profile) if profile else None
 
     def create_command(
         self,
@@ -38,6 +47,7 @@ class CommandServices:
         shell: str | None = None,
         env: dict[str, str] | None = None,
         timeout: int | None = None,
+        profile: str | None = None,
     ) -> Command:
         """
         Creates a new command by storing the provided alias, template, and optional description
@@ -56,10 +66,12 @@ class CommandServices:
                 the command. Defaults to None.
             timeout (int | None): Optional maximum number of seconds before the process is
                 killed. Defaults to None.
+            profile (str | None): Optional profile to associate with the command. Defaults to None.
 
         Returns:
             Command: The created command record.
         """
+        profile = self.resolve_profile(profile)
         with db.atomic():
             tags = self._get_tags(tags)
             cmd = self._repo.create(
@@ -70,6 +82,7 @@ class CommandServices:
                 shell=shell,
                 env=env,
                 timeout=timeout,
+                profile=profile,
             )
             if tags:
                 self._repo.add_tags(cmd, tags)
@@ -95,7 +108,7 @@ class CommandServices:
         cmd = self._repo.get_by_alias(alias)
         return self._repo.update(cmd, **fields)
 
-    def delete_command(self, alias_: str) -> bool:
+    def delete_command(self, alias_: str, profile: str | None = None) -> bool:
         """
         Deletes a command by its alias.
 
@@ -104,14 +117,18 @@ class CommandServices:
 
         Args:
             alias_: The alias of the command to delete.
+            profile (str | None): Optional profile associated with the command. Defaults to None.
 
         Returns:
             bool: True if the command was deleted successfully, False otherwise.
         """
-        cmd = self._repo.get_by_alias(alias_)
+        profile = self.resolve_profile(profile)
+        cmd = self._repo.get_by_alias(alias_, profile=profile)
         return self._repo.delete(cmd)
 
-    def add_tags(self, alias: str, tags: list[str]) -> TagAttachResult:
+    def add_tags(
+        self, alias: str, tags: list[str], profile: str | None = None
+    ) -> TagAttachResult:
         """
         Adds specified tags to an existing alias.
 
@@ -122,16 +139,20 @@ class CommandServices:
             alias (str): The alias identifying the command to which tags are to be
                 attached.
             tags (list[str]): A list of tags to attach to the command.
+            profile (str | None): Optional profile associated with the command. Defaults to None.
 
         Returns:
             TagAttachResult: The result of the tag attachment operation, indicating
                 whether the tags were successfully attached to the command.
         """
-        cmd = self._repo.get_by_alias(alias)
+        profile = self.resolve_profile(profile)
+        cmd = self._repo.get_by_alias(alias, profile=profile)
         tags = self._get_tags(tags)
         return self._repo.add_tags(cmd, tags)
 
-    def remove_tags(self, alias: str, tags: list[str]) -> TagDetachResult:
+    def remove_tags(
+        self, alias: str, tags: list[str], profile: str | None = None
+    ) -> TagDetachResult:
         """
         Removes specific tags associated with a command alias.
 
@@ -139,17 +160,19 @@ class CommandServices:
         from it. The updated tag associations will be handled by the repository.
 
         Args:
-            alias: The unique identifier for the command to update.
-            tags: A list of tags to be removed from the specified command.
+            alias (str): The unique identifier for the command to update.
+            tags (list[str]): A list of tags to be removed from the specified command.
+            profile (str | None): Optional profile associated with the command. Defaults to None.
 
         Returns:
             TagDetachResult: An object representing the result of tag detachment.
         """
-        cmd = self._repo.get_by_alias(alias)
+        profile = self.resolve_profile(profile)
+        cmd = self._repo.get_by_alias(alias, profile=profile)
         tags = self._get_tags(tags)
         return self._repo.remove_tags(cmd, tags)
 
-    def get_command(self, alias: str) -> Command:
+    def get_command(self, alias: str, profile: str | None = None) -> Command:
         """
         Retrieves a command by its alias.
 
@@ -158,14 +181,18 @@ class CommandServices:
 
         Args:
             alias (str): The alias of the command to retrieve.
+            profile (str | None): Optional profile associated with the command. Defaults to None.
 
         Returns:
             Command: The command object associated with the given alias.
         """
-        cmd = self._repo.get_by_alias(alias)
+        profile = self.resolve_profile(profile)
+        cmd = self._repo.get_by_alias(alias, profile=profile)
         return cmd
 
-    def get_command_or_none(self, alias: str) -> Command | None:
+    def get_command_or_none(
+        self, alias: str, profile: str | None = None
+    ) -> Command | None:
         """
         Gets the command associated with the given alias or returns None if the alias
         is not recognized.
@@ -176,13 +203,14 @@ class CommandServices:
 
         Args:
             alias (str): The alias of the command to retrieve.
+            profile (str | None): Optional profile associated with the command. Defaults to None.
 
         Returns:
             Command | None: The command associated with the alias if found, otherwise
             None.
         """
         try:
-            return self.get_command(alias)
+            return self.get_command(alias, profile=profile)
         except UnknownAliasError:
             return None
 
@@ -209,6 +237,7 @@ class CommandServices:
         order_by: str | Sequence[str] = "alias",
         tags: Sequence[str] | None = None,
         limit: int = 25,
+        profile: str | None = None,
     ) -> list[Command]:
         """
         Lists commands, optionally filtered by tags, with sorting and limit options.
@@ -223,21 +252,24 @@ class CommandServices:
             tags (Sequence[str], optional): A list of tags to filter the commands. If
                 provided, only commands matching the tags will be included.
             limit (int, optional): The maximum number of commands to return. Default is 25.
+            profile (str | None): Optional profile associated with the commands. Defaults to None.
 
         Returns:
             list[Command]: A list of commands matching the provided filters and sorted
             according to the specified criteria.
         """
+        profile = self.resolve_profile(profile)
         if tags:
             tags = self._get_tags(tags)
-            return self._repo.list_by_tag(tags, order_by, limit)
-        return self._repo.list_all(order_by, limit)
+            return self._repo.list_by_tag(tags, order_by, limit, profile=profile)
+        return self._repo.list_all(order_by, limit, profile=profile)
 
     def search(
         self,
         query: str,
         fields: str | Sequence[str] | None = None,
         limit: int = 25,
+        profile: str | None = None,
     ) -> list[Command]:
         """
         Searches for commands that match the given query across specified fields.
@@ -251,13 +283,53 @@ class CommandServices:
             fields (str | Sequence[str] | None): The fields to perform the search within. Defaults
                 to ("alias", "template", "description"). If None, no specific fields are targeted.
             limit (int): The maximum number of results to return. Defaults to 25.
+            profile (str | None): The profile to use for the search. Defaults to None.
 
         Returns:
             list[Command]: A list of Command objects that match the search query.
         """
         if not fields:
             fields = ("alias", "template", "description")
-        return self._repo.search(query, fields=fields, limit=limit)
+        profile = self.resolve_profile(profile)
+        return self._repo.search(query, fields=fields, limit=limit, profile=profile)
+
+    def move_command(
+        self, alias: str, target_profile: str, profile: str | None = None
+    ) -> Command:
+        source_profile = self.resolve_profile(profile)
+        cmd = self._repo.get_by_alias(alias, profile=source_profile)
+        target_profile = self._profile_repo.get_by_name(target_profile)
+        return self._repo.update(cmd, profile=target_profile)
+
+    def copy_command(
+        self,
+        alias: str,
+        target_profile: str,
+        new_alias: str | None = None,
+        profile: str | None = None,
+    ) -> Command:
+        import json
+
+        source_profile = self.resolve_profile(profile)
+        source = self._repo.get_by_alias(alias, profile=source_profile)
+        target_profile = self._profile_repo.get_by_name(target_profile)
+        source_tags = [ct.tag for ct in source.tags]
+
+        with db.atomic():
+            copy = self._repo.create(
+                alias=new_alias or source.alias,
+                template=source.template,
+                description=source.description,
+                cwd=source.cwd,
+                shell=source.shell,
+                env=json.loads(source.env) if source.env else None,
+                timeout=source.timeout,
+                profile=target_profile,
+            )
+            if source_tags:
+                self._repo.add_tags(copy, source_tags)
+
+        return self._repo.get_by_id(copy.id)
 
     def _get_tags(self, tags: Sequence[str] | None) -> list[Tag]:
         """
