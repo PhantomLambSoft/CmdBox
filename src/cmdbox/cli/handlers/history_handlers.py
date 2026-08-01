@@ -58,7 +58,12 @@ def run_history_rerun(
     entry = history_service.get_by_ref(ref, profile=profile)
     variables = history_service.get_variables(entry)
     run_service = get_run_service()
-    run_service.run(entry.alias, ctx=RunContext(), runtime_vars=variables)
+    run_service.run(
+        entry.alias,
+        ctx=RunContext(),
+        runtime_vars=variables,
+        profile=entry.profile.name,
+    )
 
 
 @log_action(__name__, "run_history_clear")
@@ -95,4 +100,6 @@ def run_rerun_last(
         return
     entry = entries[0]
     variables = service.get_variables(entry)
-    get_run_service().run(entry.alias, runtime_vars=variables)
+    get_run_service().run(
+        entry.alias, runtime_vars=variables, profile=entry.profile.name
+    )
