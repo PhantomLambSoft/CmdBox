@@ -198,6 +198,7 @@ class TestHistoryHandlers(unittest.TestCase):
     def test_run_history_rerun_last_with_entries(self):
         entry = MagicMock()
         entry.alias = "deploy"
+        entry.profile.name = "profi-the-profile"
         variables = {"ENV": "prod"}
         mock_service = MagicMock()
         mock_run_service = MagicMock()
@@ -211,6 +212,8 @@ class TestHistoryHandlers(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
-        mock_run_service.run.assert_called_once_with("deploy", runtime_vars=variables)
+        mock_run_service.run.assert_called_once_with(
+            "deploy", runtime_vars=variables, profile="profi-the-profile"
+        )
         mock_service.get_recent.assert_called_once_with(limit=1)
         mock_service.get_variables.assert_called_once_with(entry)

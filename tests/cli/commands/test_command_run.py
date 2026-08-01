@@ -92,6 +92,7 @@ class TestCommandRun(unittest.TestCase):
             shell=shell,
             timeout=22,
             verbose=verbose,
+            profile=None,
             ctx=mock_ctx,
         )
 
@@ -104,6 +105,7 @@ class TestCommandRun(unittest.TestCase):
             shell=shell,
             timeout=22,
             verbose=verbose,
+            profile=None,
             ctx=mock_ctx,
         )
 

@@ -6,7 +6,7 @@ from cmdbox.exceptions import CmdboxError
 from cmdbox.runtime.executor import RunContext
 from cmdbox.services.run_service import RunService
 from cmdbox.models import Command
-from cmdbox.resolve.type_defs import ResolveResult
+from cmdbox.resolve.type_defs import ResolveResult, TraceStep, RefKind
 from cmdbox.runtime.results import ExecutionResult
 from cmdbox.repositories.errors import UnknownAliasError
 from cmdbox.resolve.errors import ResolutionError
@@ -43,6 +43,7 @@ class TestRunService(unittest.TestCase):
 
         resolve_result = MagicMock(spec=ResolveResult)
         resolve_result.text = resolved_text
+        resolve_result.trace = [TraceStep(RefKind.VARIABLE, "name", "world", "stored")]
         self.mock_resolver.resolve.return_value = resolve_result
 
         execution_result = ExecutionResult(
@@ -76,6 +77,7 @@ class TestRunService(unittest.TestCase):
 
         resolve_result = MagicMock(spec=ResolveResult)
         resolve_result.text = resolved_text
+        resolve_result.trace = [TraceStep(RefKind.VARIABLE, "name", "world", "stored")]
         self.mock_resolver.resolve.return_value = resolve_result
 
         execution_result = ExecutionResult(
