@@ -50,6 +50,7 @@ class AddCommandArgs:
     env: Optional[list[str]] = None
     timeout: Optional[int] = None
     interactive: bool = False
+    profile: Optional[str] = None
 
 
 @log_action(__name__, "run_add_command")
@@ -64,6 +65,7 @@ def run_add_command(
     template = args.template
     description = args.description
     tags = args.tags
+    profile = args.profile
 
     if args.interactive or args.alias is None:
         alias = prompt_for_alias(AliasValidator())
@@ -91,6 +93,7 @@ def run_add_command(
         shell=args.shell,
         env=env,
         timeout=args.timeout,
+        profile=profile,
     )
     console = get_console()
     console.print(render_command_created(cmd))
@@ -100,12 +103,13 @@ def run_add_command(
 def run_get_command(
     *,
     alias: str,
+    profile: Optional[str] = None,
     get_cmd_services: Callable[[], CommandServices],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
-    cmd = cmd_service.get_command(alias)
+    cmd = cmd_service.get_command(alias, profile=profile)
     rendered_cmd = render_command(cmd)
     console.print(rendered_cmd)
 
@@ -263,6 +267,7 @@ def run_list_command(
     order: str | None,
     tags: list[str] | None,
     fields: list[str] | None = None,
+    profile: Optional[str] = None,
     get_cmd_services: Callable[[], CommandServices],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
@@ -283,7 +288,9 @@ def run_list_command(
     if order is None:
         order = settings.default_fields.command_default_order
 
-    cmds = cmd_service.list_commands(limit=limit, order_by=order, tags=tags)
+    cmds = cmd_service.list_commands(
+        limit=limit, order_by=order, tags=tags, profile=profile
+    )
     rendered_cmd_list = render_command_list(
         cmds, title="Commands", fields=resolved_fields
     )
@@ -298,6 +305,7 @@ def run_search_command(
     page: bool | None,
     search_fields: list[str] | None = None,
     fields: list[str] | None = None,
+    profile: Optional[str] = None,
     get_cmd_services: Callable[[], CommandServices],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
@@ -321,7 +329,7 @@ def run_search_command(
 
     if limit is None:
         limit = settings.default_fields.command_list_limit
-    cmds = cmd_service.search(term, limit=limit, fields=search_fields)
+    cmds = cmd_service.search(term, limit=limit, fields=search_fields, profile=profile)
     rendered_cmd_list = render_command_list(
         cmds, title="Search Results", fields=output_fields
     )
@@ -332,13 +340,14 @@ def run_search_command(
 def run_delete_command(
     *,
     alias: str,
+    profile: Optional[str] = None,
     get_cmd_services: Callable[[], CommandServices],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     cmd_service = get_cmd_services()
-    cmd = cmd_service.get_command(alias)
-    if cmd_service.delete_command(alias):
+    cmd = cmd_service.get_command(alias, profile=profile)
+    if cmd_service.delete_command(alias, profile=profile):
         console.print(render_command_deleted(cmd))
     else:
         console.error(f"Failed to delete command '{alias}'.")
@@ -349,6 +358,7 @@ def run_attach_tags(
     *,
     alias: str | None = None,
     tag_names: list[str] | None = None,
+    profile: Optional[str] = None,
     get_cmd_services: Callable[[], CommandServices],
     get_tag_services: Callable[[], TagServices],
     get_console: Callable[[], ConsoleUI],
@@ -358,7 +368,7 @@ def run_attach_tags(
     if tag_names is None:
         tag_names = get_tags_interactive(get_tag_services())
     cmd_service = get_cmd_services()
-    result = cmd_service.add_tags(alias=alias, tags=tag_names)
+    result = cmd_service.add_tags(alias=alias, tags=tag_names, profile=profile)
     console = get_console()
     console.print(render_tag_attach_result(result))
 
@@ -368,6 +378,7 @@ def run_detach_tags(
     *,
     alias: str | None = None,
     tag_names: list[str] | None = None,
+    profile: Optional[str] = None,
     get_cmd_services: Callable[[], CommandServices],
     get_tag_services: Callable[[], TagServices],
     get_console: Callable[[], ConsoleUI],
@@ -377,7 +388,7 @@ def run_detach_tags(
     if tag_names is None:
         tag_names = get_tags_interactive(get_tag_services())
     cmd_service = get_cmd_services()
-    result = cmd_service.remove_tags(alias=alias, tags=tag_names)
+    result = cmd_service.remove_tags(alias=alias, tags=tag_names, profile=profile)
     console = get_console()
     console.print(render_tag_detach_result(result))
 

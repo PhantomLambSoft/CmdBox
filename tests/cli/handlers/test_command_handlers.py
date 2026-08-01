@@ -90,6 +90,7 @@ class TestCommandHandlers(unittest.TestCase):
             shell=None,
             env=None,
             timeout=None,
+            profile=None,
         )
         mock_render.assert_called_once_with(mock_cmd)
         self.mock_console.print.assert_called_with("rendered_created")
@@ -102,6 +103,7 @@ class TestCommandHandlers(unittest.TestCase):
             description="desc1",
             tags=["tag1"],
             interactive=False,
+            profile=None,
         )
         mock_cmd = MagicMock()
         self.mock_cmd_services.create_command.return_value = mock_cmd
@@ -123,6 +125,7 @@ class TestCommandHandlers(unittest.TestCase):
             shell=None,
             env=None,
             timeout=None,
+            profile=None,
         )
         mock_render.assert_called_once_with(mock_cmd)
         self.mock_console.print.assert_called_with("rendered_created")
@@ -136,8 +139,9 @@ class TestCommandHandlers(unittest.TestCase):
             alias="alias1",
             get_cmd_services=self.get_cmd_services,
             get_console=self.get_console,
+            profile=None,
         )
-        self.mock_cmd_services.get_command.assert_called_with("alias1")
+        self.mock_cmd_services.get_command.assert_called_with("alias1", profile=None)
         mock_render.assert_called_once_with(mock_cmd)
         self.mock_console.print.assert_called_with("rendered_cmd")
 
@@ -566,13 +570,17 @@ class TestCommandHandlers(unittest.TestCase):
             order="name",
             tags=["t1"],
             fields=["f1"],
+            profile=None,
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
             get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_cmd_services.list_commands.assert_called_with(
-            limit=10, order_by="name", tags=["t1"]
+            limit=10,
+            order_by="name",
+            tags=["t1"],
+            profile=None,
         )
         mock_render.assert_called_once_with(cmds, title="Commands", fields=["f1"])
         self.mock_console.print_paged.assert_called_with(
@@ -594,13 +602,17 @@ class TestCommandHandlers(unittest.TestCase):
             order="name",
             tags=["t1"],
             fields=None,
+            profile=None,
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
             get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_cmd_services.list_commands.assert_called_with(
-            limit=10, order_by="name", tags=["t1"]
+            limit=10,
+            order_by="name",
+            tags=["t1"],
+            profile=None,
         )
         mock_render.assert_called_once_with(
             cmds, title="Commands", fields=["test_field_one", "test_field_two"]
@@ -620,13 +632,17 @@ class TestCommandHandlers(unittest.TestCase):
             order="name",
             tags=["t1"],
             fields=["all"],
+            profile=None,
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
             get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_cmd_services.list_commands.assert_called_with(
-            limit=10, order_by="name", tags=["t1"]
+            limit=10,
+            order_by="name",
+            tags=["t1"],
+            profile=None,
         )
         mock_render.assert_called_once_with(
             cmds, title="Commands", fields=self.DISPLAY_FIELDS
@@ -646,6 +662,7 @@ class TestCommandHandlers(unittest.TestCase):
             page=None,
             search_fields=["sf1"],
             fields=["f1"],
+            profile=None,
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
@@ -653,9 +670,16 @@ class TestCommandHandlers(unittest.TestCase):
             get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_cmd_services.search.assert_called_with(
-            "term", limit=5, fields=["sf1"]
+            "term",
+            limit=5,
+            fields=["sf1"],
+            profile=None,
         )
-        mock_render.assert_called_once_with(cmds, title="Search Results", fields=["f1"])
+        mock_render.assert_called_once_with(
+            cmds,
+            title="Search Results",
+            fields=["f1"],
+        )
         self.mock_console.print_paged.assert_called_with(
             "rendered_search", row_count=1, force=None
         )
@@ -679,6 +703,7 @@ class TestCommandHandlers(unittest.TestCase):
             page=None,
             search_fields=None,
             fields=None,
+            profile=None,
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
@@ -689,6 +714,7 @@ class TestCommandHandlers(unittest.TestCase):
             "term",
             limit=5,
             fields=["test_field_three", "test_field_four"],  # search fields
+            profile=None,
         )
         mock_render.assert_called_once_with(
             cmds,
@@ -707,6 +733,7 @@ class TestCommandHandlers(unittest.TestCase):
             page=None,
             search_fields=["all"],
             fields=["all"],
+            profile=None,
             get_cmd_services=self.get_cmd_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
@@ -714,7 +741,10 @@ class TestCommandHandlers(unittest.TestCase):
             get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_cmd_services.search.assert_called_with(
-            "term", limit=5, fields=self.SEARCH_FIELDS
+            "term",
+            limit=5,
+            fields=self.SEARCH_FIELDS,
+            profile=None,
         )
         mock_render.assert_called_once_with(
             cmds, title="Search Results", fields=self.DISPLAY_FIELDS
@@ -732,11 +762,12 @@ class TestCommandHandlers(unittest.TestCase):
 
         run_delete_command(
             alias="alias1",
+            profile=None,
             get_cmd_services=self.get_cmd_services,
             get_console=self.get_console,
         )
 
-        self.mock_cmd_services.delete_command.assert_called_with("alias1")
+        self.mock_cmd_services.delete_command.assert_called_with("alias1", profile=None)
         mock_render.assert_called_once_with(mock_cmd)
         self.mock_console.print.assert_called_with("rendered_deleted")
 
@@ -744,6 +775,7 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.delete_command.return_value = False
         run_delete_command(
             alias="alias1",
+            profile=None,
             get_cmd_services=self.get_cmd_services,
             get_console=self.get_console,
         )
@@ -798,6 +830,7 @@ class TestCommandHandlers(unittest.TestCase):
             tags=["tag1"],
             env=["FOO=bar", "BAZ=qux"],
             interactive=False,
+            profile=None,
         )
 
         run_add_command(
@@ -816,6 +849,7 @@ class TestCommandHandlers(unittest.TestCase):
             shell=None,
             env={"FOO": "bar", "BAZ": "qux"},
             timeout=None,
+            profile=None,
         )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_created")
@@ -830,6 +864,7 @@ class TestCommandHandlers(unittest.TestCase):
             shell="bash",
             timeout=30,
             interactive=False,
+            profile=None,
         )
 
         run_add_command(
@@ -848,6 +883,7 @@ class TestCommandHandlers(unittest.TestCase):
             shell="bash",
             env=None,
             timeout=30,
+            profile=None,
         )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_created")
@@ -860,6 +896,7 @@ class TestCommandHandlers(unittest.TestCase):
             tags=["tag1"],
             env=["KEY=a=b"],
             interactive=False,
+            profile=None,
         )
 
         run_add_command(
@@ -878,6 +915,7 @@ class TestCommandHandlers(unittest.TestCase):
             shell=None,
             env={"KEY": "a=b"},
             timeout=None,
+            profile=None,
         )
 
     def _make_cmd(self, **overrides):
