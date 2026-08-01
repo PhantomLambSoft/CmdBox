@@ -43,6 +43,7 @@ def run_run_command(
     alias: str,
     runtime_vars: dict[str, str] | None = None,
     run_ctx: RawRunContext | None = None,
+    profile: str | None = None,
     get_run_service: Callable[[], RunService],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
@@ -54,14 +55,18 @@ def run_run_command(
 
     run_service = get_run_service()
 
-    missing = run_service.collect_missing_vars(alias, runtime_vars=runtime_vars)
+    missing = run_service.collect_missing_vars(
+        alias, runtime_vars=runtime_vars, profile=profile
+    )
     if missing:
         for var_name in missing:
             value = prompt_for_missing_var(var_name)
             runtime_vars[var_name] = value
 
     run_ctx = get_run_ctx(run_ctx)
-    ex_result = run_service.run(alias, ctx=run_ctx, runtime_vars=runtime_vars)
+    ex_result = run_service.run(
+        alias, ctx=run_ctx, runtime_vars=runtime_vars, profile=profile
+    )
     if run_ctx.verbose and not run_ctx.emit:
         console = get_console()
         console.print(render_execution_result(ex_result))
@@ -73,6 +78,7 @@ def run_preview_command(
     alias: str,
     runtime_vars: dict[str, str] | None = None,
     run_ctx: RawRunContext | None = None,
+    profile: str | None = None,
     get_run_service: Callable[[], RunService],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
@@ -84,7 +90,9 @@ def run_preview_command(
 
     run_service = get_run_service()
 
-    missing = run_service.collect_missing_vars(alias, runtime_vars=runtime_vars)
+    missing = run_service.collect_missing_vars(
+        alias, runtime_vars=runtime_vars, profile=profile
+    )
     if missing:
         for var_name in missing:
             value = prompt_for_missing_var(var_name)
@@ -92,7 +100,7 @@ def run_preview_command(
 
     run_ctx = get_run_ctx(run_ctx)
     prev_result, effective_ctx = run_service.preview(
-        alias, runtime_vars=runtime_vars, ctx=run_ctx
+        alias, runtime_vars=runtime_vars, ctx=run_ctx, profile=profile
     )
     rendered_result = render_preview_result(prev_result, ctx=effective_ctx)
     console = get_console()
