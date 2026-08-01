@@ -269,7 +269,12 @@ class Resolver:
             if runtime_vars and key in runtime_vars:
                 value = runtime_vars[key]
                 trace.append(
-                    TraceStep(kind=RefKind.VARIABLE, key=key, expanded_to=value)
+                    TraceStep(
+                        kind=RefKind.VARIABLE,
+                        key=key,
+                        expanded_to=value,
+                        source="runtime",
+                    )
                 )
                 return value
 
@@ -290,7 +295,12 @@ class Resolver:
                 stack.pop()
 
             trace.append(
-                TraceStep(kind=RefKind.VARIABLE, key=rec.name, expanded_to=expanded)
+                TraceStep(
+                    kind=RefKind.VARIABLE,
+                    key=rec.name,
+                    expanded_to=expanded,
+                    source="stored",
+                )
             )
             return expanded
 

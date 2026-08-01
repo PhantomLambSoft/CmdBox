@@ -69,11 +69,17 @@ class TraceStep:
         kind (RefKind): The type or category of the trace step.
         key (str): The unique identifier or key associated with this step in the trace.
         expanded_to (str): The resulting value or destination that the key is expanded to.
+        source (str | None): For VARIABLE steps, where the value came from, "runtime"
+            if supplied via a runtime flag or a prompt response (both flow through the
+            same runtime_vars dict by the time resolution happens), or "stored" if it
+            came from a saved Variable. None for COMMAND steps, where this distinction
+            doesn't apply.
     """
 
     kind: RefKind
     key: str
     expanded_to: str
+    source: str | None = None
 
 
 @dataclass

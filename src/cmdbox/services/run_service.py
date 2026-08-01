@@ -6,7 +6,7 @@ from cmdbox.repositories.command_repository import CommandRepository
 from cmdbox.repositories.history_repository import HistoryRepository
 from cmdbox.repositories.profile_repository import ProfileRepository
 from cmdbox.resolve.resolver import Resolver
-from cmdbox.resolve.type_defs import ResolveResult
+from cmdbox.resolve.type_defs import ResolveResult, RefKind
 from cmdbox.runtime.executor import Executor, RunContext
 from cmdbox.runtime.results import ExecutionResult
 from cmdbox.settings.models import Settings
@@ -87,6 +87,7 @@ class RunService:
             exit_code=result.exit_code,
             profile=resolved_profile,
         )
+        self.record_variable_profile_use(resolved_cmd)
         return result
 
     def preview(
@@ -159,6 +160,29 @@ class RunService:
             limit=settings.history.limit_per_command,
             profile=profile,
         )
+
+    def record_variable_profile_use(self, resolved_cmd: ResolveResult) -> None:
+        """
+        Records the usage of a variable profile if a stored variable is detected in
+        the resolution trace of the provided command.
+
+        This method inspects the trace of the provided `resolved_cmd` to determine
+        if a variable with a reference kind of `VARIABLE` and a source of `stored`
+        was used. If such a variable is found, the method retrieves the active
+        variable profile ID from the profile repository and records its usage.
+
+        Args:
+            resolved_cmd: The resolution result containing the trace of steps
+                executed and their metadata.
+
+        """
+        used_stored_variable = any(
+            step.kind == RefKind.VARIABLE and step.source == "stored"
+            for step in resolved_cmd.trace
+        )
+        if used_stored_variable:
+            active_variable_profile_id = self._profile_repo.get_state().active_variable_profile_id
+            self._profile_repo.record_use(active_variable_profile_id)
 
     def collect_missing_vars(
         self,
