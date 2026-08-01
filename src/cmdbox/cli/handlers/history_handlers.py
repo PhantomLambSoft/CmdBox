@@ -18,11 +18,12 @@ def run_history_list(
     *,
     alias: str | None,
     limit: int,
+    profile: str | None = None,
     get_history_service: Callable[[], HistoryService],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     service = get_history_service()
-    entries = service.get_recent(alias=alias, limit=limit)
+    entries = service.get_recent(alias=alias, limit=limit, profile=profile)
     console = get_console()
     if not entries:
         console.info("No history found")
@@ -34,11 +35,12 @@ def run_history_list(
 def run_history_show(
     *,
     ref: str,
+    profile: str | None = None,
     get_history_service: Callable[[], HistoryService],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     service = get_history_service()
-    entry = service.get_by_ref(ref)
+    entry = service.get_by_ref(ref, profile=profile)
     variables = service.get_variables(entry)
     console = get_console()
     console.print(render_history_entry(entry, variables))
@@ -48,11 +50,12 @@ def run_history_show(
 def run_history_rerun(
     *,
     ref: str,
+    profile: str | None = None,
     get_history_service: Callable[[], HistoryService],
     get_run_service: Callable[[], RunService],
 ) -> None:
     history_service = get_history_service()
-    entry = history_service.get_by_ref(ref)
+    entry = history_service.get_by_ref(ref, profile=profile)
     variables = history_service.get_variables(entry)
     run_service = get_run_service()
     run_service.run(entry.alias, ctx=RunContext(), runtime_vars=variables)
@@ -63,6 +66,7 @@ def run_history_clear(
     *,
     alias: str | None,
     yes: bool,
+    profile: str | None = None,
     get_history_service: Callable[[], HistoryService],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
@@ -73,7 +77,7 @@ def run_history_clear(
             console.info("Aborted")
             return
     service = get_history_service()
-    count = service.clear(alias=alias)
+    count = service.clear(alias=alias, profile=profile)
     console.print(render_history_cleared(count, alias))
 
 
