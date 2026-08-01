@@ -10,6 +10,8 @@ from cmdbox.cli.handlers.command_handlers import (
     run_list_command,
     run_search_command,
     run_delete_command,
+    run_move_command,
+    run_copy_command,
     parse_env_pairs,
 )
 from cmdbox.services.field_selection import FieldSelectionResolver
@@ -1086,3 +1088,47 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.update_command.assert_called_with(
             "alias1", env={"FOO": "updated"}
         )
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_moved")
+    def test_run_move_command(self, mock_render):
+        mock_cmd = MagicMock()
+        self.mock_cmd_services.move_command.return_value = mock_cmd
+        mock_render.return_value = "rendered_moved"
+
+        run_move_command(
+            alias="alias1",
+            target_profile="target",
+            profile="source",
+            get_cmd_services=self.get_cmd_services,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.move_command.assert_called_with(
+            alias="alias1", target_profile="target", profile="source"
+        )
+        mock_render.assert_called_once_with(mock_cmd, "target")
+        self.mock_console.print.assert_called_with("rendered_moved")
+
+    @patch("cmdbox.cli.handlers.command_handlers.render_command_copied")
+    def test_run_copy_command(self, mock_render):
+        mock_cmd = MagicMock()
+        self.mock_cmd_services.copy_command.return_value = mock_cmd
+        mock_render.return_value = "rendered_copied"
+
+        run_copy_command(
+            alias="alias1",
+            target_profile="target",
+            new_alias="new_alias",
+            profile="source",
+            get_cmd_services=self.get_cmd_services,
+            get_console=self.get_console,
+        )
+
+        self.mock_cmd_services.copy_command.assert_called_with(
+            alias="alias1",
+            new_alias="new_alias",
+            target_profile="target",
+            profile="source",
+        )
+        mock_render.assert_called_once_with(mock_cmd, "target")
+        self.mock_console.print.assert_called_with("rendered_copied")

@@ -27,6 +27,8 @@ from cmdbox.cli.ui.presenters.command_presenter import (
     render_command_created,
     render_command_updated,
     render_command_deleted,
+    render_command_moved,
+    render_command_copied,
 )
 from cmdbox.cli.ui.presenters.result_presenter import (
     render_tag_attach_result,
@@ -391,6 +393,41 @@ def run_detach_tags(
     result = cmd_service.remove_tags(alias=alias, tags=tag_names, profile=profile)
     console = get_console()
     console.print(render_tag_detach_result(result))
+
+
+@log_action(__name__, "run_move_command")
+def run_move_command(
+    *,
+    alias: str,
+    target_profile: str,
+    profile: str | None = None,
+    get_cmd_services: Callable[[], CommandServices],
+    get_console: Callable[[], ConsoleUI],
+) -> None:
+    console = get_console()
+    cmd_service = get_cmd_services()
+    cmd = cmd_service.move_command(
+        alias=alias, target_profile=target_profile, profile=profile
+    )
+    console.print(render_command_moved(cmd, target_profile))
+
+
+@log_action(__name__, "run_copy_command")
+def run_copy_command(
+    *,
+    alias: str,
+    target_profile: str,
+    new_alias: str | None = None,
+    profile: str | None = None,
+    get_cmd_services: Callable[[], CommandServices],
+    get_console: Callable[[], ConsoleUI],
+) -> None:
+    console = get_console()
+    cmd_service = get_cmd_services()
+    cmd = cmd_service.copy_command(
+        alias=alias, new_alias=new_alias, target_profile=target_profile, profile=profile
+    )
+    console.print(render_command_copied(cmd, target_profile))
 
 
 def parse_env_pairs(env: list[str] | None) -> dict[str, str] | None:
