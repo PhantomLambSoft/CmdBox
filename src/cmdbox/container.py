@@ -109,10 +109,12 @@ def get_run_service() -> RunService:
     cmd_repo = get_command_repo()
     resolver = get_resolver()
     executor = Executor()
+    profile_repo = get_profile_repo()
     return RunService(
         cmd_repo,
         resolver,
         executor,
+        profile_repo=profile_repo,
         history_repo=get_history_repo(),
         get_settings=get_settings,
     )
