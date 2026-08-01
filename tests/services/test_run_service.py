@@ -18,10 +18,12 @@ class TestRunService(unittest.TestCase):
         self.mock_repo = MagicMock()
         self.mock_resolver = MagicMock()
         self.mock_executor = MagicMock()
+        self.mock_profile_repo = MagicMock()
         self.service = RunService(
             repo=self.mock_repo,
             resolver=self.mock_resolver,
             executor=self.mock_executor,
+            profile_repo=self.mock_profile_repo,
         )
 
     @patch("cmdbox.services.run_service.RunService.build_context")
@@ -53,7 +55,7 @@ class TestRunService(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, execution_result)
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_called_once_with(resolved_text, ctx=mock_context)
 
@@ -142,7 +144,7 @@ class TestRunService(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, resolve_result)
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_not_called()
 
@@ -156,7 +158,7 @@ class TestRunService(unittest.TestCase):
             self.service.run(alias)
 
         self.assertIn(f"Alias '{alias}' not found.", str(context.exception))
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_not_called()
         self.mock_executor.run.assert_not_called()
 
@@ -170,7 +172,7 @@ class TestRunService(unittest.TestCase):
             self.service.preview(alias)
 
         self.assertIn(f"Alias '{alias}' not found.", str(context.exception))
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_not_called()
 
     def test_run_resolution_failure(self):
@@ -189,7 +191,7 @@ class TestRunService(unittest.TestCase):
             self.service.run(alias)
 
         self.assertEqual(str(context.exception), "Cycle detected")
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_not_called()
 
@@ -209,7 +211,7 @@ class TestRunService(unittest.TestCase):
             self.service.preview(alias)
 
         self.assertEqual(str(context.exception), "Cycle detected")
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
 
     def test_collect_missing_vars_success(self):
@@ -225,7 +227,7 @@ class TestRunService(unittest.TestCase):
         result = self.service.collect_missing_vars(alias)
 
         self.assertEqual(expected_missing, result)
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.collect_missing_vars.assert_called_once_with(
             template, runtime_vars=None
         )
@@ -244,7 +246,7 @@ class TestRunService(unittest.TestCase):
         result = self.service.collect_missing_vars(alias, runtime_vars=runtime_vars)
 
         self.assertEqual(expected_missing, result)
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.collect_missing_vars.assert_called_once_with(
             template, runtime_vars=runtime_vars
         )
@@ -257,7 +259,7 @@ class TestRunService(unittest.TestCase):
             self.service.collect_missing_vars(alias)
 
         self.assertIn(f"Alias '{alias}' not found.", str(context.exception))
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.collect_missing_vars.assert_not_called()
 
 
@@ -268,6 +270,7 @@ class TestBuildContext(unittest.TestCase):
             repo=MagicMock(),
             resolver=MagicMock(),
             executor=MagicMock(),
+            profile_repo=MagicMock(),
         )
 
     def _make_command(

@@ -30,7 +30,7 @@ class HistoryService:
         profile: str | None = None,
     ) -> list[CommandHistory]:
         resolved_profile = self.resolve_profile(profile)
-        return self._repo.get_recent(alias, limit, resolved_profile)
+        return self._repo.get_recent(alias, limit, profile=resolved_profile)
 
     def get_by_ref(
         self,

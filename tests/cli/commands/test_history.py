@@ -14,6 +14,7 @@ class TestHistoryCommand(unittest.TestCase):
         mock_run_history_list.assert_called_once_with(
             alias=None,
             limit=25,
+            profile=None,
             get_history_service=mock_container.get_history_service,
             get_console=mock_container.get_console,
         )
@@ -28,6 +29,7 @@ class TestHistoryCommand(unittest.TestCase):
         mock_run_history_list.assert_called_once_with(
             alias="deploy",
             limit=5,
+            profile=None,
             get_history_service=mock_container.get_history_service,
             get_console=mock_container.get_console,
         )
@@ -40,6 +42,7 @@ class TestHistoryCommand(unittest.TestCase):
         mock_run_history_list.assert_called_once_with(
             alias=None,
             limit=0,
+            profile=None,
             get_history_service=mock_container.get_history_service,
             get_console=mock_container.get_console,
         )
@@ -51,6 +54,7 @@ class TestHistoryCommand(unittest.TestCase):
 
         mock_run_history_show.assert_called_once_with(
             ref="12",
+            profile=None,
             get_history_service=mock_container.get_history_service,
             get_console=mock_container.get_console,
         )
@@ -62,6 +66,7 @@ class TestHistoryCommand(unittest.TestCase):
 
         mock_run_history_rerun.assert_called_once_with(
             ref="abc123",
+            profile=None,
             get_history_service=mock_container.get_history_service,
             get_run_service=mock_container.get_run_service,
         )
@@ -74,6 +79,7 @@ class TestHistoryCommand(unittest.TestCase):
         mock_run_history_clear.assert_called_once_with(
             alias=None,
             yes=False,
+            profile=None,
             get_history_service=mock_container.get_history_service,
             get_console=mock_container.get_console,
         )
@@ -88,6 +94,7 @@ class TestHistoryCommand(unittest.TestCase):
         mock_run_history_clear.assert_called_once_with(
             alias="deploy",
             yes=True,
+            profile=None,
             get_history_service=mock_container.get_history_service,
             get_console=mock_container.get_console,
         )

@@ -28,7 +28,9 @@ class TestHistoryHandlers(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
-        mock_service.get_recent.assert_called_once_with(alias="deploy", limit=10)
+        mock_service.get_recent.assert_called_once_with(
+            alias="deploy", limit=10, profile=None
+        )
         mock_render_history_list.assert_called_once_with(entries)
         mock_console.print.assert_called_once_with("rendered-list")
         mock_console.info.assert_not_called()
@@ -48,7 +50,9 @@ class TestHistoryHandlers(unittest.TestCase):
             get_console=lambda: mock_console,
         )
 
-        mock_service.get_recent.assert_called_once_with(alias=None, limit=25)
+        mock_service.get_recent.assert_called_once_with(
+            alias=None, limit=25, profile=None
+        )
         mock_console.info.assert_called_once_with("No history found")
         mock_console.print.assert_not_called()
         mock_render_history_list.assert_not_called()
@@ -67,11 +71,12 @@ class TestHistoryHandlers(unittest.TestCase):
 
         run_history_show(
             ref="12",
+            profile=None,
             get_history_service=lambda: mock_service,
             get_console=lambda: mock_console,
         )
 
-        mock_service.get_by_ref.assert_called_once_with("12")
+        mock_service.get_by_ref.assert_called_once_with("12", profile=None)
         mock_service.get_variables.assert_called_once_with(entry)
         mock_render_history_entry.assert_called_once_with(entry, variables)
         mock_console.print.assert_called_once_with("rendered-entry")
@@ -87,11 +92,12 @@ class TestHistoryHandlers(unittest.TestCase):
 
         run_history_rerun(
             ref="abc123",
+            profile=None,
             get_history_service=lambda: mock_history_service,
             get_run_service=lambda: mock_run_service,
         )
 
-        mock_history_service.get_by_ref.assert_called_once_with("abc123")
+        mock_history_service.get_by_ref.assert_called_once_with("abc123", profile=None)
         mock_history_service.get_variables.assert_called_once_with(entry)
         mock_run_service.run.assert_called_once()
         args, kwargs = mock_run_service.run.call_args
@@ -117,7 +123,7 @@ class TestHistoryHandlers(unittest.TestCase):
         )
 
         mock_prompt_for_confirm.assert_not_called()
-        mock_service.clear.assert_called_once_with(alias=None)
+        mock_service.clear.assert_called_once_with(alias=None, profile=None)
         mock_render_history_cleared.assert_called_once_with(3, None)
         mock_console.print.assert_called_once_with("cleared")
         mock_console.info.assert_not_called()
@@ -143,8 +149,11 @@ class TestHistoryHandlers(unittest.TestCase):
         mock_prompt_for_confirm.assert_called_once_with(
             "Clear all history for 'deploy'?"
         )
-        mock_service.clear.assert_called_once_with(alias="deploy")
-        mock_render_history_cleared.assert_called_once_with(1, "deploy")
+        mock_service.clear.assert_called_once_with(alias="deploy", profile=None)
+        mock_render_history_cleared.assert_called_once_with(
+            1,
+            "deploy",
+        )
         mock_console.print.assert_called_once_with("cleared-one")
         mock_console.info.assert_not_called()
 
