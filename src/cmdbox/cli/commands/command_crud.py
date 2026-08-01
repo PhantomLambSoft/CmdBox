@@ -1,3 +1,4 @@
+from idlelib import autocomplete
 from typing import Annotated, Optional
 import logging
 
@@ -10,6 +11,7 @@ from cmdbox.cli.completions.fields import (
     command_field_options,
     command_editable_field_options,
 )
+from cmdbox.cli.completions.profiles import complete_profile_names
 from cmdbox.cli.completions.tags import complete_tag_names
 from cmdbox.cli.handlers import command_handlers
 
@@ -18,6 +20,17 @@ app = typer.Typer(no_args_is_help=True)
 cli_guard = make_cli_guard(container.get_console)
 
 log = logging.getLogger(__name__)
+
+
+PROFILE_OPTION = Annotated[
+    Optional[str],
+    typer.Option(
+        "--profile",
+        "-p",
+        help="The profile to target for this command. Defaults to the currently active profile.",
+        autocompletion=complete_profile_names,
+    ),
+]
 
 
 @app.command("add")
@@ -71,6 +84,7 @@ def add(
             help="Maximum number of seconds before the process is killed.",
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
     interactive: Annotated[
         bool,
         typer.Option("--interactive", "-i", is_flag=True, help="Interactive mode."),
@@ -92,6 +106,7 @@ def add(
         env=env,
         timeout=timeout,
         interactive=interactive,
+        profile=profile,
     )
     command_handlers.run_add_command(
         args=add_cmd_args,
@@ -111,6 +126,7 @@ def get(
             autocompletion=complete_command_aliases,
         ),
     ],
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Retrieves and displays a saved command stored under the provided alias.
@@ -118,6 +134,7 @@ def get(
     log.debug("cmd.get called. alias=%s", alias)
     command_handlers.run_get_command(
         alias=alias,
+        profile=profile,
         get_cmd_services=container.get_command_services,
         get_console=container.get_console,
     )
@@ -280,6 +297,7 @@ def list_cmds(
             autocompletion=command_field_options,
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Displays all stored commands in a list format. The number of results can be limited
@@ -299,6 +317,7 @@ def list_cmds(
         tags=tags,
         fields=fields,
         page=page,
+        profile=profile,
         get_cmd_services=container.get_command_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
@@ -341,6 +360,7 @@ def search(
             autocompletion=command_field_options,
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Searches the database for commands matching the provided search term. The search fields
@@ -361,6 +381,7 @@ def search(
         search_fields=search_fields,
         fields=fields,
         page=page,
+        profile=profile,
         get_cmd_services=container.get_command_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
@@ -382,6 +403,7 @@ def delete(
             autocompletion=complete_command_aliases,
         ),
     ],
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Deletes the command stored under the provided alias.
@@ -389,6 +411,7 @@ def delete(
     log.debug("cmd.delete called. alias=%s", alias)
     command_handlers.run_delete_command(
         alias=alias,
+        profile=profile,
         get_cmd_services=container.get_command_services,
         get_console=container.get_console,
     )
@@ -416,6 +439,7 @@ def add_tags(
             autocompletion=complete_tag_names,
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Adds the provided tags to the command stored under the provided alias. Tags must
@@ -425,6 +449,7 @@ def add_tags(
     command_handlers.run_attach_tags(
         alias=alias,
         tag_names=tags,
+        profile=profile,
         get_cmd_services=container.get_command_services,
         get_tag_services=container.get_tag_services,
         get_console=container.get_console,
@@ -448,6 +473,7 @@ def remove_tags(
             autocompletion=complete_tag_names,
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Removes the provided tags from the command stored under the provided alias.
@@ -456,7 +482,85 @@ def remove_tags(
     command_handlers.run_detach_tags(
         alias=alias,
         tag_names=tags,
+        profile=profile,
         get_cmd_services=container.get_command_services,
         get_tag_services=container.get_tag_services,
+        get_console=container.get_console,
+    )
+
+
+@app.command("move")
+@cli_guard
+def move(
+    alias: Annotated[
+        str,
+        typer.Argument(
+            help="The alias of the command to move.",
+            autocompletion=complete_command_aliases,
+        ),
+    ],
+    target_profile: Annotated[
+        str,
+        typer.Argument(
+            help="The profile to move the command to.",
+            autocompletion=complete_profile_names,
+        ),
+    ],
+    profile: PROFILE_OPTION = None,
+) -> None:
+    log.debug(
+        "cmd.move called. alias=%s, target_profile=%s, profile=%s",
+        alias,
+        target_profile,
+        profile,
+    )
+    command_handlers.run_move_command(
+        alias=alias,
+        target_profile=target_profile,
+        profile=profile,
+        get_cmd_services=container.get_command_services,
+        get_console=container.get_console,
+    )
+
+
+@app.command("copy")
+@cli_guard
+def copy(
+    alias: Annotated[
+        str,
+        typer.Argument(
+            help="The alias of the command to copy.",
+            autocompletion=complete_command_aliases,
+        ),
+    ],
+    target_profile: Annotated[
+        str,
+        typer.Argument(
+            help="The profile to copy the command into.",
+            autocompletion=complete_profile_names,
+        ),
+    ],
+    new_alias: Annotated[
+        Optional[str],
+        typer.Option(
+            "--as",
+            help="New alias for the copy, if it should different than the original.",
+        ),
+    ] = None,
+    profile: PROFILE_OPTION = None,
+) -> None:
+    log.debug(
+        "cmd.copy called. alias=%s, target_profile=%s, new_alias=%s, profile=%s",
+        alias,
+        target_profile,
+        new_alias,
+        profile,
+    )
+    command_handlers.run_copy_command(
+        alias=alias,
+        target_profile=target_profile,
+        new_alias=new_alias,
+        profile=profile,
+        get_cmd_services=container.get_command_services,
         get_console=container.get_console,
     )
