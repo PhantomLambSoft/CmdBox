@@ -156,6 +156,7 @@ def get_history_service() -> HistoryService:
     return HistoryService(
         repo=get_history_repo(),
         get_settings=get_settings,
+        profile_repository=get_profile_repo(),
     )
 
 
