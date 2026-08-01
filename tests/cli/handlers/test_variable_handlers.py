@@ -9,6 +9,8 @@ from cmdbox.cli.handlers.variable_handlers import (
     run_list_variables,
     run_search_variables,
     run_delete_variable,
+    run_move_variable,
+    run_copy_variable,
 )
 from cmdbox.services.field_selection import FieldSelectionResolver
 
@@ -632,3 +634,44 @@ class TestVariableHandlers(unittest.TestCase):
             get_console=self.get_console,
         )
         self.mock_console.error.assert_called()
+
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_moved")
+    def test_run_move_variable(self, mock_render):
+        mock_var = MagicMock()
+        self.mock_var_services.move_variable.return_value = mock_var
+        mock_render.return_value = "rendered_moved"
+
+        run_move_variable(
+            name="var1",
+            target_profile="target",
+            profile="source",
+            get_var_services=self.get_var_services,
+            get_console=self.get_console,
+        )
+
+        self.mock_var_services.move_variable.assert_called_with(
+            name="var1", target_profile="target", profile="source"
+        )
+        mock_render.assert_called_once_with(mock_var, "target")
+        self.mock_console.print.assert_called_with("rendered_moved")
+
+    @patch("cmdbox.cli.handlers.variable_handlers.render_variable_copied")
+    def test_run_copy_variable(self, mock_render):
+        mock_var = MagicMock()
+        self.mock_var_services.copy_variable.return_value = mock_var
+        mock_render.return_value = "rendered_copied"
+
+        run_copy_variable(
+            name="var1",
+            target_profile="target",
+            new_name="new_var",
+            profile="source",
+            get_var_services=self.get_var_services,
+            get_console=self.get_console,
+        )
+
+        self.mock_var_services.copy_variable.assert_called_with(
+            name="var1", new_name="new_var", target_profile="target", profile="source"
+        )
+        mock_render.assert_called_once_with(mock_var, "target")
+        self.mock_console.print.assert_called_with("rendered_copied")

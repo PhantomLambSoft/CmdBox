@@ -21,6 +21,8 @@ from cmdbox.cli.ui.presenters.variable_presenter import (
     render_variable_list,
     render_variable_updated,
     render_variable_deleted,
+    render_variable_moved,
+    render_variable_copied,
 )
 from cmdbox.cli.ui.presenters.result_presenter import (
     render_tag_attach_result,
@@ -274,6 +276,41 @@ def run_attach_tags(
     result = var_service.add_tags(name=name, tags=tag_names, profile=profile)
     console = get_console()
     console.print(render_tag_attach_result(result))
+
+
+@log_action(__name__, "run_move_variable")
+def run_move_variable(
+    *,
+    name: str,
+    target_profile: str,
+    profile: str | None = None,
+    get_var_services: Callable[[], VariableServices],
+    get_console: Callable[[], ConsoleUI],
+) -> None:
+    console = get_console()
+    var_service = get_var_services()
+    var = var_service.move_variable(
+        name=name, target_profile=target_profile, profile=profile
+    )
+    console.print(render_variable_moved(var, target_profile))
+
+
+@log_action(__name__, "run_copy_variable")
+def run_copy_variable(
+    *,
+    name: str,
+    target_profile: str,
+    new_name: str | None = None,
+    profile: str | None = None,
+    get_var_services: Callable[[], VariableServices],
+    get_console: Callable[[], ConsoleUI],
+) -> None:
+    console = get_console()
+    var_service = get_var_services()
+    var = var_service.copy_variable(
+        name=name, new_name=new_name, target_profile=target_profile, profile=profile
+    )
+    console.print(render_variable_copied(var, target_profile))
 
 
 @log_action(__name__, "run_detach_tags")
