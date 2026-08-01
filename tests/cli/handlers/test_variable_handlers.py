@@ -75,7 +75,10 @@ class TestVariableHandlers(unittest.TestCase):
         )
 
         self.mock_var_services.create_variable.assert_called_with(
-            name="var1", value="val1", tags=["tag1"]
+            name="var1",
+            value="val1",
+            tags=["tag1"],
+            profile=None,
         )
         mock_render.assert_called_once_with(mock_var)
         self.mock_console.print.assert_called_with("rendered_created")
@@ -97,7 +100,10 @@ class TestVariableHandlers(unittest.TestCase):
         )
 
         self.mock_var_services.create_variable.assert_called_with(
-            name="var1", value="val1", tags=["tag1"]
+            name="var1",
+            value="val1",
+            tags=["tag1"],
+            profile=None,
         )
         mock_render.assert_called_once_with(mock_var)
         self.mock_console.print.assert_called_with("rendered_created")
@@ -109,10 +115,14 @@ class TestVariableHandlers(unittest.TestCase):
         mock_render.return_value = "rendered_var"
         run_get_variable(
             name="var1",
+            profile=None,
             get_var_services=self.get_var_services,
             get_console=self.get_console,
         )
-        self.mock_var_services.get_variable.assert_called_with("var1")
+        self.mock_var_services.get_variable.assert_called_with(
+            "var1",
+            profile=None,
+        )
         mock_render.assert_called_once_with(mock_var)
         self.mock_console.print.assert_called_with("rendered_var")
 
@@ -410,13 +420,17 @@ class TestVariableHandlers(unittest.TestCase):
             order_by="name",
             tags=["t1"],
             fields=["f1"],
+            profile=None,
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
             get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_var_services.list_variables.assert_called_with(
-            limit=10, order_by="name", tags=["t1"]
+            limit=10,
+            order_by="name",
+            tags=["t1"],
+            profile=None,
         )
         mock_render.assert_called_once_with(vars_, title="Variables", fields=["f1"])
         self.mock_console.print_paged.assert_called_with(
@@ -438,13 +452,17 @@ class TestVariableHandlers(unittest.TestCase):
             order_by="name",
             tags=["t1"],
             fields=None,
+            profile=None,
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
             get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_var_services.list_variables.assert_called_with(
-            limit=10, order_by="name", tags=["t1"]
+            limit=10,
+            order_by="name",
+            tags=["t1"],
+            profile=None,
         )
         mock_render.assert_called_once_with(
             vars_, title="Variables", fields=["default_field_one", "default_field_two"]
@@ -464,13 +482,17 @@ class TestVariableHandlers(unittest.TestCase):
             order_by="name",
             tags=["t1"],
             fields=["all"],
+            profile=None,
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
             get_display_field_resolver=self.get_display_field_resolver,
         )
         self.mock_var_services.list_variables.assert_called_with(
-            limit=10, order_by="name", tags=["t1"]
+            limit=10,
+            order_by="name",
+            tags=["t1"],
+            profile=None,
         )
         mock_render.assert_called_once_with(
             vars_, title="Variables", fields=self.DISPLAY_FIELDS
@@ -490,6 +512,7 @@ class TestVariableHandlers(unittest.TestCase):
             page=None,
             search_fields=["sf1"],
             fields=["f1"],
+            profile=None,
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
@@ -497,7 +520,10 @@ class TestVariableHandlers(unittest.TestCase):
             get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_var_services.search.assert_called_with(
-            "term", limit=5, fields=["sf1"]
+            "term",
+            limit=5,
+            fields=["sf1"],
+            profile=None,
         )
         mock_render.assert_called_once_with(
             vars_, title="Search Results", fields=["f1"]
@@ -527,6 +553,7 @@ class TestVariableHandlers(unittest.TestCase):
             page=None,
             search_fields=None,
             fields=None,
+            profile=None,
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
@@ -537,6 +564,7 @@ class TestVariableHandlers(unittest.TestCase):
             "term",
             limit=5,
             fields=["default_field_three", "default_field_four"],  # search fields
+            profile=None,
         )
         mock_render.assert_called_once_with(
             vars_,
@@ -558,6 +586,7 @@ class TestVariableHandlers(unittest.TestCase):
             page=None,
             search_fields=["all"],
             fields=["all"],
+            profile=None,
             get_var_services=self.get_var_services,
             get_settings=self.get_settings,
             get_console=self.get_console,
@@ -565,7 +594,7 @@ class TestVariableHandlers(unittest.TestCase):
             get_search_field_resolver=self.get_search_field_resolver,
         )
         self.mock_var_services.search.assert_called_with(
-            "term", limit=5, fields=self.SEARCH_FIELDS
+            "term", limit=5, fields=self.SEARCH_FIELDS, profile=None
         )
         mock_render.assert_called_once_with(
             vars_, title="Search Results", fields=self.DISPLAY_FIELDS
@@ -583,11 +612,15 @@ class TestVariableHandlers(unittest.TestCase):
 
         run_delete_variable(
             name="var1",
+            profile=None,
             get_var_services=self.get_var_services,
             get_console=self.get_console,
         )
 
-        self.mock_var_services.delete_variable.assert_called_with("var1")
+        self.mock_var_services.delete_variable.assert_called_with(
+            "var1",
+            profile=None,
+        )
         mock_render.assert_called_once_with(mock_var)
         self.mock_console.print.assert_called_with("rendered_deleted")
 
