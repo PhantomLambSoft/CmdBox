@@ -299,6 +299,9 @@ def status() -> None:
     )
 
 
+app.command("where", hidden=False)(status)
+
+
 @app.command("cmd")
 @cli_guard
 def switch_cmd(
@@ -404,3 +407,6 @@ def switch(
         get_profile_services=container.get_profile_service,
         get_console=container.get_console,
     )
+
+
+app.command("set", hidden=True)(switch)
