@@ -130,7 +130,11 @@ class ImportService:
         self.result = ImportResult()
 
     def import_file(
-        self, path: str | Path, overwrite: bool = False, preview: bool = False
+        self,
+        path: str | Path,
+        overwrite: bool = False,
+        preview: bool = False,
+        profile: str | None = None,
     ) -> ImportResult:
         self.result.preview = preview
         data = _parse_import_file(path)
@@ -144,7 +148,7 @@ class ImportService:
         cmd_actions: list[tuple[dict, str]] = []
         for cmd_data in cmd_items:
             alias = cmd_data["alias"]
-            existing = self._cmd_service.get_command_or_none(alias)
+            existing = self._cmd_service.get_command_or_none(alias, profile=profile)
             if existing is None:
                 cmd_actions.append((cmd_data, "create"))
             elif overwrite:
@@ -155,7 +159,7 @@ class ImportService:
         var_actions: list[tuple[dict, str]] = []
         for var_data in var_items:
             name = var_data["name"]
-            existing = self._var_service.get_variable_or_none(name)
+            existing = self._var_service.get_variable_or_none(name, profile=profile)
             if existing is None:
                 var_actions.append((var_data, "create"))
             elif overwrite:
@@ -172,8 +176,8 @@ class ImportService:
         tag_names = self._collect_tag_names(cmd_actions, var_actions)
         self._ensure_tag_exists(tag_names)
 
-        self.handle_commands(cmd_actions)
-        self.handle_variables(var_actions)
+        self.handle_commands(cmd_actions, profile=profile)
+        self.handle_variables(var_actions, profile=profile)
 
         return self.result
 
@@ -200,7 +204,9 @@ class ImportService:
             elif action == "skip":
                 self.result.commands_skipped.append(alias)
 
-    def handle_commands(self, cmd_actions: list[tuple[dict, str]]):
+    def handle_commands(
+        self, cmd_actions: list[tuple[dict, str]], profile: str | None = None
+    ):
         for cmd_data, action in cmd_actions:
             if action == "skip":
                 continue
@@ -219,12 +225,15 @@ class ImportService:
                     shell=cmd_data.get("shell", None),
                     env=cmd_data.get("env", None),
                     timeout=cmd_data.get("timeout", None),
+                    profile=profile,
                 )
             else:
-                self.overwrite_existing_command(alias, cmd_data, tags)
+                self.overwrite_existing_command(alias, cmd_data, tags, profile)
 
-    def overwrite_existing_command(self, alias: str, cmd_data: dict, tags: list[str]):
-        existing = self._cmd_service.get_command(alias)
+    def overwrite_existing_command(
+        self, alias: str, cmd_data: dict, tags: list[str], profile: str | None = None
+    ):
+        existing = self._cmd_service.get_command(alias, profile=profile)
         current_tags = {ct.tag.name for ct in existing.tags}
         new_tag = set(tags)
         self._cmd_service.update_command(
@@ -235,13 +244,14 @@ class ImportService:
             shell=cmd_data.get("shell", None),
             env=cmd_data.get("env", None),
             timeout=cmd_data.get("timeout", None),
+            profile=profile,
         )
         tags_to_remove = list(current_tags - new_tag)
         tags_to_add = list(new_tag - current_tags)
         if tags_to_remove:
-            self._cmd_service.remove_tags(alias, tags_to_remove)
+            self._cmd_service.remove_tags(alias, tags_to_remove, profile=profile)
         if tags_to_add:
-            self._cmd_service.add_tags(alias, tags_to_add)
+            self._cmd_service.add_tags(alias, tags_to_add, profile=profile)
 
     def classify_variables(self, var_actions: list[tuple[dict, str]]):
         """
@@ -265,7 +275,9 @@ class ImportService:
             elif action == "skip":
                 self.result.variables_skipped.append(name)
 
-    def handle_variables(self, var_actions: list[tuple[dict, str]]):
+    def handle_variables(
+        self, var_actions: list[tuple[dict, str]], profile: str | None = None
+    ):
         for var_data, action in var_actions:
             if action == "skip":
                 continue
@@ -276,22 +288,26 @@ class ImportService:
 
             if action == "create":
                 self._var_service.create_variable(
-                    name, value=var_data["value"], tags=tags
+                    name, value=var_data["value"], tags=tags, profile=profile
                 )
             else:
-                self.overwrite_existing_variable(name, var_data, tags)
+                self.overwrite_existing_variable(name, var_data, tags, profile)
 
-    def overwrite_existing_variable(self, name: str, var_data: dict, tags: list[str]):
-        existing = self._var_service.get_variable(name)
+    def overwrite_existing_variable(
+        self, name: str, var_data: dict, tags: list[str], profile: str | None = None
+    ):
+        existing = self._var_service.get_variable(name, profile=profile)
         current_tags = {ct.tag.name for ct in existing.tags}
         new_tags = set(tags)
-        self._var_service.update_variable(name, value=var_data["value"])
+        self._var_service.update_variable(
+            name, value=var_data["value"], profile=profile
+        )
         tags_to_remove = list(current_tags - new_tags)
         tags_to_add = list(new_tags - current_tags)
         if tags_to_remove:
-            self._var_service.remove_tags(name, tags_to_remove)
+            self._var_service.remove_tags(name, tags_to_remove, profile=profile)
         if tags_to_add:
-            self._var_service.add_tags(name, tags_to_add)
+            self._var_service.add_tags(name, tags_to_add, profile=profile)
 
     def _collect_tag_names(
         self, cmd_actions: list[tuple[dict, str]], var_actions: list[tuple[dict, str]]

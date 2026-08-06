@@ -137,11 +137,11 @@ class TestImportService(unittest.TestCase):
                 {"name": "overwrite-var", "value": "3"},
             ],
         }
-        self.cmd_service.get_command_or_none.side_effect = lambda alias: {
+        self.cmd_service.get_command_or_none.side_effect = lambda alias, profile=None: {
             "skip-cmd": object(),
             "overwrite-cmd": object(),
         }.get(alias)
-        self.var_service.get_variable_or_none.side_effect = lambda name: {
+        self.var_service.get_variable_or_none.side_effect = lambda name, profile=None: {
             "skip-var": object(),
             "overwrite-var": object(),
         }.get(name)
@@ -201,11 +201,11 @@ class TestImportService(unittest.TestCase):
                 },
             ],
         }
-        self.cmd_service.get_command_or_none.side_effect = lambda alias: {
+        self.cmd_service.get_command_or_none.side_effect = lambda alias, profile=None: {
             "skip-cmd": object(),
             "overwrite-cmd": object(),
         }.get(alias)
-        self.var_service.get_variable_or_none.side_effect = lambda name: {
+        self.var_service.get_variable_or_none.side_effect = lambda name, profile=None: {
             "skip-var": object(),
             "overwrite-var": object(),
         }.get(name)
@@ -235,9 +235,10 @@ class TestImportService(unittest.TestCase):
             shell="pwsh",
             env={"A": "B"},
             timeout=10,
+            profile=None,
         )
         self.var_service.create_variable.assert_called_once_with(
-            "create-var", value="c", tags=["prod"]
+            "create-var", value="c", tags=["prod"], profile=None
         )
 
     def test_handle_commands_overwrite_updates_and_reconciles_tags(self):
@@ -271,9 +272,14 @@ class TestImportService(unittest.TestCase):
             shell="pwsh",
             env={"A": "B"},
             timeout=20,
+            profile=None,
         )
-        self.cmd_service.remove_tags.assert_called_once_with("deploy", ["old"])
-        self.cmd_service.add_tags.assert_called_once_with("deploy", ["new"])
+        self.cmd_service.remove_tags.assert_called_once_with(
+            "deploy", ["old"], profile=None
+        )
+        self.cmd_service.add_tags.assert_called_once_with(
+            "deploy", ["new"], profile=None
+        )
 
     def test_handle_commands_overwrite_skips_tag_mutations_when_unchanged(self):
         self.cmd_service.get_command.return_value = SimpleNamespace(
@@ -310,9 +316,13 @@ class TestImportService(unittest.TestCase):
             ]
         )
 
-        self.var_service.update_variable.assert_called_once_with("host", value="prod")
-        self.var_service.remove_tags.assert_called_once_with("host", ["old"])
-        self.var_service.add_tags.assert_called_once_with("host", ["new"])
+        self.var_service.update_variable.assert_called_once_with(
+            "host", value="prod", profile=None
+        )
+        self.var_service.remove_tags.assert_called_once_with(
+            "host", ["old"], profile=None
+        )
+        self.var_service.add_tags.assert_called_once_with("host", ["new"], profile=None)
 
     def test_handle_variables_skip_and_create_paths(self):
         self.service.handle_variables(
@@ -323,5 +333,41 @@ class TestImportService(unittest.TestCase):
         )
 
         self.var_service.create_variable.assert_called_once_with(
-            "create", value="y", tags=["prod"]
+            "create", value="y", tags=["prod"], profile=None
+        )
+
+    @patch("cmdbox.services.import_service.validate_no_cycles")
+    @patch("cmdbox.services.import_service.build_dependency_graph")
+    @patch("cmdbox.services.import_service._parse_import_file")
+    def test_import_file_with_profile(
+        self, mock_parse, mock_build_dependency_graph, mock_validate_no_cycles
+    ):
+        profile = "test-profile"
+        mock_parse.return_value = {
+            "version": "1",
+            "commands": [{"alias": "cmd1", "template": "echo 1"}],
+            "variables": [{"name": "var1", "value": "1"}],
+        }
+        self.cmd_service.get_command_or_none.return_value = None
+        self.var_service.get_variable_or_none.return_value = None
+
+        self.service.import_file("path", profile=profile)
+
+        self.cmd_service.get_command_or_none.assert_called_with("cmd1", profile=profile)
+        self.var_service.get_variable_or_none.assert_called_with(
+            "var1", profile=profile
+        )
+        self.cmd_service.create_command.assert_called_with(
+            alias="cmd1",
+            template="echo 1",
+            description=None,
+            tags=[],
+            cwd=None,
+            shell=None,
+            env=None,
+            timeout=None,
+            profile=profile,
+        )
+        self.var_service.create_variable.assert_called_with(
+            "var1", value="1", tags=[], profile=profile
         )

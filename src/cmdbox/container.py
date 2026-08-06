@@ -172,6 +172,7 @@ def get_export_service() -> ExportService:
     return ExportService(
         cmd_service=get_command_services(),
         var_service=get_variable_services(),
+        profile_repo=get_profile_repo(),
     )
 
 
