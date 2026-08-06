@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Optional
 
 import typer
 
@@ -27,11 +27,20 @@ def import_file(
             "--preview", help="Show what would be imported without writing anything."
         ),
     ] = False,
+    profile: Annotated[
+        Optional[str],
+        typer.Option(
+            "--profile",
+            "-p",
+            help="The profile to import into. Defaults to the currently active command profile.",
+        ),
+    ] = None,
 ) -> None:
     run_import_file(
         path=path,
         overwrite=overwrite,
         preview=preview,
+        profile=profile,
         get_import_service=container.get_import_service,
         get_console=container.get_console,
     )

@@ -18,6 +18,7 @@ class TestImportCommand(unittest.TestCase):
             path=path,
             overwrite=False,
             preview=False,
+            profile=None,
             get_import_service=mock_container.get_import_service,
             get_console=mock_container.get_console,
         )
@@ -35,6 +36,7 @@ class TestImportCommand(unittest.TestCase):
             path=path,
             overwrite=True,
             preview=True,
+            profile=None,
             get_import_service=mock_container.get_import_service,
             get_console=mock_container.get_console,
         )
@@ -52,7 +54,25 @@ class TestImportCommand(unittest.TestCase):
         self.assertEqual(path, kwargs["path"])
         self.assertEqual(False, kwargs["overwrite"])
         self.assertEqual(True, kwargs["preview"])
+        self.assertEqual(None, kwargs["profile"])
         self.assertEqual(
             mock_container.get_import_service, kwargs["get_import_service"]
         )
         self.assertEqual(mock_container.get_console, kwargs["get_console"])
+
+    @patch("cmdbox.cli.commands.import_.run_import_file")
+    @patch("cmdbox.cli.commands.import_.container")
+    def test_import_file_with_profile(self, mock_container, mock_run_import_file):
+        path = Path("import.json")
+        profile = "test-profile"
+
+        import_.import_file(path=path, profile=profile)
+
+        mock_run_import_file.assert_called_once_with(
+            path=path,
+            overwrite=False,
+            preview=False,
+            profile=profile,
+            get_import_service=mock_container.get_import_service,
+            get_console=mock_container.get_console,
+        )
