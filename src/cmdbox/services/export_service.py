@@ -26,6 +26,8 @@ class ExportResult:
     transient_commands: list[str] = field(default_factory=list)
     transient_variables: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    command_profile: str = ""
+    variable_profile: str = ""
 
 
 def collect_deep_commands(
@@ -257,9 +259,15 @@ class ExportService:
         cmd_profile: str | None = None,
         var_profile: str | None = None,
     ) -> ExportResult:
-        result = ExportResult(path=_resolve_output_path(output_path, "cmds"))
         cmd_profile_name = self._resolve_command_profile_name(cmd_profile)
         var_profile_name = self._resolve_variable_profile_name(var_profile)
+
+        # create result after the names are established
+        result = ExportResult(
+            path=_resolve_output_path(output_path, "cmds"),
+            command_profile=cmd_profile_name,
+            variable_profile=var_profile_name,
+        )
 
         if aliases:
             target_aliases = aliases
@@ -354,8 +362,12 @@ class ExportService:
         output_path: str | None = None,
         var_profile: str | None = None,
     ) -> ExportResult:
-        result = ExportResult(path=_resolve_output_path(output_path, "vars"))
         var_profile_name = self._resolve_variable_profile_name(var_profile)
+
+        result = ExportResult(
+            path=_resolve_output_path(output_path, "vars"),
+            variable_profile=var_profile_name,
+        )
 
         if names:
             target_names = names
@@ -434,9 +446,14 @@ class ExportService:
         cmd_profile: str | None = None,
         var_profile: str | None = None,
     ) -> ExportResult:
-        result = ExportResult(path=_resolve_output_path(output_path, "all"))
         cmd_profile_name = self._resolve_command_profile_name(cmd_profile)
         var_profile_name = self._resolve_variable_profile_name(var_profile)
+
+        result = ExportResult(
+            path=_resolve_output_path(output_path, "all"),
+            command_profile=cmd_profile_name,
+            variable_profile=var_profile_name,
+        )
 
         all_cmds = self._cmd_service.list_commands(
             limit=_EXPORT_LIMIT, profile=cmd_profile_name
