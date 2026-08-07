@@ -26,11 +26,11 @@ def render_export_result(result: ExportResult) -> RenderableType:
     ]
 
     if all_cmds:
-        parts.append(divider("Commands"))
+        parts.append(divider(f"Commands from profile '{result.command_profile}'"))
         parts.append(bullet_list([_labeled(a, dep) for a, dep in all_cmds]))
 
     if all_vars:
-        parts.append(divider("Variables"))
+        parts.append(divider(f"Variables from profile '{result.variable_profile}'"))
         parts.append(bullet_list([_labeled(n, dep) for n, dep in all_vars]))
 
     total_cmds = len(all_cmds)
