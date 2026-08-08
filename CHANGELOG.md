@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+- Named profile support.
+  - Allow users to make multiple profiles for commands, variables and settings and switch between them.
+  - The same command aliases and variable names can be used in different profiles.
+  - Command, variable, and settings profiles can be switched independently of one another.
+
 ### Fixed
 
 - Migration runner not migrating the database correctly.
