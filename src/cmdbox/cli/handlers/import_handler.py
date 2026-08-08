@@ -19,13 +19,16 @@ def run_import_file(
     path: Path,
     overwrite: bool,
     preview: bool,
+    profile: str | None,
     get_import_service: Callable[[], ImportService],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     try:
         import_service = get_import_service()
-        result = import_service.import_file(path, preview=preview, overwrite=overwrite)
+        result = import_service.import_file(
+            path, preview=preview, overwrite=overwrite, profile=profile
+        )
     except ImportFileError as e:
         console.error(str(e))
         raise typer.Exit(code=1)

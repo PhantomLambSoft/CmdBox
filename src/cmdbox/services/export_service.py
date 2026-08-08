@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
+from cmdbox.repositories.profile_repository import ProfileRepository
 from cmdbox.resolve.reference_parsing import (
     extract_references,
     read_angle_token,
@@ -13,7 +14,6 @@ from cmdbox.services.command_services import CommandServices
 from cmdbox.models import Command, Variable
 from cmdbox.services.variable_services import VariableServices
 from cmdbox.common.io import atomic_write_text
-
 
 _EXPORT_LIMIT = 10_000
 
@@ -26,10 +26,12 @@ class ExportResult:
     transient_commands: list[str] = field(default_factory=list)
     transient_variables: list[str] = field(default_factory=list)
     warnings: list[str] = field(default_factory=list)
+    command_profile: str = ""
+    variable_profile: str = ""
 
 
 def collect_deep_commands(
-    aliases: list[str], cmd_service: CommandServices
+    aliases: list[str], cmd_service: CommandServices, profile: str | None
 ) -> dict[str, Command]:
     collected: dict[str, Command] = {}
     stack = list(aliases)
@@ -38,7 +40,7 @@ def collect_deep_commands(
         alias = stack.pop()
         if alias in collected:
             continue
-        cmd = cmd_service.get_command_or_none(alias)
+        cmd = cmd_service.get_command_or_none(alias, profile=profile)
         if cmd is None:
             continue  # reference to a command that doesn't exist. Skip silently
         collected[alias] = cmd
@@ -51,7 +53,10 @@ def collect_deep_commands(
 
 
 def collect_deep_variables(
-    names: list[str], commands: dict[str, Command], var_service: VariableServices
+    names: list[str],
+    commands: dict[str, Command],
+    var_service: VariableServices,
+    profile: str | None,
 ) -> dict[str, Variable]:
     collected: dict[str, Variable] = {}
     stack = list(names)
@@ -65,7 +70,7 @@ def collect_deep_variables(
         name = stack.pop()
         if name in collected:
             continue
-        var = var_service.get_variable_or_none(name)
+        var = var_service.get_variable_or_none(name, profile=profile)
         if var is None:
             continue
         collected[name] = var
@@ -81,6 +86,8 @@ def flatten_template(
     template: str,
     cmd_service: CommandServices,
     var_service: VariableServices,
+    cmd_profile: str | None,
+    var_profile: str | None,
     _seen: frozenset[str] = frozenset(),
 ) -> str:
     out: list[str] = []
@@ -107,24 +114,34 @@ def flatten_template(
                 continue
 
             if kind == RefKind.COMMAND:
-                rec = cmd_service.get_command_or_none(key)
+                rec = cmd_service.get_command_or_none(key, profile=cmd_profile)
                 if rec is None:
                     out.append(f"<{raw_token}>")
                 else:
                     out.append(
                         flatten_template(
-                            rec.template, cmd_service, var_service, _seen | {label}
+                            rec.template,
+                            cmd_service,
+                            var_service,
+                            cmd_profile,
+                            var_profile,
+                            _seen | {label},
                         )
                     )
 
             else:
-                rec = var_service.get_variable_or_none(key)
+                rec = var_service.get_variable_or_none(key, profile=var_profile)
                 if rec is None:
                     out.append(f"<{raw_token}>")
                 else:
                     out.append(
                         flatten_template(
-                            rec.value, cmd_service, var_service, _seen | {label}
+                            rec.value,
+                            cmd_service,
+                            var_service,
+                            cmd_profile,
+                            var_profile,
+                            _seen | {label},
                         )
                     )
 
@@ -140,9 +157,13 @@ def _serialize_command(
     flatten: bool,
     cmd_service: CommandServices,
     var_service: VariableServices,
+    cmd_profile: str | None,
+    var_profile: str | None,
 ) -> dict:
     template = (
-        flatten_template(cmd.template, cmd_service, var_service)
+        flatten_template(
+            cmd.template, cmd_service, var_service, cmd_profile, var_profile
+        )
         if flatten
         else cmd.template
     )
@@ -163,9 +184,13 @@ def _serialize_variable(
     flatten: bool,
     cmd_service: CommandServices,
     var_service: VariableServices,
+    cmd_profile: str | None,
+    var_profile: str | None,
 ) -> dict:
     value = (
-        flatten_template(var.value, cmd_service, var_service) if flatten else var.value
+        flatten_template(var.value, cmd_service, var_service, cmd_profile, var_profile)
+        if flatten
+        else var.value
     )
     return {
         "name": var.name,
@@ -178,11 +203,15 @@ def _build_document(
     type_label: str,
     commands: list[dict],
     variables: list[dict],
+    cmd_profile: str,
+    var_profile: str,
 ) -> dict:
     return {
         "version": "1",
         "type": type_label,
         "exported_at": datetime.now(timezone.utc).isoformat(),
+        "command_profile": cmd_profile,
+        "variable_profile": var_profile,
         "commands": commands,
         "variables": variables,
     }
@@ -201,9 +230,25 @@ def _resolve_output_path(output_path: str | None, type_label: str) -> Path:
 
 class ExportService:
 
-    def __init__(self, cmd_service: CommandServices, var_service: VariableServices):
+    def __init__(
+        self,
+        cmd_service: CommandServices,
+        var_service: VariableServices,
+        profile_repo: ProfileRepository,
+    ):
         self._cmd_service = cmd_service
         self._var_service = var_service
+        self._profile_repo = profile_repo
+
+    def _resolve_command_profile_name(self, profile: str | None) -> str:
+        if profile:
+            return profile
+        return self._profile_repo.get_state().active_command_profile.name
+
+    def _resolve_variable_profile_name(self, profile: str | None) -> str:
+        if profile:
+            return profile
+        return self._profile_repo.get_state().active_variable_profile.name
 
     def export_cmds(
         self,
@@ -211,25 +256,42 @@ class ExportService:
         tag: str | None = None,
         flatten: bool = False,
         output_path: str | None = None,
+        cmd_profile: str | None = None,
+        var_profile: str | None = None,
     ) -> ExportResult:
-        result = ExportResult(path=_resolve_output_path(output_path, "cmds"))
+        cmd_profile_name = self._resolve_command_profile_name(cmd_profile)
+        var_profile_name = self._resolve_variable_profile_name(var_profile)
+
+        # create result after the names are established
+        result = ExportResult(
+            path=_resolve_output_path(output_path, "cmds"),
+            command_profile=cmd_profile_name,
+            variable_profile=var_profile_name,
+        )
 
         if aliases:
             target_aliases = aliases
         elif tag:
             target_aliases = [
                 c.alias
-                for c in self._cmd_service.list_commands(tags=tag, limit=_EXPORT_LIMIT)
+                for c in self._cmd_service.list_commands(
+                    tags=tag, limit=_EXPORT_LIMIT, profile=cmd_profile_name
+                )
             ]
         else:
             target_aliases = [
-                c.alias for c in self._cmd_service.list_commands(limit=_EXPORT_LIMIT)
+                c.alias
+                for c in self._cmd_service.list_commands(
+                    limit=_EXPORT_LIMIT, profile=cmd_profile_name
+                )
             ]
 
         if flatten:
             serialized_cmds = []
             for alias in target_aliases:
-                cmd = self._cmd_service.get_command_or_none(alias)
+                cmd = self._cmd_service.get_command_or_none(
+                    alias, profile=cmd_profile_name
+                )
                 if cmd is None:
                     result.warnings.append(f"Command {alias} not found")
                     continue
@@ -239,14 +301,18 @@ class ExportService:
                         flatten=True,
                         cmd_service=self._cmd_service,
                         var_service=self._var_service,
+                        cmd_profile=cmd_profile_name,
+                        var_profile=var_profile_name,
                     )
                 )
                 result.commands.append(alias)
             serialized_vars = []
         else:
-            collected_cmds = collect_deep_commands(target_aliases, self._cmd_service)
+            collected_cmds = collect_deep_commands(
+                target_aliases, self._cmd_service, profile=cmd_profile_name
+            )
             collected_vars = collect_deep_variables(
-                [], collected_cmds, self._var_service
+                [], collected_cmds, self._var_service, profile=var_profile_name
             )
 
             target_set = set(target_aliases)
@@ -260,6 +326,8 @@ class ExportService:
                     flatten=False,
                     cmd_service=self._cmd_service,
                     var_service=self._var_service,
+                    cmd_profile=cmd_profile_name,
+                    var_profile=var_profile_name,
                 )
                 for cmd in collected_cmds.values()
             ]
@@ -269,6 +337,8 @@ class ExportService:
                     flatten=False,
                     cmd_service=self._cmd_service,
                     var_service=self._var_service,
+                    cmd_profile=cmd_profile_name,
+                    var_profile=var_profile_name,
                 )
                 for var in collected_vars.values()
             ]
@@ -278,7 +348,9 @@ class ExportService:
             ]
             result.transient_variables = list(collected_vars.keys())
 
-        doc = _build_document("cmds", serialized_cmds, serialized_vars)
+        doc = _build_document(
+            "cmds", serialized_cmds, serialized_vars, cmd_profile_name, var_profile_name
+        )
         atomic_write_text(result.path, json.dumps(doc, indent=2))
         return result
 
@@ -288,25 +360,38 @@ class ExportService:
         tag: str | None = None,
         flatten: bool = False,
         output_path: str | None = None,
+        var_profile: str | None = None,
     ) -> ExportResult:
-        result = ExportResult(path=_resolve_output_path(output_path, "vars"))
+        var_profile_name = self._resolve_variable_profile_name(var_profile)
+
+        result = ExportResult(
+            path=_resolve_output_path(output_path, "vars"),
+            variable_profile=var_profile_name,
+        )
 
         if names:
             target_names = names
         elif tag:
             target_names = [
                 v.name
-                for v in self._var_service.list_variables(tags=tag, limit=_EXPORT_LIMIT)
+                for v in self._var_service.list_variables(
+                    tags=tag, limit=_EXPORT_LIMIT, profile=var_profile_name
+                )
             ]
         else:
             target_names = [
-                v.name for v in self._var_service.list_variables(limit=_EXPORT_LIMIT)
+                v.name
+                for v in self._var_service.list_variables(
+                    limit=_EXPORT_LIMIT, profile=var_profile_name
+                )
             ]
 
         if flatten:
             serialized_vars = []
             for name in target_names:
-                var = self._var_service.get_variable_or_none(name)
+                var = self._var_service.get_variable_or_none(
+                    name, profile=var_profile_name
+                )
                 if var is None:
                     result.warnings.append(f"Variable {name} not found")
                     continue
@@ -316,11 +401,15 @@ class ExportService:
                         flatten=True,
                         cmd_service=self._cmd_service,
                         var_service=self._var_service,
+                        cmd_profile=None,
+                        var_profile=var_profile,
                     )
                 )
                 result.variables.append(name)
         else:
-            collected_vars = collect_deep_variables(target_names, {}, self._var_service)
+            collected_vars = collect_deep_variables(
+                target_names, {}, self._var_service, profile=var_profile
+            )
 
             target_names = set(target_names)
             for name in target_names:
@@ -333,6 +422,8 @@ class ExportService:
                     flatten=False,
                     cmd_service=self._cmd_service,
                     var_service=self._var_service,
+                    cmd_profile=None,
+                    var_profile=var_profile,
                 )
                 for var in collected_vars.values()
             ]
@@ -342,17 +433,34 @@ class ExportService:
                 x for x in collected_vars if x not in target_names
             ]
 
-        doc = _build_document("vars", [], serialized_vars)
+        doc = _build_document(
+            "vars", [], serialized_vars, "", var_profile=var_profile_name
+        )
         atomic_write_text(result.path, json.dumps(doc, indent=2))
         return result
 
     def export_all(
-        self, flatten: bool = False, output_path: str | None = None
+        self,
+        flatten: bool = False,
+        output_path: str | None = None,
+        cmd_profile: str | None = None,
+        var_profile: str | None = None,
     ) -> ExportResult:
-        result = ExportResult(path=_resolve_output_path(output_path, "all"))
+        cmd_profile_name = self._resolve_command_profile_name(cmd_profile)
+        var_profile_name = self._resolve_variable_profile_name(var_profile)
 
-        all_cmds = self._cmd_service.list_commands(limit=_EXPORT_LIMIT)
-        all_vars = self._var_service.list_variables(limit=_EXPORT_LIMIT)
+        result = ExportResult(
+            path=_resolve_output_path(output_path, "all"),
+            command_profile=cmd_profile_name,
+            variable_profile=var_profile_name,
+        )
+
+        all_cmds = self._cmd_service.list_commands(
+            limit=_EXPORT_LIMIT, profile=cmd_profile_name
+        )
+        all_vars = self._var_service.list_variables(
+            limit=_EXPORT_LIMIT, profile=var_profile_name
+        )
 
         serialized_cmds = [
             _serialize_command(
@@ -360,6 +468,8 @@ class ExportService:
                 flatten=flatten,
                 cmd_service=self._cmd_service,
                 var_service=self._var_service,
+                cmd_profile=cmd_profile_name,
+                var_profile=var_profile_name,
             )
             for cmd in all_cmds
         ]
@@ -369,12 +479,20 @@ class ExportService:
                 flatten=False,
                 cmd_service=self._cmd_service,
                 var_service=self._var_service,
+                cmd_profile=cmd_profile_name,
+                var_profile=var_profile_name,
             )
             for var in all_vars
         ]
         result.commands = [cmd.alias for cmd in all_cmds]
         result.variables = [var.name for var in all_vars]
 
-        doc = _build_document("all", serialized_cmds, serialized_vars)
+        doc = _build_document(
+            "all",
+            serialized_cmds,
+            serialized_vars,
+            cmd_profile=cmd_profile_name,
+            var_profile=var_profile_name,
+        )
         atomic_write_text(result.path, json.dumps(doc, indent=2))
         return result

@@ -10,7 +10,6 @@ from cmdbox.cli.ui.primitives import (
 )
 from cmdbox.services.import_service import ImportResult
 
-
 ACTION_ICONS: dict[str, tuple[str, str]] = {
     "create": ("+", "status.success"),
     "skip": ("~", "ui.muted"),
@@ -118,8 +117,11 @@ def render_import_result(result: ImportResult) -> RenderableType:
     if not rows:
         rows.append(("", "Nothing was imported."))
 
+    caption = f"Imported into profile: '{result.profile}'" if result.profile else ""
+
     return section(
         title="Import Complete",
         body=kv_table(rows),
+        caption=caption,
         border_style="status.success",
     )

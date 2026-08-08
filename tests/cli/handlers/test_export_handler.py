@@ -38,6 +38,8 @@ class TestExportHandler(unittest.TestCase):
             tag="release",
             flatten=True,
             output="out.json",
+            cmd_profile=None,
+            var_profile=None,
             get_export_service=self.get_export_service,
             get_console=self.get_console,
         )
@@ -47,6 +49,8 @@ class TestExportHandler(unittest.TestCase):
             tag="release",
             flatten=True,
             output_path="out.json",
+            cmd_profile=None,
+            var_profile=None,
         )
         mock_render.assert_called_once_with(result)
         self.mock_console.warning.assert_not_called()
@@ -66,6 +70,8 @@ class TestExportHandler(unittest.TestCase):
             tag=None,
             flatten=False,
             output=None,
+            cmd_profile=None,
+            var_profile=None,
             get_export_service=self.get_export_service,
             get_console=self.get_console,
         )
@@ -87,6 +93,7 @@ class TestExportHandler(unittest.TestCase):
             tag="prod",
             flatten=True,
             output="vars.json",
+            var_profile=None,
             get_export_service=self.get_export_service,
             get_console=self.get_console,
         )
@@ -96,6 +103,7 @@ class TestExportHandler(unittest.TestCase):
             tag="prod",
             flatten=True,
             output_path="vars.json",
+            var_profile=None,
         )
         mock_render.assert_called_once_with(result)
         self.mock_console.warning.assert_not_called()
@@ -112,6 +120,7 @@ class TestExportHandler(unittest.TestCase):
             tag=None,
             flatten=False,
             output=None,
+            var_profile=None,
             get_export_service=self.get_export_service,
             get_console=self.get_console,
         )
@@ -121,6 +130,7 @@ class TestExportHandler(unittest.TestCase):
             tag=None,
             flatten=False,
             output_path=None,
+            var_profile=None,
         )
         self.mock_console.warning.assert_called_once_with("warn")
         self.mock_console.print.assert_called_once_with("rendered_vars")
@@ -134,6 +144,8 @@ class TestExportHandler(unittest.TestCase):
         run_export_all(
             flatten=True,
             output="all.json",
+            cmd_profile=None,
+            var_profile=None,
             get_export_service=self.get_export_service,
             get_console=self.get_console,
         )
@@ -141,6 +153,8 @@ class TestExportHandler(unittest.TestCase):
         self.mock_export_service.export_all.assert_called_once_with(
             flatten=True,
             output_path="all.json",
+            cmd_profile=None,
+            var_profile=None,
         )
         mock_render.assert_called_once_with(result)
         self.mock_console.warning.assert_not_called()
@@ -158,6 +172,8 @@ class TestExportHandler(unittest.TestCase):
         run_export_all(
             flatten=False,
             output=None,
+            cmd_profile=None,
+            var_profile=None,
             get_export_service=self.get_export_service,
             get_console=self.get_console,
         )
@@ -167,3 +183,72 @@ class TestExportHandler(unittest.TestCase):
         )
         self.assertEqual(3, self.mock_console.warning.call_count)
         self.mock_console.print.assert_called_once_with("rendered_all")
+
+    def test_run_export_cmds_with_profiles(self):
+        self.mock_export_service.export_cmds.return_value = ExportResult(
+            Path("out.json")
+        )
+
+        run_export_cmds(
+            aliases=None,
+            tag=None,
+            flatten=False,
+            output=None,
+            cmd_profile="p-cmd",
+            var_profile="p-var",
+            get_export_service=self.get_export_service,
+            get_console=self.get_console,
+        )
+
+        self.mock_export_service.export_cmds.assert_called_once_with(
+            aliases=None,
+            tag=None,
+            flatten=False,
+            output_path=None,
+            cmd_profile="p-cmd",
+            var_profile="p-var",
+        )
+
+    def test_run_export_vars_with_profile(self):
+        self.mock_export_service.export_vars.return_value = ExportResult(
+            Path("out.json")
+        )
+
+        run_export_vars(
+            names=None,
+            tag=None,
+            flatten=False,
+            output=None,
+            var_profile="p-var",
+            get_export_service=self.get_export_service,
+            get_console=self.get_console,
+        )
+
+        self.mock_export_service.export_vars.assert_called_once_with(
+            names=None,
+            tag=None,
+            flatten=False,
+            output_path=None,
+            var_profile="p-var",
+        )
+
+    def test_run_export_all_with_profiles(self):
+        self.mock_export_service.export_all.return_value = ExportResult(
+            Path("out.json")
+        )
+
+        run_export_all(
+            flatten=False,
+            output=None,
+            cmd_profile="p-cmd",
+            var_profile="p-var",
+            get_export_service=self.get_export_service,
+            get_console=self.get_console,
+        )
+
+        self.mock_export_service.export_all.assert_called_once_with(
+            flatten=False,
+            output_path=None,
+            cmd_profile="p-cmd",
+            var_profile="p-var",
+        )

@@ -101,3 +101,21 @@ def render_variable_deleted(variable: Variable):
         body=rendered_variable,
         border_style="status.success",
     )
+
+
+def render_variable_moved(var: Variable, target_profile: str):
+    rendered_variable = render_variable(var)
+    return section(
+        title=f"Command '{var.name}' moved to profile '{target_profile}'",
+        body=rendered_variable,
+        border_style="status.success",
+    )
+
+
+def render_variable_copied(var: Variable, target_profile: str):
+    rendered_variable = render_variable(var)
+    return section(
+        title=f"Command '{var.name}' copied to profile '{target_profile}'",
+        body=rendered_variable,
+        border_style="status.success",
+    )

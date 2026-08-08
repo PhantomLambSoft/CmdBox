@@ -92,6 +92,7 @@ class TestCommandRun(unittest.TestCase):
             shell=shell,
             timeout=22,
             verbose=verbose,
+            profile=None,
             ctx=mock_ctx,
         )
 
@@ -104,6 +105,7 @@ class TestCommandRun(unittest.TestCase):
             shell=shell,
             timeout=22,
             verbose=verbose,
+            profile=None,
             ctx=mock_ctx,
         )
 
@@ -200,6 +202,30 @@ class TestCommandRun(unittest.TestCase):
         self.assertIsNone(kwargs["run_ctx"].env)
         self.assertFalse(kwargs["run_ctx"].capture)
         self.assertIsNone(kwargs["run_ctx"].shell)
+
+    @patch("cmdbox.cli.commands.command_run.run_run_command")
+    @patch("cmdbox.cli.commands.command_run.container")
+    def test_run_with_profile(self, mock_container, mock_run_run_command):
+        alias = "test-alias"
+        profile = "other-profile"
+
+        command_run.run(alias=alias, profile=profile, ctx=self.make_mock_ctx())
+
+        mock_run_run_command.assert_called_once()
+        kwargs = mock_run_run_command.call_args[1]
+        self.assertEqual(profile, kwargs["profile"])
+
+    @patch("cmdbox.cli.commands.command_run.run_preview_command")
+    @patch("cmdbox.cli.commands.command_run.container")
+    def test_preview_with_profile(self, mock_container, mock_run_preview_command):
+        alias = "test-alias"
+        profile = "other-profile"
+
+        command_run.preview(alias=alias, profile=profile, ctx=self.make_mock_ctx())
+
+        mock_run_preview_command.assert_called_once()
+        kwargs = mock_run_preview_command.call_args[1]
+        self.assertEqual(profile, kwargs["profile"])
 
     @patch("cmdbox.cli.commands.command_run.run_run_command")
     @patch("cmdbox.cli.commands.command_run.container")

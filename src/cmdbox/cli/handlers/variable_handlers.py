@@ -21,6 +21,8 @@ from cmdbox.cli.ui.presenters.variable_presenter import (
     render_variable_list,
     render_variable_updated,
     render_variable_deleted,
+    render_variable_moved,
+    render_variable_copied,
 )
 from cmdbox.cli.ui.presenters.result_presenter import (
     render_tag_attach_result,
@@ -38,6 +40,7 @@ class AddVariableArgs:
     name: Optional[str]
     value: Optional[str]
     tags: Optional[list[str]]
+    profile: Optional[str] = None
     interactive: bool = False
 
 
@@ -52,6 +55,7 @@ def run_add_variable(
     name = args.name
     value = args.value
     tags = args.tags
+    profile = args.profile
 
     if args.interactive or name is None:
         name = prompt_for_name(NameValidator())
@@ -65,7 +69,9 @@ def run_add_variable(
         tags = None
 
     var_service = get_var_services()
-    var = var_service.create_variable(name=name, value=value, tags=tags)
+    var = var_service.create_variable(
+        name=name, value=value, tags=tags, profile=profile
+    )
     console = get_console()
     console.print(render_variable_created(var))
 
@@ -74,12 +80,13 @@ def run_add_variable(
 def run_get_variable(
     *,
     name: str,
+    profile: Optional[str] = None,
     get_var_services: Callable[[], VariableServices],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     var_service = get_var_services()
-    var = var_service.get_variable(name)
+    var = var_service.get_variable(name, profile=profile)
     rendered_var = render_variable(var)
     console.print(rendered_var)
 
@@ -166,6 +173,7 @@ def run_list_variables(
     order_by: str | None,
     tags: list[str] | None,
     fields: list[str] | None = None,
+    profile: Optional[str] = None,
     get_var_services: Callable[[], VariableServices],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
@@ -180,7 +188,9 @@ def run_list_variables(
     if order_by is None:
         order_by = settings.default_fields.variable_default_order
 
-    vars_ = var_service.list_variables(limit=limit, order_by=order_by, tags=tags)
+    vars_ = var_service.list_variables(
+        limit=limit, order_by=order_by, tags=tags, profile=profile
+    )
 
     fields = get_display_field_resolver().resolve(
         fields,
@@ -200,6 +210,7 @@ def run_search_variables(
     page: bool | None,
     search_fields: list[str] | None = None,
     fields: list[str] | None = None,
+    profile: Optional[str] = None,
     get_var_services: Callable[[], VariableServices],
     get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
@@ -223,7 +234,7 @@ def run_search_variables(
 
     if limit is None:
         limit = settings.default_fields.variable_list_limit
-    vars_ = var_service.search(term, limit=limit, fields=search_fields)
+    vars_ = var_service.search(term, limit=limit, fields=search_fields, profile=profile)
     rendered_var_list = render_variable_list(
         vars_, title="Search Results", fields=output_fields
     )
@@ -234,13 +245,14 @@ def run_search_variables(
 def run_delete_variable(
     *,
     name: str,
+    profile: Optional[str] = None,
     get_var_services: Callable[[], VariableServices],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     var_service = get_var_services()
-    var = var_service.get_variable(name)
-    if var_service.delete_variable(name):
+    var = var_service.get_variable(name, profile=profile)
+    if var_service.delete_variable(name, profile=profile):
         console.print(render_variable_deleted(var))
     else:
         console.error(f"Failed to delete variable '{name}'.")
@@ -251,6 +263,7 @@ def run_attach_tags(
     *,
     name: str | None = None,
     tag_names: list[str] | None = None,
+    profile: Optional[str] = None,
     get_var_services: Callable[[], VariableServices],
     get_tag_services: Callable[[], TagServices],
     get_console: Callable[[], ConsoleUI],
@@ -260,9 +273,44 @@ def run_attach_tags(
     if not tag_names:
         tag_names = get_tags_interactive(get_tag_services())
     var_service = get_var_services()
-    result = var_service.add_tags(name=name, tags=tag_names)
+    result = var_service.add_tags(name=name, tags=tag_names, profile=profile)
     console = get_console()
     console.print(render_tag_attach_result(result))
+
+
+@log_action(__name__, "run_move_variable")
+def run_move_variable(
+    *,
+    name: str,
+    target_profile: str,
+    profile: str | None = None,
+    get_var_services: Callable[[], VariableServices],
+    get_console: Callable[[], ConsoleUI],
+) -> None:
+    console = get_console()
+    var_service = get_var_services()
+    var = var_service.move_variable(
+        name=name, target_profile=target_profile, profile=profile
+    )
+    console.print(render_variable_moved(var, target_profile))
+
+
+@log_action(__name__, "run_copy_variable")
+def run_copy_variable(
+    *,
+    name: str,
+    target_profile: str,
+    new_name: str | None = None,
+    profile: str | None = None,
+    get_var_services: Callable[[], VariableServices],
+    get_console: Callable[[], ConsoleUI],
+) -> None:
+    console = get_console()
+    var_service = get_var_services()
+    var = var_service.copy_variable(
+        name=name, new_name=new_name, target_profile=target_profile, profile=profile
+    )
+    console.print(render_variable_copied(var, target_profile))
 
 
 @log_action(__name__, "run_detach_tags")
@@ -270,6 +318,7 @@ def run_detach_tags(
     *,
     name: str | None = None,
     tag_names: list[str] | None = None,
+    profile: Optional[str] = None,
     get_var_services: Callable[[], VariableServices],
     get_tag_services: Callable[[], TagServices],
     get_console: Callable[[], ConsoleUI],
@@ -279,6 +328,6 @@ def run_detach_tags(
     if not tag_names:
         tag_names = get_tags_interactive(get_tag_services())
     var_service = get_var_services()
-    result = var_service.remove_tags(name=name, tags=tag_names)
+    result = var_service.remove_tags(name=name, tags=tag_names, profile=profile)
     console = get_console()
     console.print(render_tag_detach_result(result))

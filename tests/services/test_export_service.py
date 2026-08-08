@@ -54,9 +54,11 @@ class TestExportHelpers(unittest.TestCase):
             "deploy": make_command("deploy", "run <cmd:build>"),
             "build": make_command("build", "echo done <cmd:missing>"),
         }
-        cmd_service.get_command_or_none.side_effect = lambda alias: commands.get(alias)
+        cmd_service.get_command_or_none.side_effect = (
+            lambda alias, profile=None: commands.get(alias)
+        )
 
-        result = collect_deep_commands(["deploy", "unknown"], cmd_service)
+        result = collect_deep_commands(["deploy", "unknown"], cmd_service, profile=None)
 
         self.assertEqual({"deploy", "build"}, set(result.keys()))
 
@@ -70,9 +72,11 @@ class TestExportHelpers(unittest.TestCase):
             "region": make_variable("region", "us-east"),
             "user": make_variable("user", "admin"),
         }
-        var_service.get_variable_or_none.side_effect = lambda name: variables.get(name)
+        var_service.get_variable_or_none.side_effect = (
+            lambda name, profile=None: variables.get(name)
+        )
 
-        result = collect_deep_variables(["user"], commands, var_service)
+        result = collect_deep_variables(["user"], commands, var_service, profile=None)
 
         self.assertEqual({"host", "region", "user"}, set(result.keys()))
 
@@ -86,13 +90,19 @@ class TestExportHelpers(unittest.TestCase):
         variables = {
             "host": make_variable("host", "api-<var:host>"),
         }
-        cmd_service.get_command_or_none.side_effect = lambda alias: commands.get(alias)
-        var_service.get_variable_or_none.side_effect = lambda name: variables.get(name)
+        cmd_service.get_command_or_none.side_effect = (
+            lambda alias, profile=None: commands.get(alias)
+        )
+        var_service.get_variable_or_none.side_effect = (
+            lambda name, profile=None: variables.get(name)
+        )
 
         result = flatten_template(
             r"A \<var:x> B <cmd:deploy> C <cmd:missing> D <cmd:loop> E <broken",
             cmd_service,
             var_service,
+            cmd_profile=None,
+            var_profile=None,
         )
 
         self.assertEqual(
@@ -107,11 +117,13 @@ class TestExportHelpers(unittest.TestCase):
         now_obj.isoformat.return_value = fixed_iso
         mock_datetime.now.return_value = now_obj
 
-        result = _build_document("cmds", [{"alias": "a"}], [{"name": "v"}])
+        result = _build_document("cmds", [{"alias": "a"}], [{"name": "v"}], "cp", "vp")
 
         self.assertEqual("1", result["version"])
         self.assertEqual("cmds", result["type"])
         self.assertEqual(fixed_iso, result["exported_at"])
+        self.assertEqual("cp", result["command_profile"])
+        self.assertEqual("vp", result["variable_profile"])
         self.assertEqual([{"alias": "a"}], result["commands"])
         self.assertEqual([{"name": "v"}], result["variables"])
 
@@ -154,8 +166,12 @@ class TestExportHelpers(unittest.TestCase):
         with patch(
             "cmdbox.services.export_service.flatten_template", return_value="flattened"
         ):
-            serialized_cmd = _serialize_command(cmd, True, MagicMock(), MagicMock())
-            serialized_var = _serialize_variable(var, True, MagicMock(), MagicMock())
+            serialized_cmd = _serialize_command(
+                cmd, True, MagicMock(), MagicMock(), None, None
+            )
+            serialized_var = _serialize_variable(
+                var, True, MagicMock(), MagicMock(), None, None
+            )
 
         self.assertEqual("deploy", serialized_cmd["alias"])
         self.assertEqual("flattened", serialized_cmd["template"])
@@ -170,7 +186,16 @@ class TestExportService(unittest.TestCase):
     def setUp(self):
         self.cmd_service = MagicMock()
         self.var_service = MagicMock()
-        self.service = ExportService(self.cmd_service, self.var_service)
+        self.profile_repo = MagicMock()
+        self.service = ExportService(
+            self.cmd_service, self.var_service, self.profile_repo
+        )
+
+        # Default profile state
+        self.profile_repo.get_state.return_value = SimpleNamespace(
+            active_command_profile=SimpleNamespace(name="default-cmd"),
+            active_variable_profile=SimpleNamespace(name="default-var"),
+        )
 
     @patch("cmdbox.services.export_service.atomic_write_text")
     @patch("cmdbox.services.export_service._resolve_output_path")
@@ -182,11 +207,11 @@ class TestExportService(unittest.TestCase):
         build = make_command("build", "echo <var:build_flag>")
         env = make_variable("env", "prod")
         build_flag = make_variable("build_flag", "-v")
-        self.cmd_service.get_command_or_none.side_effect = lambda alias: {
+        self.cmd_service.get_command_or_none.side_effect = lambda alias, profile=None: {
             "deploy": deploy,
             "build": build,
         }.get(alias)
-        self.var_service.get_variable_or_none.side_effect = lambda name: {
+        self.var_service.get_variable_or_none.side_effect = lambda name, profile=None: {
             "env": env,
             "build_flag": build_flag,
         }.get(name)
@@ -211,10 +236,10 @@ class TestExportService(unittest.TestCase):
         self, mock_resolve_output_path, mock_atomic_write_text
     ):
         mock_resolve_output_path.return_value = Path("C:\\exports\\cmds-flat.json")
-        self.cmd_service.get_command_or_none.side_effect = lambda alias: {
+        self.cmd_service.get_command_or_none.side_effect = lambda alias, profile=None: {
             "deploy": make_command("deploy", "<var:env>")
         }.get(alias)
-        self.var_service.get_variable_or_none.side_effect = lambda name: {
+        self.var_service.get_variable_or_none.side_effect = lambda name, profile=None: {
             "env": make_variable("env", "prod")
         }.get(name)
 
@@ -236,14 +261,16 @@ class TestExportService(unittest.TestCase):
         self.cmd_service.list_commands.return_value = [
             make_command("by-tag", "echo hi"),
         ]
-        self.cmd_service.get_command_or_none.side_effect = lambda alias: {
+        self.cmd_service.get_command_or_none.side_effect = lambda alias, profile=None: {
             "by-tag": make_command("by-tag", "echo hi")
         }.get(alias)
 
         result = self.service.export_cmds(None, tag="ops", flatten=True)
 
         self.assertEqual(["by-tag"], result.commands)
-        self.cmd_service.list_commands.assert_called_once_with(tags="ops", limit=10000)
+        self.cmd_service.list_commands.assert_called_once_with(
+            tags="ops", limit=10000, profile="default-cmd"
+        )
         mock_atomic_write_text.assert_called_once()
 
     @patch("cmdbox.services.export_service.atomic_write_text")
@@ -254,7 +281,7 @@ class TestExportService(unittest.TestCase):
             make_variable("a", "1"),
             make_variable("missing", "?"),
         ]
-        self.var_service.get_variable_or_none.side_effect = lambda name: {
+        self.var_service.get_variable_or_none.side_effect = lambda name, profile=None: {
             "a": make_variable("a", "1")
         }.get(name)
 
@@ -265,7 +292,7 @@ class TestExportService(unittest.TestCase):
         self.assertEqual([], result.transient_variables)
         self.assertEqual(["Variable missing not found"], result.warnings)
         self.var_service.list_variables.assert_called_once_with(
-            tags="prod", limit=10000
+            tags="prod", limit=10000, profile="default-var"
         )
         mock_atomic_write_text.assert_called_once()
 
@@ -274,14 +301,16 @@ class TestExportService(unittest.TestCase):
         self, mock_atomic_write_text
     ):
         self.var_service.list_variables.return_value = [make_variable("x", "1")]
-        self.var_service.get_variable_or_none.side_effect = lambda name: {
+        self.var_service.get_variable_or_none.side_effect = lambda name, profile=None: {
             "x": make_variable("x", "1")
         }.get(name)
 
         result = self.service.export_vars()
 
         self.assertEqual(["x"], result.variables)
-        self.var_service.list_variables.assert_called_once_with(limit=10000)
+        self.var_service.list_variables.assert_called_once_with(
+            limit=10000, profile="default-var"
+        )
         mock_atomic_write_text.assert_called_once()
 
     @patch("cmdbox.services.export_service.atomic_write_text")
@@ -292,7 +321,7 @@ class TestExportService(unittest.TestCase):
         all_vars = [make_variable("env", "prod")]
         self.cmd_service.list_commands.return_value = all_cmds
         self.var_service.list_variables.return_value = all_vars
-        self.var_service.get_variable_or_none.side_effect = lambda name: {
+        self.var_service.get_variable_or_none.side_effect = lambda name, profile=None: {
             "env": make_variable("env", "prod")
         }.get(name)
 
@@ -304,3 +333,24 @@ class TestExportService(unittest.TestCase):
         self.assertEqual("all", written_doc["type"])
         self.assertEqual("prod", written_doc["variables"][0]["value"])
         self.assertEqual("prod", written_doc["commands"][0]["template"])
+
+    @patch("cmdbox.services.export_service.atomic_write_text")
+    def test_export_cmds_with_profiles(self, mock_atomic_write_text):
+        profile_c = "p-cmd"
+        profile_v = "p-var"
+        cmd = make_command("c1", "<var:v1>")
+        var = make_variable("v1", "val1")
+
+        self.cmd_service.get_command_or_none.side_effect = lambda alias, profile=None: (
+            cmd if alias == "c1" and profile == profile_c else None
+        )
+        self.var_service.get_variable_or_none.side_effect = lambda name, profile=None: (
+            var if name == "v1" and profile == profile_v else None
+        )
+
+        self.service.export_cmds(["c1"], cmd_profile=profile_c, var_profile=profile_v)
+
+        # collect_deep_commands should use cmd_profile
+        self.cmd_service.get_command_or_none.assert_any_call("c1", profile=profile_c)
+        # collect_deep_variables should use var_profile
+        self.var_service.get_variable_or_none.assert_any_call("v1", profile=profile_v)

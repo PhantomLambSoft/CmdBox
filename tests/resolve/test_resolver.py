@@ -26,7 +26,9 @@ class TestResolver(unittest.TestCase):
         result = self.resolver.resolve("hello <name>")
         self.assertEqual(result.text, "hello world")
         self.assertEqual(len(result.trace), 1)
-        self.assertEqual(result.trace[0], TraceStep(RefKind.VARIABLE, "name", "world"))
+        self.assertEqual(
+            result.trace[0], TraceStep(RefKind.VARIABLE, "name", "world", "stored")
+        )
 
     def test_resolve_simple_command(self):
         self.mock_lookup.get_command.return_value = CommandRecord("greet", "echo hello")

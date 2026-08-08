@@ -1,8 +1,8 @@
-from typing import Any, Optional, Iterable, Dict
+from typing import Any, Optional, Iterable, Dict, Sequence
 import typer
 
 
-def parse_set_pairs(pairs: Optional[list[str]]) -> Dict[str, str]:
+def parse_set_pairs(pairs: Optional[Sequence[str]]) -> Dict[str, str]:
     """
     Parses a list of key-value string pairs and converts them into a dictionary.
 

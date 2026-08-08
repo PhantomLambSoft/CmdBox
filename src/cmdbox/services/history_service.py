@@ -1,43 +1,72 @@
 import json
 from typing import Callable
 
-from cmdbox.models import CommandHistory
+from cmdbox.models import CommandHistory, Profile
 from cmdbox.repositories.history_repository import HistoryRepository
+from cmdbox.repositories.profile_repository import ProfileRepository
 from cmdbox.services.errors import HistoryIndexError
 from cmdbox.settings.models import Settings
 
 
 class HistoryService:
 
-    def __init__(self, repo: HistoryRepository, get_settings: Callable[[], Settings]):
+    def __init__(
+        self,
+        repo: HistoryRepository,
+        get_settings: Callable[[], Settings],
+        profile_repository: ProfileRepository,
+    ):
         self._repo = repo
         self._get_settings = get_settings
+        self._profile_repo = profile_repository
+
+    def resolve_profile(self, profile: str | None) -> Profile | None:
+        return self._profile_repo.get_by_name(profile) if profile else None
 
     def get_recent(
         self,
         alias: str | None = None,
         limit: int = 20,
+        profile: str | None = None,
     ) -> list[CommandHistory]:
-        return self._repo.get_recent(alias, limit)
+        resolved_profile = self.resolve_profile(profile)
+        return self._repo.get_recent(alias, limit, profile=resolved_profile)
 
-    def get_by_ref(self, ref: str, alias: str | None = None) -> CommandHistory:
+    def get_by_ref(
+        self,
+        ref: str,
+        alias: str | None = None,
+        profile: str | None = None,
+    ) -> CommandHistory:
+        resolved_profile = self.resolve_profile(profile)
         if ref.isdigit():
-            return self._get_by_index(int(ref), alias=alias)
-        return self._repo.get_by_id(ref)
+            return self._get_by_index(int(ref), alias=alias, profile=resolved_profile)
+        return self._repo.get_by_id(ref, profile=resolved_profile)
 
     def get_variables(self, entry: CommandHistory) -> dict[str, str] | None:
         if entry.variables_used is None:
             return None
         return json.loads(entry.variables_used)
 
-    def delete_by_ref(self, ref: str) -> bool:
-        entry = self.get_by_ref(ref)
-        return self._repo.delete_by_id(entry.id)
+    def delete_by_ref(self, ref: str, profile: str | None = None) -> bool:
+        resolved_profile = self.resolve_profile(profile)
+        entry = self.get_by_ref(ref, profile=profile)
+        return self._repo.delete_by_id(entry.id, profile=resolved_profile)
 
-    def clear(self, alias: str | None = None) -> int:
-        return self._repo.clear(alias=alias)
+    def clear(
+        self,
+        alias: str | None = None,
+        profile: str | None = None,
+    ) -> int:
+        resolved_profile = self.resolve_profile(profile)
+        return self._repo.clear(alias=alias, profile=resolved_profile)
 
-    def _get_by_index(self, index: int, alias: str | None = None) -> CommandHistory:
+    def _get_by_index(
+        self,
+        index: int,
+        alias: str | None = None,
+        profile: Profile | None = None,
+    ) -> CommandHistory:
         """
         Fetches a specific command history entry by its index.
 
@@ -51,6 +80,8 @@ class HistoryService:
                 retrieve. Must be greater than 0.
             alias (str | None): Optional alias to filter the history entries. If
                 None, no alias filter is applied.
+            profile (str | None): Optional profile to filter the history entries. If
+                None, no profile filter is applied.
 
         Returns:
             CommandHistory: The command history entry corresponding to the provided
@@ -62,7 +93,7 @@ class HistoryService:
         """
         if index < 1:
             raise HistoryIndexError(index=index)
-        entries = self._repo.get_recent(alias=alias, limit=index)
+        entries = self._repo.get_recent(alias=alias, limit=index, profile=profile)
         if index > len(entries):
             raise HistoryIndexError(index=index)
         return entries[index - 1]

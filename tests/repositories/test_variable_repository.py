@@ -1,4 +1,6 @@
 import unittest
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 from peewee import DoesNotExist
 
@@ -6,7 +8,6 @@ from cmdbox.database import db, get_db, ensure_schema
 from cmdbox.repositories.errors import (
     ValidationError,
     NameConflictError,
-    UnknownNameError,
     UpdateError,
     TagAttachError,
     TagDetachError,
@@ -33,16 +34,29 @@ class TestVariableRepository(unittest.TestCase):
         Variable.delete().execute()
         Tag.delete().execute()
         VariableTag.delete().execute()
-        self.repo = VariableRepository()
+        self.profile_repo = MagicMock(
+            get_state=MagicMock(
+                return_value=SimpleNamespace(active_variable_profile_id=1)
+            )
+        )
+        self.repo = VariableRepository(profile_repository=self.profile_repo)
 
     def _create_variable_group(self):
-        self.var_one = Variable.create(name="test1", value="test_value_e Antelope Bee")
-        self.var_two = Variable.create(name="test2", value="test_value_d Zebra Bee")
-        self.var_three = Variable.create(
-            name="test3", value="test_value_c Kangaroo Bee"
+        self.var_one = Variable.create(
+            name="test1", value="test_value_e Antelope Bee", profile=1
         )
-        self.var_four = Variable.create(name="test4", value="test_value_b Bee Bee Bee")
-        self.var_five = Variable.create(name="test5", value="test_value_a Bee Goldfish")
+        self.var_two = Variable.create(
+            name="test2", value="test_value_d Zebra Bee", profile=1
+        )
+        self.var_three = Variable.create(
+            name="test3", value="test_value_c Kangaroo Bee", profile=1
+        )
+        self.var_four = Variable.create(
+            name="test4", value="test_value_b Bee Bee Bee", profile=1
+        )
+        self.var_five = Variable.create(
+            name="test5", value="test_value_a Bee Goldfish", profile=1
+        )
 
     def _tag_variable_group(self):
         self.tag_one = Tag.create(name="tag_one")
@@ -77,7 +91,7 @@ class TestVariableRepository(unittest.TestCase):
             self.repo.create(name="", value="test_value")
 
     def test_create_duplicate_variable_name_not_allowed(self):
-        Variable.create(name="test", value="test_value")
+        Variable.create(name="test", value="test_value", profile=1)
         with self.assertRaises(NameConflictError):
             self.repo.create(name="test", value="test_value2")
 
@@ -104,6 +118,19 @@ class TestVariableRepository(unittest.TestCase):
     def test_unicode_characters_are_allowed_in_variable_value(self):
         self.repo.create(name="test", value="git-✨")
 
+    def test_create_with_profile(self):
+        """Variable should be created with the provided profile."""
+        var = self.repo.create(name="test", value="test_value", profile=2)
+        self.assertEqual(2, var.profile_id)
+        self.profile_repo.get_state.assert_not_called()
+
+    def test_create_uses_active_profile_by_default(self):
+        """Variable should be created with the active profile if none is provided."""
+        # The mock in setUp returns 1 as active_variable_profile_id
+        var = self.repo.create(name="test", value="test_value")
+        self.assertEqual(1, var.profile_id)
+        self.profile_repo.get_state.assert_called_once()
+
     def test_whitespace_in_middle_of_variable_name_is_not_allowed(self):
         with self.assertRaises(ValidationError):
             self.repo.create(name="test test", value="test_value")
@@ -117,7 +144,7 @@ class TestVariableRepository(unittest.TestCase):
         self.assertIsNone(var)
 
     def test_variable_name_capitalisation_does_not_matter(self):
-        variable = Variable.create(name="test", value="test_value")
+        variable = Variable.create(name="test", value="test_value", profile=1)
         var = self.repo.get_by_name("TEST")
         self.assertEqual(variable, var)
 
@@ -126,7 +153,7 @@ class TestVariableRepository(unittest.TestCase):
     # =================================================================================
 
     def test_get_variable_by_name(self):
-        variable = Variable.create(name="test", value="test_value")
+        variable = Variable.create(name="test", value="test_value", profile=1)
         var = self.repo.get_by_name("test")
         self.assertEqual(variable, var)
 
@@ -135,25 +162,27 @@ class TestVariableRepository(unittest.TestCase):
         self.assertIsNone(var)
 
     def test_get_by_other_fields_does_not_work(self):
-        Variable.create(name="test", value="test_value")
+        Variable.create(name="test", value="test_value", profile=1)
         var = self.repo.get_by_name("test_value")
         self.assertIsNone(var)
 
     def test_get_by_all_symbols_is_allowed(self):
-        Variable.create(name="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|", value="test_value")
+        Variable.create(
+            name="test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|", value="test_value", profile=1
+        )
         self.repo.get_by_name("test-1!@#$%^&*()_+-=[]\\;/.,<>?:{}|")
 
     def test_get_by_unicode_characters_is_allowed(self):
-        Variable.create(name="git-✨", value="test_value")
+        Variable.create(name="git-✨", value="test_value", profile=1)
         self.repo.get_by_name(name="git-✨")
 
     def test_get_variable_by_id(self):
-        variable = Variable.create(name="test", value="test_value")
+        variable = Variable.create(name="test", value="test_value", profile=1)
         var = self.repo.get_by_id(variable.id)
         self.assertEqual(variable, var)
 
     def test_get_variable_by_invalid_id_raises_exception(self):
-        Variable.create(name="test", value="test_value")
+        Variable.create(name="test", value="test_value", profile=1)
         with self.assertRaises(UnknownVariableError):
             self.repo.get_by_id(123456789)
 
@@ -162,52 +191,52 @@ class TestVariableRepository(unittest.TestCase):
     # =================================================================================
 
     def test_update_variable_name_works(self):
-        var = Variable.create(name="test", value="test_value")
+        var = Variable.create(name="test", value="test_value", profile=1)
         self.repo.update(variable=var, name="new_name")
         Variable.get(Variable.name == "new_name")
 
     def test_update_variable_value_works(self):
-        variable = Variable.create(name="test", value="test_value")
+        variable = Variable.create(name="test", value="test_value", profile=1)
         var = self.repo.update(variable=variable, value="new_value")
         self.assertEqual("new_value", Variable.get(Variable.name == "test").value)
         self.assertEqual(variable, var)
 
     def test_update_variable_with_blank_name_raises_exception(self):
-        var = Variable.create(name="test", value="test_value")
+        var = Variable.create(name="test", value="test_value", profile=1)
         with self.assertRaises(ValidationError):
             self.repo.update(variable=var, name="")
 
     def test_update_variable_with_null_name_does_nothing(self):
-        var = Variable.create(name="test", value="test_value")
+        var = Variable.create(name="test", value="test_value", profile=1)
         self.repo.update(variable=var, name=None)
         self.assertEqual(var, Variable.get(Variable.name == "test"))
 
     def test_update_variable_with_duplicate_name_raises_exception(self):
-        Variable.create(name="test", value="test_value")
-        var = Variable.create(name="test2", value="test_value2")
+        Variable.create(name="test", value="test_value", profile=1)
+        var = Variable.create(name="test2", value="test_value2", profile=1)
         with self.assertRaises(NameConflictError):
             self.repo.update(variable=var, name="test")
 
     def test_update_variable_value_to_an_existing_variable_is_allowed(self):
         """Multiple variables can have the same value."""
-        Variable.create(name="test", value="test_value")
-        var = Variable.create(name="test2", value="test_value2")
+        Variable.create(name="test", value="test_value", profile=1)
+        var = Variable.create(name="test2", value="test_value2", profile=1)
         self.repo.update(variable=var, value="test")
 
     def test_update_with_no_fields_throws_exception(self):
-        var = Variable.create(name="test", value="test_value")
+        var = Variable.create(name="test", value="test_value", profile=1)
         with self.assertRaises(UpdateError):
             self.repo.update(variable=var)
 
     def test_update_name_with_white_space_in_middle_of_name_is_not_allowed(self):
-        var = Variable.create(name="test", value="test_value")
+        var = Variable.create(name="test", value="test_value", profile=1)
         with self.assertRaises(ValidationError):
             self.repo.update(variable=var, name="test2 test")
 
     def test_update_name_with_white_space_at_beginning_and_end_of_name_is_stripped(
         self,
     ):
-        var = Variable.create(name="test", value="test_value")
+        var = Variable.create(name="test", value="test_value", profile=1)
         self.repo.update(variable=var, name=" test2 ")
         self.assertEqual("test2", Variable.get(Variable.name == "test2").name)
 
@@ -385,6 +414,50 @@ class TestVariableRepository(unittest.TestCase):
             Variable.get(Variable.id == self.var_two)
             Variable.get(Variable.id == self.var_five)
 
+    # =================================================================================
+    # SECTION: PROFILE SCOPING TESTS
+    # =================================================================================
+
+    def test_same_name_allowed_in_different_profiles(self):
+        Variable.create(name="host", value="10.0.0.1", profile=1)
+        var = self.repo.create(name="host", value="10.0.0.2", profile=2)
+        self.assertEqual(2, var.profile_id)
+        self.assertEqual(2, Variable.select().where(Variable.name == "host").count())
+
+    def test_get_by_name_only_finds_variable_in_active_profile(self):
+        Variable.create(name="host", value="10.0.0.2", profile=2)
+        var = self.repo.get_by_name("host")
+        self.assertIsNone(var)
+
+    def test_get_by_name_with_explicit_profile_overrides_active(self):
+        other = Variable.create(name="host", value="10.0.0.2", profile=2)
+        var = self.repo.get_by_name("host", profile=2)
+        self.assertEqual(other, var)
+
+    def test_list_all_only_returns_active_profile_variables(self):
+        self._create_variable_group()
+        Variable.create(name="other-profile-var", value="x", profile=2)
+        vars = self.repo.list_all()
+        self.assertEqual(5, len(vars))
+
+    def test_list_all_with_explicit_profile_returns_only_that_profile(self):
+        self._create_variable_group()
+        other = Variable.create(name="other-profile-var", value="x", profile=2)
+        vars = self.repo.list_all(profile=2)
+        self.assertEqual([other], vars)
+
+    def test_search_only_returns_active_profile_variables(self):
+        self._create_variable_group()
+        Variable.create(name="test-other", value="test", profile=2)
+        vars = self.repo.search("test")
+        self.assertEqual(5, len(vars))
+
+    def test_search_with_explicit_profile_returns_only_that_profile(self):
+        self._create_variable_group()
+        other = Variable.create(name="test-other", value="test", profile=2)
+        vars = self.repo.search("test", profile=2)
+        self.assertEqual([other], vars)
+
 
 class TestVariableTagging(unittest.TestCase):
 
@@ -403,11 +476,16 @@ class TestVariableTagging(unittest.TestCase):
         Tag.delete().execute()
         Variable.delete().execute()
         VariableTag.delete().execute()
-        self.repo = VariableRepository()
+        profile_repo = MagicMock(
+            get_state=MagicMock(
+                return_value=SimpleNamespace(active_command_profile_id=1)
+            )
+        )
+        self.repo = VariableRepository(profile_repository=profile_repo)
 
     def _create_var_tags(self):
-        self.var_one = Variable.create(name="var_one", value="Value one")
-        self.var_two = Variable.create(name="var_two", value="Value two")
+        self.var_one = Variable.create(name="var_one", value="Value one", profile=1)
+        self.var_two = Variable.create(name="var_two", value="Value two", profile=1)
         self.tag_one = Tag.create(name="tag_one", description="Tag One Description")
         self.tag_two = Tag.create(name="tag_two", description="Tag Two Description")
         self.var_tag_one = VariableTag.create(variable=self.var_one, tag=self.tag_one)
@@ -415,7 +493,7 @@ class TestVariableTagging(unittest.TestCase):
         self.var_tag_three = VariableTag.create(variable=self.var_two, tag=self.tag_two)
 
     def test_add_tag(self):
-        var = Variable.create(name="test_var", value="test")
+        var = Variable.create(name="test_var", value="test", profile=1)
         tag = Tag.create(name="test_tag", description="test_description")
         results = self.repo.add_tags(variable=var, tags=[tag])
         var_tag = VariableTag.get(variable=var, tag=tag)
@@ -424,7 +502,7 @@ class TestVariableTagging(unittest.TestCase):
         self.assertEqual(0, len(results.existing))
 
     def test_add_multiple_tags(self):
-        var = Variable.create(name="test_var", value="test")
+        var = Variable.create(name="test_var", value="test", profile=1)
         tag1 = Tag.create(name="test_tag1", description="test_description1")
         tag2 = Tag.create(name="test_tag2", description="test_description2")
         results = self.repo.add_tags(variable=var, tags=[tag1, tag2])
@@ -437,7 +515,7 @@ class TestVariableTagging(unittest.TestCase):
         self.assertEqual(0, len(results.existing))
 
     def test_mixed_tagging_of_existing_and_new_works_correctly(self):
-        var = Variable.create(name="test_var", value="test")
+        var = Variable.create(name="test_var", value="test", profile=1)
         tag1 = Tag.create(name="test_tag1", description="test_description1")
         var_tag1 = VariableTag.create(variable=var, tag=tag1)
         tag2 = Tag.create(name="test_tag2", description="test_description2")
@@ -446,13 +524,13 @@ class TestVariableTagging(unittest.TestCase):
         self.assertEqual(1, len(results.existing))
 
     def test_add_tag_with_no_tags_does_nothing(self):
-        var = Variable.create(name="test_var", value="test")
+        var = Variable.create(name="test_var", value="test", profile=1)
         results = self.repo.add_tags(variable=var, tags=[])
         self.assertEqual(0, len(results.added))
         self.assertEqual(0, len(results.existing))
 
     def test_add_tag_with_non_existent_tag_raises_exception(self):
-        var = Variable.create(name="test_var", value="test")
+        var = Variable.create(name="test_var", value="test", profile=1)
         with self.assertRaises(TagAttachError):
             self.repo.add_tags(variable=var, tags=[None])
 
@@ -462,7 +540,7 @@ class TestVariableTagging(unittest.TestCase):
             self.repo.add_tags(variable=None, tags=[tag])
 
     def test_double_tagging_does_not_raise_error(self):
-        var = Variable.create(name="test_var", value="test")
+        var = Variable.create(name="test_var", value="test", profile=1)
         tag = Tag.create(name="test_tag")
         var_tag = VariableTag.create(variable=var, tag=tag)
 
@@ -472,7 +550,7 @@ class TestVariableTagging(unittest.TestCase):
         self.assertEqual("test_tag", results.existing[0])
 
     def test_add_tag_is_atomic_and_no_tags_are_added_if_one_fails(self):
-        var = Variable.create(name="test_var", value="test")
+        var = Variable.create(name="test_var", value="test", profile=1)
         tag = Tag.create(name="test_tag")
         with self.assertRaises(TagAttachError):
             self.repo.add_tags(variable=var, tags=[tag, None])

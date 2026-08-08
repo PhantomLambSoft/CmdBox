@@ -14,6 +14,7 @@ class BaseRepository(Generic[M]):
         secondary_ordering: str,
         fields: str | Sequence[str] | None = None,
         limit: int = 25,
+        extra_condition: Node | None = None,
     ) -> list[M]:
         """
         Searches for commands matching the given query across specified fields.
@@ -32,6 +33,7 @@ class BaseRepository(Generic[M]):
                 default, searches within "name" and "description". Can be a single field
                 name as a string or a sequence of field names.
             limit (int): The maximum number of results to return. Default is 25.
+            extra_condition (Node | None): An additional condition to apply to the query.
 
         Returns:
             list[Command]: A list of Command objects matching the search query, sorted
@@ -64,6 +66,9 @@ class BaseRepository(Generic[M]):
         condition = or_clauses[0]
         for clause in or_clauses[1:]:
             condition |= clause
+
+        if extra_condition is not None:
+            condition &= extra_condition
 
         if len(relevance_parts) > 1:
             relevance = fn.MIN(*relevance_parts).alias("relevance")

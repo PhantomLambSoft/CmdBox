@@ -6,6 +6,7 @@ import typer
 from cmdbox import container
 from cmdbox.cli.common.errors import make_cli_guard
 from cmdbox.cli.completions.commands import complete_command_aliases
+from cmdbox.cli.completions.profiles import complete_profile_names
 from cmdbox.cli.handlers.run_handler import (
     run_preview_command,
     RawRunContext,
@@ -86,13 +87,21 @@ def run(
             help="Outputs additional information alongside the command output.",
         ),
     ] = None,
+    profile: Annotated[
+        Optional[str],
+        typer.Option(
+            "--profile",
+            help="The profile to find this command in. Defaults to the currently active command profile.",
+            autocompletion=complete_profile_names,
+        ),
+    ] = None,
     ctx: typer.Context,
 ) -> None:
     """
     Run stored commands by using their alias.
     """
     log.debug(
-        "run.run called. alias=%s, preview=%s, cwd_used=%s, env=%s, capture=%s, shell=%s, timeout=%s, emit=%s, verbose=%s",
+        "run.run called. alias=%s, preview=%s, cwd_used=%s, env=%s, capture=%s, shell=%s, timeout=%s, emit=%s, profile=%s, verbose=%s",
         alias,
         preview_cmd,
         cwd,
@@ -101,6 +110,7 @@ def run(
         shell,
         timeout,
         emit,
+        profile,
         verbose,
     )
     if preview_cmd:
@@ -112,6 +122,7 @@ def run(
             shell=shell,
             timeout=timeout,
             verbose=verbose,
+            profile=profile,
             ctx=ctx,
         )
         return
@@ -132,6 +143,7 @@ def run(
         alias=alias,
         runtime_vars=runtime_vars,
         run_ctx=ctx,
+        profile=profile,
         get_run_service=container.get_run_service,
         get_settings=container.get_settings,
         get_console=container.get_console,
@@ -191,13 +203,21 @@ def preview(
             help="Outputs additional information alongside the command output.",
         ),
     ] = None,
+    profile: Annotated[
+        Optional[str],
+        typer.Option(
+            "--profile",
+            help="The profile to find this command in. Defaults to the currently active command profile.",
+            autocompletion=complete_profile_names,
+        ),
+    ] = None,
     ctx: typer.Context,
 ) -> None:
     """
     Output the command that will be executed without actually running it.
     """
     log.debug(
-        "run.preview called. alias=%s, cwd=%s, env=%s, capture=%s, shell=%s, timeout=%s, verbose=%s",
+        "run.preview called. alias=%s, cwd=%s, env=%s, capture=%s, shell=%s, timeout=%s, verbose=%s, profile=%s",
         alias,
         cwd,
         env,
@@ -205,6 +225,7 @@ def preview(
         shell,
         timeout,
         verbose,
+        profile,
     )
     runtime_vars = parse_runtime_vars(ctx.args)
     ctx = RawRunContext(
@@ -214,6 +235,7 @@ def preview(
         alias=alias,
         runtime_vars=runtime_vars,
         run_ctx=ctx,
+        profile=profile,
         get_run_service=container.get_run_service,
         get_settings=container.get_settings,
         get_console=container.get_console,

@@ -59,6 +59,7 @@ class TestCommandCrud(unittest.TestCase):
         # Verify
         mock_run_get_command.assert_called_once_with(
             alias=alias,
+            profile=None,
             get_cmd_services=mock_container.get_command_services,
             get_console=mock_container.get_console,
         )
@@ -125,6 +126,7 @@ class TestCommandCrud(unittest.TestCase):
             order=order,
             tags=tags,
             fields=fields,
+            profile=None,
             get_cmd_services=mock_container.get_command_services,
             get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
@@ -152,6 +154,7 @@ class TestCommandCrud(unittest.TestCase):
             page=None,
             search_fields=search_fields,
             fields=fields,
+            profile=None,
             get_cmd_services=mock_container.get_command_services,
             get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
@@ -171,6 +174,7 @@ class TestCommandCrud(unittest.TestCase):
         # Verify
         mock_run_delete_command.assert_called_once_with(
             alias=alias,
+            profile=None,
             get_cmd_services=mock_container.get_command_services,
             get_console=mock_container.get_console,
         )
@@ -189,6 +193,7 @@ class TestCommandCrud(unittest.TestCase):
         mock_run_attach_tags.assert_called_once_with(
             alias=alias,
             tag_names=tags,
+            profile=None,
             get_cmd_services=mock_container.get_command_services,
             get_tag_services=mock_container.get_tag_services,
             get_console=mock_container.get_console,
@@ -208,7 +213,50 @@ class TestCommandCrud(unittest.TestCase):
         mock_run_detach_tags.assert_called_once_with(
             alias=alias,
             tag_names=tags,
+            profile=None,
             get_cmd_services=mock_container.get_command_services,
             get_tag_services=mock_container.get_tag_services,
+            get_console=mock_container.get_console,
+        )
+
+    @patch("cmdbox.cli.commands.command_crud.command_handlers.run_move_command")
+    @patch("cmdbox.cli.commands.command_crud.container")
+    def test_move(self, mock_container, mock_run_move_command):
+        # Setup
+        alias = "test-alias"
+        target_profile = "target-profile"
+
+        # Execute
+        command_crud.move(alias=alias, target_profile=target_profile)
+
+        # Verify
+        mock_run_move_command.assert_called_once_with(
+            alias=alias,
+            target_profile=target_profile,
+            profile=None,
+            get_cmd_services=mock_container.get_command_services,
+            get_console=mock_container.get_console,
+        )
+
+    @patch("cmdbox.cli.commands.command_crud.command_handlers.run_copy_command")
+    @patch("cmdbox.cli.commands.command_crud.container")
+    def test_copy(self, mock_container, mock_run_copy_command):
+        # Setup
+        alias = "test-alias"
+        target_profile = "target-profile"
+        new_alias = "new-alias"
+
+        # Execute
+        command_crud.copy(
+            alias=alias, target_profile=target_profile, new_alias=new_alias
+        )
+
+        # Verify
+        mock_run_copy_command.assert_called_once_with(
+            alias=alias,
+            target_profile=target_profile,
+            new_alias=new_alias,
+            profile=None,
+            get_cmd_services=mock_container.get_command_services,
             get_console=mock_container.get_console,
         )

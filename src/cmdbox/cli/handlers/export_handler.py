@@ -13,13 +13,20 @@ def run_export_cmds(
     tag: str | None,
     flatten: bool,
     output: str | None,
+    cmd_profile: str | None,
+    var_profile: str | None,
     get_export_service: Callable[[], ExportService],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     export_service = get_export_service()
     result = export_service.export_cmds(
-        aliases=aliases, tag=tag, flatten=flatten, output_path=output
+        aliases=aliases,
+        tag=tag,
+        flatten=flatten,
+        output_path=output,
+        cmd_profile=cmd_profile,
+        var_profile=var_profile,
     )
     for warning in result.warnings:
         console.warning(warning)
@@ -33,13 +40,18 @@ def run_export_vars(
     tag: str | None,
     flatten: bool,
     output: str | None,
+    var_profile: str | None,
     get_export_service: Callable[[], ExportService],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     export_service = get_export_service()
     result = export_service.export_vars(
-        names=names, tag=tag, flatten=flatten, output_path=output
+        names=names,
+        tag=tag,
+        flatten=flatten,
+        output_path=output,
+        var_profile=var_profile,
     )
     for warning in result.warnings:
         console.warning(warning)
@@ -51,12 +63,19 @@ def run_export_all(
     *,
     flatten: bool,
     output: str | None,
+    cmd_profile: str | None,
+    var_profile: str | None,
     get_export_service: Callable[[], ExportService],
     get_console: Callable[[], ConsoleUI],
 ) -> None:
     console = get_console()
     export_service = get_export_service()
-    result = export_service.export_all(flatten=flatten, output_path=output)
+    result = export_service.export_all(
+        flatten=flatten,
+        output_path=output,
+        cmd_profile=cmd_profile,
+        var_profile=var_profile,
+    )
     for warning in result.warnings:
         console.warning(warning)
     console.print(render_export_result(result))

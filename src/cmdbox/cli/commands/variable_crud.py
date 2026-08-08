@@ -9,12 +9,24 @@ from cmdbox.cli.completions.fields import variable_field_options
 from cmdbox.cli.completions.variables import complete_variable_names
 from cmdbox.cli.completions.tags import complete_tag_names
 from cmdbox.cli.handlers import variable_handlers
+from cmdbox.cli.completions.profiles import complete_profile_names
 
 app = typer.Typer(no_args_is_help=True)
 
 cli_guard = make_cli_guard(container.get_console)
 
 log = logging.getLogger(__name__)
+
+
+PROFILE_OPTION = Annotated[
+    Optional[str],
+    typer.Option(
+        "--profile",
+        "-p",
+        help="The profile to target for this variable. Defaults to the currently active profile.",
+        autocompletion=complete_profile_names,
+    ),
+]
 
 
 @app.command("add")
@@ -31,6 +43,7 @@ def add(
             autocompletion=complete_tag_names,
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
     interactive: Annotated[
         bool,
         typer.Option("--interactive", "-i", is_flag=True, help="Interactive mode."),
@@ -42,14 +55,15 @@ def add(
     flag is used.
     """
     log.debug(
-        "var.add called. name=%s, value=%s, tags=%s, interactive=%s",
+        "var.add called. name=%s, value=%s, tags=%s, profile=%s, interactive=%s",
         name,
         value,
         tags,
+        profile,
         interactive,
     )
     add_var_args = variable_handlers.AddVariableArgs(
-        name=name, value=value, tags=tags, interactive=interactive
+        name=name, value=value, tags=tags, interactive=interactive, profile=profile
     )
     variable_handlers.run_add_variable(
         args=add_var_args,
@@ -69,13 +83,15 @@ def get(
             autocompletion=complete_variable_names,
         ),
     ],
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Retrieves and displays the variable stored under the provided name.
     """
-    log.debug("var.get called. name=%s", name)
+    log.debug("var.get called. name=%s, profile=%s", name, profile)
     variable_handlers.run_get_variable(
         name=name,
+        profile=profile,
         get_var_services=container.get_variable_services,
         get_console=container.get_console,
     )
@@ -185,18 +201,20 @@ def list_vars(
             autocompletion=variable_field_options,
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Displays all stored variables in a list format. The number of results can be limited
     with the `--limit` option. The output fields can be customized with the `--field` option.
     """
     log.debug(
-        "var.list called. order=%s, tags=%s, limit=%s, fields=%s, page=%s",
+        "var.list called. order=%s, tags=%s, limit=%s, fields=%s, page=%s, profile=%s",
         order,
         tags,
         limit,
         fields,
         page,
+        profile,
     )
     variable_handlers.run_list_variables(
         order_by=order,
@@ -204,6 +222,7 @@ def list_vars(
         limit=limit,
         fields=fields,
         page=page,
+        profile=profile,
         get_var_services=container.get_variable_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
@@ -246,6 +265,7 @@ def search(
             autocompletion=variable_field_options,
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Searches the database for variables matching the provided search term. The search fields
@@ -253,12 +273,13 @@ def search(
     `--field` option.
     """
     log.debug(
-        "var.search called. term=%s, limit=%s, search_fields=%s, fields=%s, page=%s",
+        "var.search called. term=%s, limit=%s, search_fields=%s, fields=%s, page=%s, profile=%s",
         term,
         limit,
         search_fields,
         fields,
         page,
+        profile,
     )
     variable_handlers.run_search_variables(
         term=term,
@@ -266,6 +287,7 @@ def search(
         page=page,
         search_fields=search_fields,
         fields=fields,
+        profile=profile,
         get_var_services=container.get_variable_services,
         get_settings=container.get_settings,
         get_console=container.get_console,
@@ -287,13 +309,15 @@ def delete(
             autocompletion=complete_variable_names,
         ),
     ],
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Deletes the variable stored under the provided name.
     """
-    log.debug("var.delete called. name=%s", name)
+    log.debug("var.delete called. name=%s, profile=%s", name, profile)
     variable_handlers.run_delete_variable(
         name=name,
+        profile=profile,
         get_var_services=container.get_variable_services,
         get_console=container.get_console,
     )
@@ -320,15 +344,17 @@ def add_tags(
             help="The tags to add to the command.", autocompletion=complete_tag_names
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Adds the provided tags to the command stored under the provided alias. Tags must
     be existing.
     """
-    log.debug("var.tag.add called. name=%s, tags=%s", name, tags)
+    log.debug("var.tag.add called. name=%s, tags=%s, profile=%s", name, tags, profile)
     variable_handlers.run_attach_tags(
         name=name,
         tag_names=tags,
+        profile=profile,
         get_var_services=container.get_variable_services,
         get_tag_services=container.get_tag_services,
         get_console=container.get_console,
@@ -352,15 +378,98 @@ def remove_tags(
             autocompletion=complete_tag_names,
         ),
     ] = None,
+    profile: PROFILE_OPTION = None,
 ) -> None:
     """
     Removes the provided tags from the command stored under the provided alias.
     """
-    log.debug("var.tag.remove called. name=%s, tags=%s", name, tags)
+    log.debug(
+        "var.tag.remove called. name=%s, tags=%s, profile=%s", name, tags, profile
+    )
     variable_handlers.run_detach_tags(
         name=name,
         tag_names=tags,
+        profile=profile,
         get_var_services=container.get_variable_services,
         get_tag_services=container.get_tag_services,
+        get_console=container.get_console,
+    )
+
+
+@app.command("move")
+@cli_guard
+def move(
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the command to move.",
+            autocompletion=complete_variable_names,
+        ),
+    ],
+    target_profile: Annotated[
+        str,
+        typer.Argument(
+            help="The profile to copy the command into.",
+            autocompletion=complete_profile_names,
+        ),
+    ],
+    profile: PROFILE_OPTION = None,
+) -> None:
+    log.debug(
+        "var.move called. name=%s, target_profile=%s, profile=%s",
+        name,
+        target_profile,
+        profile,
+    )
+    variable_handlers.run_move_variable(
+        name=name,
+        target_profile=target_profile,
+        profile=profile,
+        get_var_services=container.get_variable_services,
+        get_console=container.get_console,
+    )
+
+
+@app.command("copy")
+@cli_guard
+def copy(
+    name: Annotated[
+        str,
+        typer.Argument(
+            help="The name of the command to move.",
+            autocompletion=complete_variable_names,
+        ),
+    ],
+    target_profile: Annotated[
+        str,
+        typer.Argument(
+            help="The profile to copy the command into.",
+            autocompletion=complete_profile_names,
+        ),
+    ],
+    new_name: Annotated[
+        str,
+        typer.Option(
+            "--name",
+            "-n",
+            help="New name for the command, if it should be different than the original",
+            autocompletion=complete_variable_names,
+        ),
+    ],
+    profile: PROFILE_OPTION = None,
+) -> None:
+    log.debug(
+        "var.copy called. name=%s, target_profile=%s, new_name=%s, profile=%s",
+        name,
+        target_profile,
+        new_name,
+        profile,
+    )
+    variable_handlers.run_copy_variable(
+        name=name,
+        target_profile=target_profile,
+        new_name=new_name,
+        profile=profile,
+        get_var_services=container.get_variable_services,
         get_console=container.get_console,
     )

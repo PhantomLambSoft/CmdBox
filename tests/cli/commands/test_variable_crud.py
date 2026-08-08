@@ -52,6 +52,7 @@ class TestVariableCrud(unittest.TestCase):
         # Verify
         mock_run_get_variable.assert_called_once_with(
             name=name,
+            profile=None,
             get_var_services=mock_container.get_variable_services,
             get_console=mock_container.get_console,
         )
@@ -107,6 +108,7 @@ class TestVariableCrud(unittest.TestCase):
             limit=limit,
             page=None,
             fields=fields,
+            profile=None,
             get_var_services=mock_container.get_variable_services,
             get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
@@ -134,6 +136,7 @@ class TestVariableCrud(unittest.TestCase):
             page=None,
             search_fields=search_fields,
             fields=fields,
+            profile=None,
             get_var_services=mock_container.get_variable_services,
             get_settings=mock_container.get_settings,
             get_console=mock_container.get_console,
@@ -153,6 +156,7 @@ class TestVariableCrud(unittest.TestCase):
         # Verify
         mock_run_delete_variable.assert_called_once_with(
             name=name,
+            profile=None,
             get_var_services=mock_container.get_variable_services,
             get_console=mock_container.get_console,
         )
@@ -171,6 +175,7 @@ class TestVariableCrud(unittest.TestCase):
         mock_run_attach_tags.assert_called_once_with(
             name=name,
             tag_names=tags,
+            profile=None,
             get_var_services=mock_container.get_variable_services,
             get_tag_services=mock_container.get_tag_services,
             get_console=mock_container.get_console,
@@ -190,7 +195,48 @@ class TestVariableCrud(unittest.TestCase):
         mock_run_detach_tags.assert_called_once_with(
             name=name,
             tag_names=tags,
+            profile=None,
             get_var_services=mock_container.get_variable_services,
             get_tag_services=mock_container.get_tag_services,
+            get_console=mock_container.get_console,
+        )
+
+    @patch("cmdbox.cli.commands.variable_crud.variable_handlers.run_move_variable")
+    @patch("cmdbox.cli.commands.variable_crud.container")
+    def test_move(self, mock_container, mock_run_move_variable):
+        # Setup
+        name = "test-var"
+        target_profile = "target-profile"
+
+        # Execute
+        variable_crud.move(name=name, target_profile=target_profile)
+
+        # Verify
+        mock_run_move_variable.assert_called_once_with(
+            name=name,
+            target_profile=target_profile,
+            profile=None,
+            get_var_services=mock_container.get_variable_services,
+            get_console=mock_container.get_console,
+        )
+
+    @patch("cmdbox.cli.commands.variable_crud.variable_handlers.run_copy_variable")
+    @patch("cmdbox.cli.commands.variable_crud.container")
+    def test_copy(self, mock_container, mock_run_copy_variable):
+        # Setup
+        name = "test-var"
+        target_profile = "target-profile"
+        new_name = "new-name"
+
+        # Execute
+        variable_crud.copy(name=name, target_profile=target_profile, new_name=new_name)
+
+        # Verify
+        mock_run_copy_variable.assert_called_once_with(
+            name=name,
+            target_profile=target_profile,
+            new_name=new_name,
+            profile=None,
+            get_var_services=mock_container.get_variable_services,
             get_console=mock_container.get_console,
         )

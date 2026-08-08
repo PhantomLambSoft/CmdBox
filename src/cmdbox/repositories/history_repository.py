@@ -2,14 +2,18 @@ import json
 import uuid
 from datetime import datetime
 
-from cmdbox.models import CommandHistory
+from cmdbox.models import CommandHistory, Profile
 from cmdbox.repositories.errors import (
     UnknownHistoryEntryError,
     AmbiguousHistoryIdEntryError,
 )
+from cmdbox.repositories.profile_repository import ProfileRepository
 
 
 class HistoryRepository:
+
+    def __init__(self, profile_repository: ProfileRepository) -> None:
+        self.profile_repository = profile_repository
 
     def record(
         self,
@@ -20,6 +24,7 @@ class HistoryRepository:
         variables_used: dict[str, str] | None,
         exit_code: int | None,
         limit: int | None,
+        profile: Profile | int | None = None,
     ) -> CommandHistory:
         """
         Records a command execution in the history and applies retention rules
@@ -40,10 +45,14 @@ class HistoryRepository:
                 None if the command has no exit code.
             limit (int | None): The retention limit for the history of the
                 specified alias. If None, no limit is applied.
+            profile (Profile | None): The profile to which the command history entry belongs.
+                If None, the active profile is used.
 
         Returns:
             CommandHistory: The newly created command history entry.
         """
+        if profile is None:
+            profile = self.profile_repository.get_state().active_command_profile_id
         entry = CommandHistory.create(
             id=uuid.uuid4().hex,
             alias=alias,
@@ -52,11 +61,12 @@ class HistoryRepository:
             variables_used=json.dumps(variables_used) if variables_used else None,
             exit_code=exit_code,
             ran_at=datetime.now(),
+            profile=profile,
         )
-        self._apply_retention(alias, limit)
+        self._apply_retention(alias, limit, profile=profile)
         return entry
 
-    def get_by_id(self, ref: str) -> CommandHistory:
+    def get_by_id(self, ref: str, profile: Profile | None = None) -> CommandHistory:
         """
         Retrieves a `CommandHistory` entry by its ID or a prefix of the ID.
 
@@ -66,6 +76,8 @@ class HistoryRepository:
 
         Args:
             ref (str): The ID or prefix of the command history entry to retrieve.
+            profile (Profile | None): The profile to which the command history entry belongs.
+                If None, the active profile is used.
 
         Returns:
             CommandHistory: The command history entry corresponding to the provided reference.
@@ -75,8 +87,15 @@ class HistoryRepository:
             AmbiguousHistoryIdEntryError: If multiple command history entries match the given
                 prefix, making the reference ambiguous.
         """
+        if profile is None:
+            profile = self.profile_repository.get_state().active_command_profile_id
         matches = list(
-            CommandHistory.select().where(CommandHistory.id.startswith(ref)).limit(2)
+            CommandHistory.select()
+            .where(
+                (CommandHistory.id.startswith(ref))
+                & (CommandHistory.profile == profile)
+            )
+            .limit(2)
         )
         if not matches:
             raise UnknownHistoryEntryError(ref=ref)
@@ -85,7 +104,7 @@ class HistoryRepository:
         return matches[0]
 
     def get_recent(
-        self, alias: str | None = None, limit: int = 25
+        self, alias: str | None = None, limit: int = 25, profile: Profile | None = None
     ) -> list[CommandHistory]:
         """
         Fetches the most recent command history records, optionally filtered by alias and limited
@@ -101,30 +120,42 @@ class HistoryRepository:
             alias: Optional. The alias name to filter the command history records.
             limit: The maximum number of command history records to return. Defaults
                 to 25. If set to 0 or a negative number, no records will be retrieved.
+            profile: Optional. The profile to which the command history entry belongs.
+                If None, the active profile is used.
 
         Returns:
             list[CommandHistory]: A list of `CommandHistory` objects representing the
             queried command history records.
         """
-        query = CommandHistory.select().order_by(CommandHistory.ran_at.desc())
+        if profile is None:
+            profile = self.profile_repository.get_state().active_command_profile_id
+        query = (
+            CommandHistory.select()
+            .where(CommandHistory.profile == profile)
+            .order_by(CommandHistory.ran_at.desc())
+        )
         if alias:
             query = query.where(CommandHistory.alias == alias)
         if limit > 0:
             query = query.limit(limit)
         return list(query)
 
-    def delete_by_id(self, history_id: str) -> bool:
-        entry = self.get_by_id(history_id)
+    def delete_by_id(self, history_id: str, profile: Profile | None = None) -> bool:
+        entry = self.get_by_id(history_id, profile=profile)
         entry.delete_instance()
         return True
 
-    def clear(self, alias: str | None = None) -> int:
-        query = CommandHistory.delete()
+    def clear(self, alias: str | None = None, profile: Profile | None = None) -> int:
+        if profile is None:
+            profile = self.profile_repository.get_state().active_command_profile_id
+        query = CommandHistory.delete().where(CommandHistory.profile == profile)
         if alias:
             query = query.where(CommandHistory.alias == alias)
         return query.execute()
 
-    def _apply_retention(self, alias: str, limit: int | None) -> None:
+    def _apply_retention(
+        self, alias: str, limit: int | None, profile: Profile | int
+    ) -> None:
         """
         Applies retention logic by limiting the number of recent command history
         entries for the specified alias. Deletes older command history entries
@@ -134,13 +165,17 @@ class HistoryRepository:
             alias (str): The alias to filter command history entries.
             limit (int | None): The maximum number of recent entries to retain. If
                 the limit is less than or equal to zero, no action is performed.
+            profile (Profile | None): The profile to which the command history entry belongs.
+                If None, the active profile is used.
         """
         if limit is None or limit <= 0:
             return
         keep_ids = [
             row.id
             for row in CommandHistory.select(CommandHistory.id)
-            .where(CommandHistory.alias == alias)
+            .where(
+                (CommandHistory.alias == alias) & (CommandHistory.profile == profile)
+            )
             .order_by(CommandHistory.ran_at.desc())
             .limit(limit)
         ]
@@ -149,6 +184,7 @@ class HistoryRepository:
                 CommandHistory.delete()
                 .where(
                     (CommandHistory.alias == alias)
+                    & (CommandHistory.profile == profile)
                     & (CommandHistory.id.not_in(keep_ids))
                 )
                 .execute()

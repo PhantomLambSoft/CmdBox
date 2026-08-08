@@ -3,47 +3,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import MagicMock, call, patch
 
+from peewee import SqliteDatabase
 from cmdbox.migrations import runner
 from cmdbox.migrations.errors import MigrationError
+from cmdbox.models import ALL_MODELS, Profile, ProfileState
 
 
 class TestMigrationRunner(unittest.TestCase):
-
-    @patch("cmdbox.migrations.runner.migrate")
-    @patch("cmdbox.migrations.runner.datetime")
-    @patch("cmdbox.migrations.runner.load_migrations")
-    @patch("cmdbox.migrations.runner.set_user_version")
-    @patch("cmdbox.migrations.runner.get_current_version")
-    @patch("cmdbox.migrations.runner.get_user_version")
-    @patch("cmdbox.migrations.runner.is_empty_database")
-    @patch("cmdbox.migrations.runner.SqliteDatabase")
-    def test_ensure_migrated_stamps_fresh_database(
-        self,
-        mock_sqlite_db,
-        mock_is_empty_database,
-        mock_get_user_version,
-        mock_get_current_version,
-        mock_set_user_version,
-        mock_load_migrations,
-        mock_datetime,
-        mock_migrate,
-    ):
-        db = MagicMock()
-        mock_sqlite_db.return_value = db
-        mock_get_user_version.return_value = 0
-        mock_is_empty_database.return_value = True
-        mock_get_current_version.return_value = 4
-        mock_datetime.now.return_value.strftime.return_value = "20260101_120000"
-
-        runner.ensure_migrated("db.sqlite")
-
-        mock_is_empty_database.assert_called_once_with(db)
-        mock_sqlite_db.assert_called_once_with("db.sqlite")
-        self.assertEqual(2, db.connect.call_count)
-        self.assertEqual(2, db.close.call_count)
-        mock_set_user_version.assert_called_once_with(db, 4)
-        mock_load_migrations.assert_not_called()
-        mock_migrate.assert_not_called()
 
     @patch("cmdbox.migrations.runner.migrate")
     @patch("cmdbox.migrations.runner.load_migrations")
@@ -419,3 +385,52 @@ class TestMigrationRunner(unittest.TestCase):
         )
 
         mock_unlink.assert_not_called()
+
+
+class TestInitializeFreshDatabase(unittest.TestCase):
+
+    def setUp(self):
+        self.db = SqliteDatabase(":memory:")
+        # We need to bind the models to this database.
+        # initialize_fresh_database uses bind_ctx, but it expects ALL_MODELS
+        # to be bound to the database it is called with.
+        # In cmdbox, models are normally bound to cmdbox.database.db.
+        # initialize_fresh_database will bind them to the passed db.
+
+    def test_initialize_fresh_database_creates_schema_and_defaults(self):
+        current_version = 5
+
+        # Peewee's bind_ctx is great for operations, but we need to ensure
+        # the database is persistent enough for our assertions in this test.
+        # initialize_fresh_database closes the db, which for :memory: clears it.
+        # We'll mock close to prevent this during the test.
+        with patch.object(SqliteDatabase, "close"):
+            runner.initialize_fresh_database(self.db, current_version)
+
+            self.db.connect(reuse_if_open=True)
+            # Verify tables exist
+            tables = self.db.get_tables()
+            for model in ALL_MODELS:
+                self.assertIn(model._meta.table_name, tables)
+
+            # Verify user_version
+            version = self.db.execute_sql("PRAGMA user_version").fetchone()[0]
+            self.assertEqual(current_version, version)
+
+            # Verify default profile
+            with self.db.bind_ctx(ALL_MODELS):
+                default_profile = Profile.get(Profile.name == "default")
+                self.assertEqual("default", default_profile.name)
+                self.assertEqual(
+                    "Automatically created default profile.",
+                    default_profile.description,
+                )
+
+                # Verify profile state
+                state = ProfileState.get()
+                self.assertEqual(default_profile.id, state.active_command_profile_id)
+                self.assertEqual(default_profile.id, state.active_variable_profile_id)
+                self.assertEqual(default_profile.id, state.active_settings_profile_id)
+
+        # Ensure we close it now that we are done
+        self.db.close()

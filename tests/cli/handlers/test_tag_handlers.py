@@ -400,7 +400,9 @@ class TestTagHandlers(unittest.TestCase):
         )
         self.mock_tag_services.list_tags.assert_called_with(limit=10, order_by="name")
         mock_render.assert_called_once_with(tags, title="Tags", fields=["f1"])
-        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=2, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=2, force=None
+        )
 
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
     def test_run_list_tags_uses_correct_defaults_from_settings(self, mock_render):
@@ -425,7 +427,9 @@ class TestTagHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             tags, title="Tags", fields=["default_field_one", "default_field_two"]
         )
-        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=2, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=2, force=None
+        )
 
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
     def test_run_list_tags_uses_all_keyword_correctly(self, mock_render):
@@ -446,7 +450,9 @@ class TestTagHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             tags, title="Tags", fields=self.DISPLAY_FIELDS
         )
-        self.mock_console.print_paged.assert_called_with("rendered_list", row_count=2, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_list", row_count=2, force=None
+        )
 
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
     def test_run_search_tags(self, mock_render):
@@ -469,7 +475,9 @@ class TestTagHandlers(unittest.TestCase):
             "term", limit=5, fields=["sf1"]
         )
         mock_render.assert_called_once_with(tags, title="Search Results", fields=["f1"])
-        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=1, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=1, force=None
+        )
 
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
     def test_run_search_tags_uses_correct_defaults_from_settings(self, mock_render):
@@ -504,7 +512,9 @@ class TestTagHandlers(unittest.TestCase):
             title="Search Results",
             fields=["default_field_one", "default_field_two"],
         )
-        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=1, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=1, force=None
+        )
 
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_list")
     def test_run_search_tags_uses_all_keyword_correctly(self, mock_render):
@@ -529,7 +539,9 @@ class TestTagHandlers(unittest.TestCase):
         mock_render.assert_called_once_with(
             tags, title="Search Results", fields=self.DISPLAY_FIELDS
         )
-        self.mock_console.print_paged.assert_called_with("rendered_search", row_count=1, force=None)
+        self.mock_console.print_paged.assert_called_with(
+            "rendered_search", row_count=1, force=None
+        )
 
     @patch("cmdbox.cli.handlers.tag_handlers.render_tag_deleted")
     def test_run_delete_tag_success(self, mock_render):

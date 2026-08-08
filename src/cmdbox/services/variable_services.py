@@ -1,7 +1,8 @@
 from typing import Sequence
 
-from cmdbox.models import Tag, Variable
+from cmdbox.models import Tag, Variable, Profile
 from cmdbox.repositories.errors import UnknownNameError
+from cmdbox.repositories.profile_repository import ProfileRepository
 from cmdbox.repositories.variable_repository import VariableRepository
 from cmdbox.database import db
 from cmdbox.repositories.results import TagAttachResult, TagDetachResult
@@ -20,19 +21,28 @@ class VariableServices:
     Attributes:
         variable_repository (VariableRepository): Repository for managing variable records.
         tag_repository (TagRepository): Repository for managing tag-related operations.
+        profile_repository (ProfileRepository): Repository for managing profile-related operations.
     """
 
     def __init__(
-        self, variable_repository: VariableRepository, tag_repository: TagRepository
+        self,
+        variable_repository: VariableRepository,
+        tag_repository: TagRepository,
+        profile_repository: ProfileRepository,
     ):
         self._repo = variable_repository
         self._tag_repo = tag_repository
+        self._profile_repo = profile_repository
+
+    def resolve_profile(self, profile: str | None) -> Profile | None:
+        return self._profile_repo.get_by_name(profile) if profile else None
 
     def create_variable(
         self,
         name: str,
         value: str,
         tags: list[str] | None = None,
+        profile: str | None = None,
     ) -> Variable:
         """
         Creates a new variable by storing the provided name, value, and optional tags
@@ -44,13 +54,16 @@ class VariableServices:
             value (str): The value associated with the variable.
             tags (list[str] | None): An optional list of tags to associate with the variable.
                 Defaults to None.
+            profile (str | None): An optional profile name to associate with the variable.
+                Defaults to None.
 
         Returns:
             Variable: The created variable record.
         """
+        profile = self.resolve_profile(profile)
         with db.atomic():
             tags = self._get_tags(tags)
-            var = self._repo.create(name=name, value=value)
+            var = self._repo.create(name=name, value=value, profile=profile)
             if tags:
                 self._repo.add_tags(var, tags)
         return var
@@ -72,7 +85,7 @@ class VariableServices:
         var = self._repo.get_by_name(name_)
         return self._repo.update(var, **fields)
 
-    def delete_variable(self, name: str) -> bool:
+    def delete_variable(self, name: str, profile: str | None = None) -> bool:
         """
         Deletes a variable by its name.
 
@@ -81,14 +94,18 @@ class VariableServices:
 
         Args:
             name: The name of the variable to delete.
+            profile: An optional profile name associated with the variable.
 
         Returns:
             bool: True if the variable was deleted successfully, False otherwise.
         """
-        var = self._repo.get_by_name(name)
+        profile = self.resolve_profile(profile)
+        var = self._repo.get_by_name(name, profile=profile)
         return self._repo.delete(var)
 
-    def add_tags(self, name: str, tags: list[str]) -> TagAttachResult:
+    def add_tags(
+        self, name: str, tags: list[str], profile: str | None = None
+    ) -> TagAttachResult:
         """
         Adds specified tags to an existing variable name.
 
@@ -99,16 +116,20 @@ class VariableServices:
             name (str): The name identifying the variable to which tags are to be
                 attached.
             tags (list[str]): A list of tags to attach to the variable.
+            profile: An optional profile name associated with the variable.
 
         Returns:
             TagAttachResult: The result of the tag attachment operation, indicating
                 whether the tags were successfully attached to the variable.
         """
-        var = self._repo.get_by_name(name)
+        profile = self.resolve_profile(profile)
+        var = self._repo.get_by_name(name, profile=profile)
         tags = self._get_tags(tags)
         return self._repo.add_tags(var, tags)
 
-    def remove_tags(self, name: str, tags: list[str]) -> TagDetachResult:
+    def remove_tags(
+        self, name: str, tags: list[str], profile: str | None = None
+    ) -> TagDetachResult:
         """
         Removes specific tags associated with a variable name.
 
@@ -118,15 +139,17 @@ class VariableServices:
         Args:
             name: The unique identifier for the variable to update.
             tags: A list of tags to be removed from the specified variable.
+            profile: An optional profile name associated with the variable.
 
         Returns:
             TagDetachResult: An object representing the result of tag detachment.
         """
-        var = self._repo.get_by_name(name)
+        profile = self.resolve_profile(profile)
+        var = self._repo.get_by_name(name, profile=profile)
         tags = self._get_tags(tags)
         return self._repo.remove_tags(var, tags)
 
-    def get_variable(self, name: str) -> Variable:
+    def get_variable(self, name: str, profile: str | None = None) -> Variable:
         """
         Retrieves a variable by its name.
 
@@ -135,27 +158,32 @@ class VariableServices:
 
         Args:
             name (str): The name of the variable to retrieve.
+            profile (str | None): An optional profile name associated with the variable.
 
         Returns:
             Variable: The variable object associated with the given name.
         """
-        var = self._repo.get_by_name(name)
+        profile = self.resolve_profile(profile)
+        var = self._repo.get_by_name(name, profile=profile)
         return var
 
-    def get_variable_or_none(self, name: str) -> Variable | None:
+    def get_variable_or_none(
+        self, name: str, profile: str | None = None
+    ) -> Variable | None:
         """
         Retrieves a variable by its name and returns it if found, or returns None
         if the variable is not found.
 
         Args:
             name (str): The name of the variable to retrieve.
+            profile (str | None): An optional profile name associated with the variable.
 
         Returns:
             Variable | None: The variable associated with the given name if it exists,
             otherwise None in case the name does not correspond to any variable.
         """
         try:
-            return self.get_variable(name)
+            return self.get_variable(name, profile=profile)
         except UnknownNameError:
             return None
 
@@ -168,6 +196,7 @@ class VariableServices:
         order_by: str | Sequence[str] = "name",
         tags: Sequence[str] | None = None,
         limit: int = 25,
+        profile: str | None = None,
     ) -> list[Variable]:
         """
         Lists variables, optionally filtered by tags, with sorting and limit options.
@@ -182,21 +211,24 @@ class VariableServices:
             tags (Sequence[str], optional): A list of tags to filter the variables. If
                 provided, only variables matching the tags will be included.
             limit (int, optional): The maximum number of commands to return. Default is 25.
+            profile (str | None): An optional profile name associated with the variables.
 
         Returns:
             list[Variable]: A list of variables matching the provided filters and sorted
             according to the specified criteria.
         """
+        profile = self.resolve_profile(profile)
         if tags:
             tags = self._get_tags(tags)
-            return self._repo.list_by_tag(tags, order_by, limit)
-        return self._repo.list_all(order_by, limit)
+            return self._repo.list_by_tag(tags, order_by, limit, profile=profile)
+        return self._repo.list_all(order_by, limit, profile=profile)
 
     def search(
         self,
         query: str,
         fields: str | Sequence[str] | None = None,
         limit: int = 25,
+        profile: str | None = None,
     ) -> list[Variable]:
         """
         Searches for variables that match the given query across specified fields.
@@ -210,13 +242,46 @@ class VariableServices:
             fields (str | Sequence[str] | None): The fields to perform the search within. Defaults
                 to ("name", "value"). If None, no specific fields are targeted.
             limit (int): The maximum number of results to return. Defaults to 25.
+            profile (str | None): An optional profile name associated with the variables.
 
         Returns:
             list[Variable]: A list of Variable objects that match the search query.
         """
         if not fields:
             fields = ("name", "value")
-        return self._repo.search(query, fields=fields, limit=limit)
+        profile = self.resolve_profile(profile)
+        return self._repo.search(query, fields=fields, limit=limit, profile=profile)
+
+    def move_variable(
+        self, name: str, target_profile: str, profile: str | None = None
+    ) -> Variable:
+        source_profile = self.resolve_profile(profile)
+        var = self._repo.get_by_name(name, profile=source_profile)
+        target_profile = self._profile_repo.get_by_name(target_profile)
+        return self._repo.update(var, profile=target_profile)
+
+    def copy_variable(
+        self,
+        name: str,
+        target_profile: str,
+        new_name: str | None = None,
+        profile: str | None = None,
+    ) -> Variable:
+        source_profile = self.resolve_profile(profile)
+        source = self._repo.get_by_name(name, profile=source_profile)
+        target_profile = self._profile_repo.get_by_name(target_profile)
+        source_tags = [ct.tag for ct in source.tags]
+
+        with db.atomic():
+            copy = self._repo.create(
+                name=new_name or source.name,
+                value=source.value,
+                profile=target_profile,
+            )
+            if source_tags:
+                self._repo.add_tags(copy, source_tags)
+
+        return self._repo.get_by_id(copy.id)
 
     def _get_tags(self, tags: Sequence[str] | None) -> list[Tag]:
         """

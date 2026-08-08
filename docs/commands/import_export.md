@@ -20,6 +20,20 @@ The `export` command group writes commands and/or variables to a JSON file. Ther
 three subcommands depending on what you want to export: [`cmds`](#export-cmds),
 [`vars`](#export-vars), or [`all`](#export-all).
 
+### Profile scoping
+
+Every export command accepts `--profile` (or `-p`) to choose which profile's commands are exported, and `--var-profile`
+to choose which profile any `<var:>` dependencies are resolved from. Both default to whichever profile is currently 
+active for that purpose. `export vars` only accepts `--var-profile`, there's no command axis to it.
+
+```console
+> cb export cmds deploy --profile work
+```
+
+The exported file records which profiles were used, via `command_profile` and `variable_profile` fields at the top 
+level. These are purely informational, `import` does not read them, the destination profile is always chosen explicitly 
+at import time.
+
 ### Dependencies are included automatically
 
 If a command references another command with `<cmd:name>`, or a variable with
@@ -194,6 +208,20 @@ To replace existing items instead, use the `--overwrite` flag.
 !!! note "Tags"
     Tags referenced by an imported command or variable are created automatically if
     they don't already exist in your database.
+
+### Profile scoping
+
+By default, `import` writes into the currently active command profile. Use `--profile` to target a different one.
+
+```console
+> cb import ./cmdbox-cmds-2026-08-30.json --profile work
+```
+
+Conflict detection (skip vs. `--overwrite`) checks for existing items *within the target profile only*, an alias that
+already exists in a different profile does not block the import.
+
+Both commands and variables from a file land in the same target profile, `import` does not support splitting them 
+across two profiles the way `export` can pull from two source profiles.
 
 ### `--preview`
 

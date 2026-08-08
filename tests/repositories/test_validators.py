@@ -7,6 +7,8 @@ from cmdbox.repositories.validators import (
     VariableValidator,
     TagValidatorConfig,
     TagValidator,
+    ProfileValidatorConfig,
+    ProfileValidator,
 )
 from cmdbox.repositories.errors import ValidationError
 
@@ -242,6 +244,75 @@ class TestTagValidator(unittest.TestCase):
         self.validator.validate_create(name="tag", description="desc")
         self.validator.validate_update(name=None, description=None)
         # invalids
+        with self.assertRaises(ValidationError):
+            self.validator.validate_create(name="", description="desc")
+        with self.assertRaises(ValidationError):
+            self.validator.validate_update(name="  ", description=None)
+
+
+class TestProfileValidator(unittest.TestCase):
+
+    def setUp(self):
+        self.config = ProfileValidatorConfig(
+            max_name_length=5,
+            max_description_length=10,
+        )
+        self.validator = ProfileValidator(config=self.config)
+
+    # --- validate_name ---
+    def test_name_empty_raises(self):
+        with self.assertRaises(ValidationError) as ctx:
+            self.validator.validate_name("")
+        self.assertIn("cannot be empty", str(ctx.exception))
+
+    def test_name_whitespace_only_raises(self):
+        with self.assertRaises(ValidationError) as ctx:
+            self.validator.validate_name("   ")
+        self.assertIn("only whitespace", str(ctx.exception))
+
+    def test_name_with_internal_space_raises(self):
+        with self.assertRaises(ValidationError) as ctx:
+            self.validator.validate_name("ab cd")
+        self.assertIn("cannot contain spaces", str(ctx.exception))
+
+    def test_name_max_length_boundary_ok(self):
+        self.validator.validate_name("a" * self.config.max_name_length)
+
+    def test_name_too_long_raises(self):
+        with self.assertRaises(ValidationError) as ctx:
+            self.validator.validate_name("a" * (self.config.max_name_length + 1))
+        self.assertIn("too long", str(ctx.exception))
+
+    def test_name_leading_trailing_spaces_allowed(self):
+        self.validator.validate_name("  abc  ")
+
+    # --- validate_description ---
+    def test_description_none_ok(self):
+        self.validator.validate_description(None)
+
+    def test_description_empty_ok(self):
+        self.validator.validate_description("")
+
+    def test_description_max_length_boundary_ok(self):
+        self.validator.validate_description("x" * self.config.max_description_length)
+
+    def test_description_too_long_raises(self):
+        with self.assertRaises(ValidationError) as ctx:
+            self.validator.validate_description(
+                "x" * (self.config.max_description_length + 1)
+            )
+        self.assertIn("too long", str(ctx.exception))
+
+    # --- validate_create/update ---
+    def test_validate_create_happy_path(self):
+        self.validator.validate_create(name="abc", description="desc")
+
+    def test_validate_update_validates_only_provided_fields(self):
+        self.validator.validate_update(name=None, description=None)
+        self.validator.validate_update(name=" abc ", description=None)
+        self.validator.validate_update(name=None, description="")
+
+    def test_validate_create_and_update_invalids(self):
         with self.assertRaises(ValidationError):
             self.validator.validate_create(name="", description="desc")
         with self.assertRaises(ValidationError):

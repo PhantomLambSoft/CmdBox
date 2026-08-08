@@ -1,3 +1,14 @@
+PROFILE_DISPLAY_FIELDS = [
+    "name",
+    "description",
+    "date_created",
+]
+PROFILE_SEARCH_FIELDS = [
+    "name",
+    "description",
+    "date_created",
+    "last_updated",
+]
 COMMAND_DISPLAY_FIELDS = [
     "alias",
     "template",

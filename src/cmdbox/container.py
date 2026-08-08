@@ -9,8 +9,11 @@ from cmdbox.core.fields import (
     VARIABLE_SEARCH_FIELDS,
     TAG_DISPLAY_FIELDS,
     TAG_SEARCH_FIELDS,
+    PROFILE_DISPLAY_FIELDS,
+    PROFILE_SEARCH_FIELDS,
 )
 from cmdbox.repositories.history_repository import HistoryRepository
+from cmdbox.repositories.profile_repository import ProfileRepository
 from cmdbox.services.export_service import ExportService
 from cmdbox.services.field_selection import FieldSelectionResolver
 from cmdbox.services.history_service import HistoryService
@@ -30,11 +33,13 @@ from cmdbox.runtime.executor import Executor
 from cmdbox.services.command_services import CommandServices
 from cmdbox.services.run_service import RunService
 from cmdbox.services.tag_services import TagServices
+from cmdbox.services.profile_services import ProfileServices
 
 
 @lru_cache(maxsize=1)
 def get_settings_service() -> SettingsService:
-    config_path = get_app_data_dir() / "config.toml"
+    profile_service = get_profile_service()
+    config_path = profile_service.resolve_settings_path(get_app_data_dir())
     repo = SettingsRepository(config_path)
     settings = SettingsService(repo)
     return settings
@@ -60,12 +65,14 @@ def get_console() -> ConsoleUI:
 
 @lru_cache(maxsize=1)
 def get_command_repo() -> CommandRepository:
-    return CommandRepository()
+    profile_repo = get_profile_repo()
+    return CommandRepository(profile_repo)
 
 
 @lru_cache(maxsize=1)
 def get_variable_repo() -> VariableRepository:
-    return VariableRepository()
+    profile_repo = get_profile_repo()
+    return VariableRepository(profile_repo)
 
 
 @lru_cache(maxsize=1)
@@ -76,7 +83,14 @@ def get_tag_repo() -> TagRepository:
 @lru_cache(maxsize=1)
 def get_history_repo() -> HistoryRepository:
     get_db()
-    return HistoryRepository()
+    profile_repo = get_profile_repo()
+    return HistoryRepository(profile_repo)
+
+
+@lru_cache(maxsize=1)
+def get_profile_repo() -> ProfileRepository:
+    get_db()
+    return ProfileRepository()
 
 
 @lru_cache(maxsize=1)
@@ -95,10 +109,12 @@ def get_run_service() -> RunService:
     cmd_repo = get_command_repo()
     resolver = get_resolver()
     executor = Executor()
+    profile_repo = get_profile_repo()
     return RunService(
         cmd_repo,
         resolver,
         executor,
+        profile_repo=profile_repo,
         history_repo=get_history_repo(),
         get_settings=get_settings,
     )
@@ -109,7 +125,12 @@ def get_command_services() -> CommandServices:
     get_db()
     cmd_repo = get_command_repo()
     tag_repo = get_tag_repo()
-    return CommandServices(command_repository=cmd_repo, tag_repository=tag_repo)
+    profile_repo = get_profile_repo()
+    return CommandServices(
+        command_repository=cmd_repo,
+        tag_repository=tag_repo,
+        profile_repository=profile_repo,
+    )
 
 
 @lru_cache(maxsize=1)
@@ -117,7 +138,12 @@ def get_variable_services() -> VariableServices:
     get_db()
     var_repo = get_variable_repo()
     tag_repo = get_tag_repo()
-    return VariableServices(variable_repository=var_repo, tag_repository=tag_repo)
+    profile_repo = get_profile_repo()
+    return VariableServices(
+        variable_repository=var_repo,
+        tag_repository=tag_repo,
+        profile_repository=profile_repo,
+    )
 
 
 @lru_cache(maxsize=1)
@@ -132,7 +158,13 @@ def get_history_service() -> HistoryService:
     return HistoryService(
         repo=get_history_repo(),
         get_settings=get_settings,
+        profile_repository=get_profile_repo(),
     )
+
+
+@lru_cache(maxsize=1)
+def get_profile_service() -> ProfileServices:
+    return ProfileServices(profile_repository=get_profile_repo())
 
 
 @lru_cache(maxsize=1)
@@ -140,6 +172,7 @@ def get_export_service() -> ExportService:
     return ExportService(
         cmd_service=get_command_services(),
         var_service=get_variable_services(),
+        profile_repo=get_profile_repo(),
     )
 
 
@@ -149,7 +182,18 @@ def get_import_service() -> ImportService:
         cmd_service=get_command_services(),
         var_service=get_variable_services(),
         tag_service=get_tag_services(),
+        profile_repo=get_profile_repo(),
     )
+
+
+@lru_cache(maxsize=1)
+def get_profile_display_field_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=PROFILE_DISPLAY_FIELDS)
+
+
+@lru_cache(maxsize=1)
+def get_profile_search_field_resolver() -> FieldSelectionResolver:
+    return FieldSelectionResolver(allowed_fields=PROFILE_SEARCH_FIELDS)
 
 
 @lru_cache(maxsize=1)

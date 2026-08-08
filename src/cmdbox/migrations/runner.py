@@ -40,10 +40,7 @@ def ensure_migrated(db_path: str) -> None:
     current_version = get_current_version()
 
     if version == 0 and fresh:
-        db.connect()
-        set_user_version(db, current_version)
-        db.close()
-        log.debug("Fresh database stamped at v%d", current_version)
+        initialize_fresh_database(db, current_version)
         return
 
     if version == 0 and not fresh:
@@ -66,6 +63,33 @@ def ensure_migrated(db_path: str) -> None:
 
     for v in range(version, current_version):
         migrate(v, path, migrations, timestamp)
+
+
+def initialize_fresh_database(db: SqliteDatabase, current_version: int) -> None:
+    from cmdbox.models import ALL_MODELS, Profile, ProfileState
+
+    if db.is_closed():
+        db.connect()
+    try:
+        with db.bind_ctx(ALL_MODELS):
+            db.create_tables(ALL_MODELS, safe=True)
+            default_profile = Profile.create(
+                name="default",
+                description="Automatically created default profile.",
+                date_created=datetime.now(),
+                last_used=None,
+            )
+            ProfileState.create(
+                active_command_profile=default_profile,
+                active_variable_profile=default_profile,
+                active_settings_profile=default_profile,
+            )
+        set_user_version(db, current_version)
+    finally:
+        db.close()
+    log.debug(
+        "Fresh database created with current schema and stamped at v%d", current_version
+    )
 
 
 def migrate(version: int, path: Path, migrations: dict, timestamp: str) -> None:
@@ -93,7 +117,9 @@ def migrate(version: int, path: Path, migrations: dict, timestamp: str) -> None:
 
     new_path = path.parent / (path.name + ".new")
     if new_path.exists():
-        log.debug("removing stale .new file from previous migration attempt: %s", new_path)
+        log.debug(
+            "removing stale .new file from previous migration attempt: %s", new_path
+        )
         new_path.unlink()
 
     log.info("Migrating database v%d -> v%d...", version, target)

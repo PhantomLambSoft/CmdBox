@@ -16,6 +16,8 @@ class TestExportCommand(unittest.TestCase):
             tag=None,
             flatten=False,
             output=None,
+            cmd_profile=None,
+            var_profile=None,
             get_export_service=mock_container.get_export_service,
             get_console=mock_container.get_console,
         )
@@ -39,6 +41,8 @@ class TestExportCommand(unittest.TestCase):
             tag="release",
             flatten=True,
             output="exports\\cmds.json",
+            cmd_profile=None,
+            var_profile=None,
             get_export_service=mock_container.get_export_service,
             get_console=mock_container.get_console,
         )
@@ -55,6 +59,8 @@ class TestExportCommand(unittest.TestCase):
         self.assertEqual(None, kwargs["tag"])
         self.assertEqual(False, kwargs["flatten"])
         self.assertEqual(None, kwargs["output"])
+        self.assertEqual(None, kwargs["cmd_profile"])
+        self.assertEqual(None, kwargs["var_profile"])
         self.assertEqual(
             mock_container.get_export_service, kwargs["get_export_service"]
         )
@@ -70,6 +76,7 @@ class TestExportCommand(unittest.TestCase):
             tag=None,
             flatten=False,
             output=None,
+            var_profile=None,
             get_export_service=mock_container.get_export_service,
             get_console=mock_container.get_console,
         )
@@ -93,6 +100,7 @@ class TestExportCommand(unittest.TestCase):
             tag="prod",
             flatten=True,
             output="vars.json",
+            var_profile=None,
             get_export_service=mock_container.get_export_service,
             get_console=mock_container.get_console,
         )
@@ -109,6 +117,7 @@ class TestExportCommand(unittest.TestCase):
         self.assertEqual(None, kwargs["tag"])
         self.assertEqual(False, kwargs["flatten"])
         self.assertEqual(None, kwargs["output"])
+        self.assertEqual(None, kwargs["var_profile"])
         self.assertEqual(
             mock_container.get_export_service, kwargs["get_export_service"]
         )
@@ -122,6 +131,8 @@ class TestExportCommand(unittest.TestCase):
         mock_run_export_all.assert_called_once_with(
             flatten=False,
             output=None,
+            cmd_profile=None,
+            var_profile=None,
             get_export_service=mock_container.get_export_service,
             get_console=mock_container.get_console,
         )
@@ -136,6 +147,53 @@ class TestExportCommand(unittest.TestCase):
         mock_run_export_all.assert_called_once_with(
             flatten=True,
             output="all-export.json",
+            cmd_profile=None,
+            var_profile=None,
+            get_export_service=mock_container.get_export_service,
+            get_console=mock_container.get_console,
+        )
+
+    @patch("cmdbox.cli.commands.export.run_export_cmds")
+    @patch("cmdbox.cli.commands.export.container")
+    def test_export_cmds_with_profiles(self, mock_container, mock_run_export_cmds):
+        export.export_cmds(cmd_profile="p-cmd", var_profile="p-var")
+
+        mock_run_export_cmds.assert_called_once_with(
+            aliases=None,
+            tag=None,
+            flatten=False,
+            output=None,
+            cmd_profile="p-cmd",
+            var_profile="p-var",
+            get_export_service=mock_container.get_export_service,
+            get_console=mock_container.get_console,
+        )
+
+    @patch("cmdbox.cli.commands.export.run_export_vars")
+    @patch("cmdbox.cli.commands.export.container")
+    def test_export_vars_with_profile(self, mock_container, mock_run_export_vars):
+        export.export_vars(var_profile="p-var")
+
+        mock_run_export_vars.assert_called_once_with(
+            names=None,
+            tag=None,
+            flatten=False,
+            output=None,
+            var_profile="p-var",
+            get_export_service=mock_container.get_export_service,
+            get_console=mock_container.get_console,
+        )
+
+    @patch("cmdbox.cli.commands.export.run_export_all")
+    @patch("cmdbox.cli.commands.export.container")
+    def test_export_all_with_profiles(self, mock_container, mock_run_export_all):
+        export.export_all(cmd_profile="p-cmd", var_profile="p-var")
+
+        mock_run_export_all.assert_called_once_with(
+            flatten=False,
+            output=None,
+            cmd_profile="p-cmd",
+            var_profile="p-var",
             get_export_service=mock_container.get_export_service,
             get_console=mock_container.get_console,
         )

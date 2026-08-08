@@ -30,6 +30,7 @@ class TestImportHandler(unittest.TestCase):
             path=path,
             overwrite=False,
             preview=False,
+            profile=None,
             get_import_service=self.get_import_service,
             get_console=self.get_console,
         )
@@ -38,6 +39,7 @@ class TestImportHandler(unittest.TestCase):
             path,
             overwrite=False,
             preview=False,
+            profile=None,
         )
         mock_render.assert_called_once_with(result)
         self.mock_console.print.assert_called_once_with("rendered_result")
@@ -57,6 +59,7 @@ class TestImportHandler(unittest.TestCase):
             path=path,
             overwrite=True,
             preview=True,
+            profile=None,
             get_import_service=self.get_import_service,
             get_console=self.get_console,
         )
@@ -65,6 +68,7 @@ class TestImportHandler(unittest.TestCase):
             path,
             overwrite=True,
             preview=True,
+            profile=None,
         )
         mock_render_preview.assert_called_once_with(result, source=str(path))
         mock_render_result.assert_not_called()
@@ -82,6 +86,7 @@ class TestImportHandler(unittest.TestCase):
                 path=path,
                 overwrite=False,
                 preview=False,
+                profile=None,
                 get_import_service=self.get_import_service,
                 get_console=self.get_console,
             )
@@ -100,6 +105,7 @@ class TestImportHandler(unittest.TestCase):
                 path=path,
                 overwrite=True,
                 preview=True,
+                profile=None,
                 get_import_service=self.get_import_service,
                 get_console=self.get_console,
             )
@@ -110,3 +116,24 @@ class TestImportHandler(unittest.TestCase):
             "cmd:build -> var:ENV -> cmd:build"
         )
         self.mock_console.print.assert_not_called()
+
+    def test_run_import_file_with_profile(self):
+        path = Path("import.json")
+        profile = "test-profile"
+        self.mock_import_service.import_file.return_value = ImportResult()
+
+        run_import_file(
+            path=path,
+            overwrite=False,
+            preview=False,
+            profile=profile,
+            get_import_service=self.get_import_service,
+            get_console=self.get_console,
+        )
+
+        self.mock_import_service.import_file.assert_called_once_with(
+            path,
+            overwrite=False,
+            preview=False,
+            profile=profile,
+        )

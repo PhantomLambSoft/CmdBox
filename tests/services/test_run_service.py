@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 from cmdbox.exceptions import CmdboxError
 from cmdbox.runtime.executor import RunContext
 from cmdbox.services.run_service import RunService
-from cmdbox.models import Command
-from cmdbox.resolve.type_defs import ResolveResult
+from cmdbox.models import Command, Profile
+from cmdbox.resolve.type_defs import ResolveResult, TraceStep, RefKind
 from cmdbox.runtime.results import ExecutionResult
 from cmdbox.repositories.errors import UnknownAliasError
 from cmdbox.resolve.errors import ResolutionError
@@ -18,10 +18,12 @@ class TestRunService(unittest.TestCase):
         self.mock_repo = MagicMock()
         self.mock_resolver = MagicMock()
         self.mock_executor = MagicMock()
+        self.mock_profile_repo = MagicMock()
         self.service = RunService(
             repo=self.mock_repo,
             resolver=self.mock_resolver,
             executor=self.mock_executor,
+            profile_repo=self.mock_profile_repo,
         )
 
     @patch("cmdbox.services.run_service.RunService.build_context")
@@ -41,6 +43,7 @@ class TestRunService(unittest.TestCase):
 
         resolve_result = MagicMock(spec=ResolveResult)
         resolve_result.text = resolved_text
+        resolve_result.trace = [TraceStep(RefKind.VARIABLE, "name", "world", "stored")]
         self.mock_resolver.resolve.return_value = resolve_result
 
         execution_result = ExecutionResult(
@@ -53,9 +56,42 @@ class TestRunService(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, execution_result)
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_called_once_with(resolved_text, ctx=mock_context)
+
+    @patch("cmdbox.services.run_service.RunService.build_context")
+    def test_run_with_profile(self, mock_build_context):
+        mock_context = MagicMock()
+        mock_build_context.return_value = mock_context
+
+        alias = "test-alias"
+        template = "echo hello"
+        resolved_text = "echo hello"
+        profile_name = "other-profile"
+        mock_profile = MagicMock(spec=Profile)
+        self.mock_profile_repo.get_by_name.return_value = mock_profile
+
+        command = MagicMock(spec=Command)
+        command.template = template
+        command.env = None
+        self.mock_repo.get_by_alias.return_value = command
+
+        resolve_result = MagicMock(spec=ResolveResult)
+        resolve_result.text = resolved_text
+        resolve_result.trace = []
+        self.mock_resolver.resolve.return_value = resolve_result
+
+        execution_result = ExecutionResult(
+            command=resolved_text, exit_code=0, stdout="hello", stderr=""
+        )
+        self.mock_executor.run.return_value = execution_result
+
+        self.service.run(alias, profile=profile_name)
+
+        self.mock_profile_repo.get_by_name.assert_called_once_with(profile_name)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=mock_profile)
+        self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
 
     @patch("cmdbox.services.run_service.RunService.build_context")
     def test_record_use_updates_command_usage(self, mock_build_context):
@@ -74,6 +110,7 @@ class TestRunService(unittest.TestCase):
 
         resolve_result = MagicMock(spec=ResolveResult)
         resolve_result.text = resolved_text
+        resolve_result.trace = [TraceStep(RefKind.VARIABLE, "name", "world", "stored")]
         self.mock_resolver.resolve.return_value = resolve_result
 
         execution_result = ExecutionResult(
@@ -142,9 +179,31 @@ class TestRunService(unittest.TestCase):
 
         # Assert
         self.assertEqual(result, resolve_result)
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_not_called()
+
+    def test_preview_with_profile(self):
+        alias = "test-alias"
+        template = "echo hello"
+        profile_name = "other-profile"
+        mock_profile = MagicMock(spec=Profile)
+        self.mock_profile_repo.get_by_name.return_value = mock_profile
+
+        command = MagicMock(spec=Command)
+        command.template = template
+        command.env = None
+        self.mock_repo.get_by_alias.return_value = command
+
+        resolve_result = MagicMock(spec=ResolveResult)
+        resolve_result.text = "echo hello"
+        self.mock_resolver.resolve.return_value = resolve_result
+
+        self.service.preview(alias, profile=profile_name)
+
+        self.mock_profile_repo.get_by_name.assert_called_once_with(profile_name)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=mock_profile)
+        self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
 
     def test_run_command_not_found(self):
         # Setup
@@ -156,7 +215,7 @@ class TestRunService(unittest.TestCase):
             self.service.run(alias)
 
         self.assertIn(f"Alias '{alias}' not found.", str(context.exception))
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_not_called()
         self.mock_executor.run.assert_not_called()
 
@@ -170,7 +229,7 @@ class TestRunService(unittest.TestCase):
             self.service.preview(alias)
 
         self.assertIn(f"Alias '{alias}' not found.", str(context.exception))
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_not_called()
 
     def test_run_resolution_failure(self):
@@ -189,7 +248,7 @@ class TestRunService(unittest.TestCase):
             self.service.run(alias)
 
         self.assertEqual(str(context.exception), "Cycle detected")
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
         self.mock_executor.run.assert_not_called()
 
@@ -209,7 +268,7 @@ class TestRunService(unittest.TestCase):
             self.service.preview(alias)
 
         self.assertEqual(str(context.exception), "Cycle detected")
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.resolve.assert_called_once_with(template, runtime_vars=None)
 
     def test_collect_missing_vars_success(self):
@@ -225,7 +284,27 @@ class TestRunService(unittest.TestCase):
         result = self.service.collect_missing_vars(alias)
 
         self.assertEqual(expected_missing, result)
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
+        self.mock_resolver.collect_missing_vars.assert_called_once_with(
+            template, runtime_vars=None
+        )
+
+    def test_collect_missing_vars_with_profile(self):
+        alias = "test-alias"
+        template = "echo <name>"
+        profile_name = "other-profile"
+        mock_profile = MagicMock(spec=Profile)
+        self.mock_profile_repo.get_by_name.return_value = mock_profile
+
+        command = MagicMock(spec=Command)
+        command.template = template
+        self.mock_repo.get_by_alias.return_value = command
+        self.mock_resolver.collect_missing_vars.return_value = ["name"]
+
+        self.service.collect_missing_vars(alias, profile=profile_name)
+
+        self.mock_profile_repo.get_by_name.assert_called_once_with(profile_name)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=mock_profile)
         self.mock_resolver.collect_missing_vars.assert_called_once_with(
             template, runtime_vars=None
         )
@@ -244,7 +323,7 @@ class TestRunService(unittest.TestCase):
         result = self.service.collect_missing_vars(alias, runtime_vars=runtime_vars)
 
         self.assertEqual(expected_missing, result)
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.collect_missing_vars.assert_called_once_with(
             template, runtime_vars=runtime_vars
         )
@@ -257,7 +336,7 @@ class TestRunService(unittest.TestCase):
             self.service.collect_missing_vars(alias)
 
         self.assertIn(f"Alias '{alias}' not found.", str(context.exception))
-        self.mock_repo.get_by_alias.assert_called_once_with(alias)
+        self.mock_repo.get_by_alias.assert_called_once_with(alias, profile=None)
         self.mock_resolver.collect_missing_vars.assert_not_called()
 
 
@@ -268,6 +347,7 @@ class TestBuildContext(unittest.TestCase):
             repo=MagicMock(),
             resolver=MagicMock(),
             executor=MagicMock(),
+            profile_repo=MagicMock(),
         )
 
     def _make_command(

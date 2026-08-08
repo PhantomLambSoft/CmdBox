@@ -38,12 +38,30 @@ def export_cmds(
             help="Path to the output JSON file. Defaults to current directory.",
         ),
     ] = None,
+    cmd_profile: Annotated[
+        Optional[str],
+        typer.Option(
+            "--cmd_profile",
+            "-p",
+            help="The profile to export commands from. Defaults to the currently active profile.",
+        ),
+    ] = None,
+    var_profile: Annotated[
+        Optional[str],
+        typer.Option(
+            "--var_profile",
+            "-v",
+            help="The profile to export variables from. Defaults to the currently active profile.",
+        ),
+    ] = None,
 ) -> None:
     run_export_cmds(
         aliases=aliases,
         tag=tag,
         flatten=flatten,
         output=output,
+        cmd_profile=cmd_profile,
+        var_profile=var_profile,
         get_export_service=container.get_export_service,
         get_console=container.get_console,
     )
@@ -75,12 +93,21 @@ def export_vars(
             help="Path to the output JSON file. Defaults to current directory.",
         ),
     ] = None,
+    var_profile: Annotated[
+        Optional[str],
+        typer.Option(
+            "--var_profile",
+            "-v",
+            help="The profile to export variables from. Defaults to the currently active profile.",
+        ),
+    ] = None,
 ) -> None:
     run_export_vars(
         names=names,
         tag=tag,
         flatten=flatten,
         output=output,
+        var_profile=var_profile,
         get_export_service=container.get_export_service,
         get_console=container.get_console,
     )
@@ -104,10 +131,28 @@ def export_all(
             help="Path to the output JSON file. Defaults to current directory.",
         ),
     ] = None,
+    cmd_profile: Annotated[
+        Optional[str],
+        typer.Option(
+            "--cmd_profile",
+            "-p",
+            help="The profile to export commands from. Defaults to the currently active profile.",
+        ),
+    ] = None,
+    var_profile: Annotated[
+        Optional[str],
+        typer.Option(
+            "--var_profile",
+            "-v",
+            help="The profile to export variables from. Defaults to the currently active profile.",
+        ),
+    ] = None,
 ) -> None:
     run_export_all(
         flatten=flatten,
         output=output,
+        cmd_profile=cmd_profile,
+        var_profile=var_profile,
         get_export_service=container.get_export_service,
         get_console=container.get_console,
     )

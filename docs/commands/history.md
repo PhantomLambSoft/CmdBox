@@ -13,6 +13,11 @@ The available subcommands for `history` are:
 - [last](#last)
 - [clear](#clear)
 
+!!! tip "The --profile flag"
+    `list`, `show`, `rerun`, and `clear` all accept `--profile` (or `-p`) to target a profile other than the currently
+    active one. For `show` and `rerun`, note that an index-style reference (e.g. `cb history show 3`) is resolved 
+    *within* the given profile, "3rd most recent" means something different in each profile's own history.
+
 ---
 
 ## `list`

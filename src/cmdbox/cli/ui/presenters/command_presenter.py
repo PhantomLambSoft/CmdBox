@@ -144,6 +144,24 @@ def render_command_deleted(command: Command):
     )
 
 
+def render_command_moved(command: Command, target_profile: str):
+    rendered_command = render_command(command)
+    return section(
+        title=f"Command '{command.alias}' moved to profile '{target_profile}'",
+        body=rendered_command,
+        border_style="status.success",
+    )
+
+
+def render_command_copied(command: Command, target_profile: str):
+    rendered_command = render_command(command)
+    return section(
+        title=f"Command '{command.alias}' copied to profile '{target_profile}'",
+        body=rendered_command,
+        border_style="status.success",
+    )
+
+
 def format_env(env: str | None) -> str | None:
     """
     Formats the provided environment string by parsing it as JSON and converting the
