@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from cmdbox.common.graph_utils import find_cycle
+from cmdbox.repositories.profile_repository import ProfileRepository
 from cmdbox.resolve.reference_parsing import extract_references
 from cmdbox.resolve.type_defs import RefKind
 from cmdbox.services.command_services import CommandServices
@@ -27,6 +28,7 @@ class ImportResult:
     variables_created: list[str] = field(default_factory=list)
     variables_skipped: list[str] = field(default_factory=list)
     variables_overwritten: list[str] = field(default_factory=list)
+    profile: str = ""
     preview: bool = False
 
 
@@ -123,11 +125,18 @@ class ImportService:
         cmd_service: CommandServices,
         var_service: VariableServices,
         tag_service: TagServices,
+        profile_repo: ProfileRepository,
     ):
         self._cmd_service = cmd_service
         self._var_service = var_service
         self.tag_service = tag_service
+        self._profile_repo = profile_repo
         self.result = ImportResult()
+
+    def _resolve_profile(self, profile: str | None = None) -> str:
+        if profile:
+            return profile
+        return self._profile_repo.get_state().active_command_profile.name
 
     def import_file(
         self,
@@ -137,6 +146,7 @@ class ImportService:
         profile: str | None = None,
     ) -> ImportResult:
         self.result.preview = preview
+        self.result.profile = self._resolve_profile(profile)
         data = _parse_import_file(path)
 
         deps = build_dependency_graph(data)

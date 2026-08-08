@@ -117,8 +117,11 @@ def render_import_result(result: ImportResult) -> RenderableType:
     if not rows:
         rows.append(("", "Nothing was imported."))
 
+    caption = f"Imported into profile: '{result.profile}'" if result.profile else ""
+
     return section(
         title="Import Complete",
         body=kv_table(rows),
+        caption=caption,
         border_style="status.success",
     )
