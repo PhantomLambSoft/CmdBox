@@ -138,6 +138,16 @@ suppress it if verbose output is on by default in your settings.
 
 ---
 
+**`--profile`**
+
+Looks up the command in the given profile rather than the currently active command profile. This only affects where the
+command is *found*, any `<cmd:>` or `<var:>` references inside its template still resolve against whatever profile is 
+currently active.
+
+```console
+> cb run deploy --profile work
+```
+
 ### Stored execution context
 
 Values for `--cwd`, `--shell`, `--env`, and `--timeout` can be stored directly on a command

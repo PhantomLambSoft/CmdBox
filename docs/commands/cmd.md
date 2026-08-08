@@ -22,6 +22,11 @@ Some of these subcommands also have aliases available. These will be discussed i
     If you have a stored command whose alias happens to match one of these subcommand names, the shorthand will
     route to the `cmd` subcommand rather than running your stored command. Use `cb run <alias>` in that case.
 
+!!! tip "The --profile flag"
+    Most `cmd` subcommands accept `--profile` (or `-p`) to target a profile other than the currently active one, without
+    switching. For example, `cb cmd get deploy --profile work` looks up `deploy` in the `work` profile regardless of 
+    which profile is currently active.
+
 ## `add`
 
 The `add` subcommand adds new commands to your CmdBox database.
@@ -374,4 +379,32 @@ Untag works the same as `tag`.
 
 ```console
 $ cb cmd untag pip-outdated dev
+```
+
+## `move`
+
+Moves a command into a different profile. The command's alias, tags, and execution history stay attached to it, only its
+profile changes.
+
+```console
+> cb cmd move deploy personal
+```
+
+If a command with the same alias already exists in the target profile, this fails the same way creating a duplicate
+alias would.
+
+---
+
+## `copy`
+
+Copies a command, including its tags, into a different profile. The original command is left untouched.
+
+```console
+> cb cmd copy deploy personal
+```
+
+To give the copy a different alias, use `--as`:
+
+```console
+> cb cmd copy deploy personal --as deploy-staging
 ```

@@ -18,6 +18,11 @@ The available subcommands for `var` are:
 
 Some of these subcommands also have aliases available. These will be discussed in the subcommands section.
 
+!!! tip "The --profile flag"
+    Most `var` subcommands accept `--profile` (or `-p`) to target a profile other than the currently active one, without
+    switching. For example, `cb var get host --profile work` looks up `host` in the `work` profile regardless of which
+    profile is currently active.
+
 ---
 
 ## `add`
@@ -262,3 +267,26 @@ The `untag` subcommand removes a tag from a stored variable. It works the same w
 > cb var untag host network
 ```
 
+## `move`
+
+Moves a variable into a different profile.
+
+```console
+> cb var move host personal
+```
+
+---
+
+## `copy`
+
+Copies a variable, including its tags, into a different profile. The original is left untouched.
+
+```console
+> cb var copy host personal
+```
+
+To give the copy a different name, use `--as`:
+
+```console
+> cb var copy host personal --as host-staging
+```
