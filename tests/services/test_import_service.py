@@ -114,8 +114,9 @@ class TestImportService(unittest.TestCase):
         self.cmd_service = MagicMock()
         self.var_service = MagicMock()
         self.tag_service = MagicMock()
+        self.profile_repo = MagicMock()
         self.service = ImportService(
-            self.cmd_service, self.var_service, self.tag_service
+            self.cmd_service, self.var_service, self.tag_service, self.profile_repo
         )
 
     @patch("cmdbox.services.import_service.validate_no_cycles")
