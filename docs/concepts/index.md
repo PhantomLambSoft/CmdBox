@@ -246,6 +246,24 @@ changes.
 
 ---
 
+## Profiles
+
+Profiles let you maintain separate sets of commands, variables, and settings. This is useful for separating work and
+personal commands, keeping the same alias across different projects, or maintaining different variable values across
+environments without duplicating commands.
+
+Command, variable, and settings profiles are independently switchable. By default, switching profiles moves all three
+together, but they can be split apart when you need commands to stay put while only variables change (or vice versa).
+See the [`profile` reference](../commands/profile.md) for the full command set, and [
+`cb profile status`](../commands/profile.md#status) for checking which profile is currently active for each.
+
+Every install always has a `default` profile, which cannot be renamed or deleted. Any command or variable created
+without specifying a profile lands in whichever profile is currently active.
+
+Tags remain global across all profiles, they are not profile-scoped.
+
+---
+
 ## Shell Integration
 
 By default, `cb` runs commands in a background process separate from your current terminal
