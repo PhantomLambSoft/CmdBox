@@ -129,7 +129,7 @@ class ImportService:
     ):
         self._cmd_service = cmd_service
         self._var_service = var_service
-        self.tag_service = tag_service
+        self._tag_service = tag_service
         self._profile_repo = profile_repo
         self.result = ImportResult()
 
@@ -330,5 +330,5 @@ class ImportService:
 
     def _ensure_tag_exists(self, tag_names: set[str]) -> None:
         for name in tag_names:
-            if not self.tag_service.tag_exists(name):
-                self.tag_service.create_tag(name)
+            if not self._tag_service.tag_exists(name):
+                self._tag_service.create_tag(name)
