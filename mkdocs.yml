@@ -8,19 +8,19 @@ edit_uri: edit/main/docs/
 theme:
     name: material
     palette:
-        - scheme: default
-          primary: custom
-          accent: custom
-          toggle:
-              icon: material/brightness-7
-              name: Switch to dark mode
+        -   scheme: default
+            primary: custom
+            accent: custom
+            toggle:
+                icon: material/brightness-7
+                name: Switch to dark mode
 
-        - scheme: slate
-          primary: indigo
-          accent: indigo
-          toggle:
-              icon: material/brightness-4
-              name: Switch to light mode
+        -   scheme: slate
+            primary: indigo
+            accent: indigo
+            toggle:
+                icon: material/brightness-4
+                name: Switch to light mode
 
     features:
         - navigation.tabs
@@ -32,38 +32,39 @@ theme:
         - content.code.copy
 
 extra_css: #
-        - stylesheets/extra.css
+    - stylesheets/extra.css
 
 markdown_extensions:
     - admonition
     - pymdownx.details
     - pymdownx.superfences
-    - pymdownx.highlight:
-        anchor_linenums: true
+    -   pymdownx.highlight:
+            anchor_linenums: true
     - pymdownx.inlinehilite
-    - pymdownx.tabbed:
-        alternate_style: true
+    -   pymdownx.tabbed:
+            alternate_style: true
     - tables
-    - toc:
-          permalink: true
+    -   toc:
+            permalink: true
 
 nav:
-    - Home: index.md
-    - Getting Started:
-        - Installation: installation.md
-        - Quick Start: quickstart.md
-    - Commands:
-        - Overview: commands/index.md
-        - cmd: commands/cmd.md
-        - var: commands/var.md
-        - tag: commands/tag.md
-        - run: commands/run.md
-        - history: commands/history.md
-        - import/export: commands/import_export.md
-        - settings: commands/settings.md
-        - init: commands/init.md
-    - Concepts:
-        - Overview: concepts/index.md
-        - Quoting and Templates: concepts/quoting.md
-    - FAQ: faq.md
-    - Comparisons: comparisons.md
+    -   Home: index.md
+    -   Getting Started:
+            -   Installation: installation.md
+            -   Quick Start: quickstart.md
+    -   Commands:
+            -   Overview: commands/index.md
+            -   cmd: commands/cmd.md
+            -   var: commands/var.md
+            -   tag: commands/tag.md
+            -   run: commands/run.md
+            -   profile: commands/profile.md
+            -   history: commands/history.md
+            -   import/export: commands/import_export.md
+            -   settings: commands/settings.md
+            -   init: commands/init.md
+    -   Concepts:
+            -   Overview: concepts/index.md
+            -   Quoting and Templates: concepts/quoting.md
+    -   FAQ: faq.md
+    -   Comparisons: comparisons.md
