@@ -11,6 +11,7 @@ from .errors import (
     ActiveProfileDeleteError,
     UpdateError,
     ValidationError,
+    DefaultProfileProtectionError,
 )
 from cmdbox.models import Profile, ProfileState, Command, Variable
 from .validators import ProfileValidator
@@ -116,11 +117,17 @@ class ProfileRepository(BaseRepository):
             ValidationError: If a provided field name is invalid.
             ProfileConflictError: If a unique constraint is violated for a profile name.
             IntegrityError: If any other database integrity error occurs while saving.
+            DefaultProfileProtectionError: If the default profile is attempted to be renamed.
         """
         if not profile:
             raise UpdateError("No profile provided for update.")
         if not fields:
             raise UpdateError("No fields provided for update.")
+
+        if profile.name == "default" and "name" in fields:
+            new_name = fields["name"].strip() if fields["name"] else fields["name"]
+            if new_name != "default":
+                raise DefaultProfileProtectionError(action="renamed")
 
         if "name" in fields and fields.get("name") is not None:
             fields["name"] = fields.get("name").strip()
@@ -162,6 +169,9 @@ class ProfileRepository(BaseRepository):
         """
         if not profile:
             return False
+
+        if profile.name == "default":
+            raise DefaultProfileProtectionError(action="deleted")
 
         state = self.get_state()
         if profile.id in (

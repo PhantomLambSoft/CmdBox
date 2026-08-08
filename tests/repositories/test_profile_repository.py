@@ -1,6 +1,4 @@
 import unittest
-from datetime import datetime
-from peewee import IntegrityError
 
 from cmdbox.database import db, get_db, ensure_schema
 from cmdbox.repositories.errors import (
@@ -10,6 +8,7 @@ from cmdbox.repositories.errors import (
     ProfileNotEmptyError,
     ActiveProfileDeleteError,
     UpdateError,
+    DefaultProfileProtectionError,
 )
 from cmdbox.models import Profile, ProfileState, Command, Variable, ALL_MODELS
 from cmdbox.repositories.profile_repository import ProfileRepository
@@ -151,6 +150,14 @@ class TestProfileRepository(unittest.TestCase):
         with self.assertRaises(UpdateError):
             self.repo.update(profile)
 
+    def test_update_default_profile_name_raises_exception(self):
+        with self.assertRaises(DefaultProfileProtectionError):
+            self.repo.update(self.default_profile, name="new_name")
+
+        # Verify name did not change
+        retrieved = Profile.get_by_id(self.default_profile.id)
+        self.assertEqual("default", retrieved.name)
+
     # =================================================================================
     # SECTION: DELETE TESTS
     # =================================================================================
@@ -208,6 +215,13 @@ class TestProfileRepository(unittest.TestCase):
 
     def test_delete_none_returns_false(self):
         self.assertFalse(self.repo.delete(None))
+
+    def test_delete_default_profile_raises_exception(self):
+        with self.assertRaises(DefaultProfileProtectionError):
+            self.repo.delete(self.default_profile)
+
+        # Verify profile still exists
+        self.assertIsNotNone(Profile.get_or_none(Profile.name == "default"))
 
     # =================================================================================
     # SECTION: LIST AND UTIL TESTS

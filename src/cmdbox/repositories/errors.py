@@ -179,3 +179,19 @@ class ActiveProfileDeleteError(CmdboxError):
             f"Profile '{name}' is currently active and cannot be deleted. "
             f"Switch to a different profile first."
         )
+
+
+class DefaultProfileProtectionError(CmdboxError):
+    """
+    Raised when attempting to rename or delete the default profile. The default
+    profile's name is load bearing, in that it determines which settings file
+    is used (config.toml) and it is one profile guaranteed to exist on every
+    installation. Renaming or deleting it is never allowed, regardless of
+    --force or any other option.
+
+    Attributes:
+        action (str): The action that was attempted on the default profile.
+    """
+
+    def __init__(self, action: str) -> None:
+        super().__init__(f"The 'default' profile cannot be {action}.")
