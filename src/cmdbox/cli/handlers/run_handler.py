@@ -12,7 +12,6 @@ from cmdbox.cli.ui.presenters.result_presenter import (
 )
 from cmdbox.runtime.executor import RunContext
 from cmdbox.services.run_service import RunService
-from cmdbox.settings.models import Settings
 from cmdbox.logging_setup.log_decorators import log_action
 
 log = logging.getLogger(__name__)
@@ -45,13 +44,10 @@ def run_run_command(
     run_ctx: RawRunContext | None = None,
     profile: str | None = None,
     get_run_service: Callable[[], RunService],
-    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ):
-    settings = get_settings()
     if run_ctx is None:
         run_ctx = RawRunContext()
-    apply_settings_defaults(run_ctx, settings)
 
     run_service = get_run_service()
 
@@ -80,13 +76,10 @@ def run_preview_command(
     run_ctx: RawRunContext | None = None,
     profile: str | None = None,
     get_run_service: Callable[[], RunService],
-    get_settings: Callable[[], Settings],
     get_console: Callable[[], ConsoleUI],
 ):
-    settings = get_settings()
     if run_ctx is None:
         run_ctx = RawRunContext()
-    apply_settings_defaults(run_ctx, settings)
 
     run_service = get_run_service()
 
@@ -105,29 +98,6 @@ def run_preview_command(
     rendered_result = render_preview_result(prev_result, ctx=effective_ctx)
     console = get_console()
     console.print(rendered_result)
-
-
-def apply_settings_defaults(run_ctx: RawRunContext, settings: Settings) -> None:
-    """
-    Adjusts the execution context by applying default settings if certain values
-    are not explicitly defined. This ensures that the runtime behavior aligns
-    with the provided configuration.
-
-    Args:
-        run_ctx: An object representing the current runtime context. It contains
-            runtime-specific configurations, such as verbosity, shell usage,
-            and output capturing.
-        settings: A configuration object that holds execution defaults. These
-            defaults are applied to the runtime context when corresponding
-            settings are unspecified.
-    """
-    ex = settings.execution_settings
-    if run_ctx.verbose is None:
-        run_ctx.verbose = ex.default_verbose
-    if run_ctx.capture is None:
-        run_ctx.capture = ex.capture_output
-    if run_ctx.shell is None:
-        run_ctx.shell = ex.default_shell
 
 
 def get_run_ctx(raw_run_ctx: RawRunContext) -> RunContext:
