@@ -266,7 +266,7 @@ class TestImportService(unittest.TestCase):
         )
 
         self.cmd_service.update_command.assert_called_once_with(
-            alias="deploy",
+            current_alias="deploy",
             template="echo",
             description="d",
             cwd="C:/repo",
