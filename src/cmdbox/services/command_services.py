@@ -91,7 +91,7 @@ class CommandServices:
 
         return command
 
-    def update_command(self, alias: str, **fields) -> Command:
+    def update_command(self, current_alias: str, **fields) -> Command:
         """
         Updates an existing command by its alias with new field values.
 
@@ -99,13 +99,13 @@ class CommandServices:
         with the provided fields. The update is performed using the repository.
 
         Args:
-            alias (str): The alias of the command to update.
+            current_alias (str): The alias of the command to update.
             **fields: Arbitrary field values to update on the command.
 
         Returns:
             Command: The updated command object.
         """
-        cmd = self._repo.get_by_alias(alias)
+        cmd = self._repo.get_by_alias(current_alias)
         return self._repo.update(cmd, **fields)
 
     def delete_command(self, alias_: str, profile: str | None = None) -> bool:
