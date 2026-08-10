@@ -76,7 +76,7 @@ class TestCommandCrud(unittest.TestCase):
 
         # Execute
         command_crud.update(
-            alias=alias,
+            current_alias=alias,
             template=template,
             description=description,
             new_alias=new_alias,
@@ -87,7 +87,7 @@ class TestCommandCrud(unittest.TestCase):
 
         # Verify
         mock_run_update_command.assert_called_once_with(
-            alias=alias,
+            current_alias=alias,
             template=template,
             description=description,
             new_alias=new_alias,

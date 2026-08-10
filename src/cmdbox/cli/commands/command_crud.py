@@ -143,7 +143,7 @@ def get(
 @app.command("update")
 @cli_guard
 def update(
-    alias: Annotated[
+    current_alias: Annotated[
         str,
         typer.Argument(
             help="The alias of the command to update.",
@@ -151,30 +151,30 @@ def update(
         ),
     ],
     template: Annotated[
-        str, typer.Option("--template", "-t", help="The new template.")
+        str | None, typer.Option("--template", "-t", help="The new template.")
     ] = None,
     description: Annotated[
-        str, typer.Option("--description", "-d", help="The new description.")
+        str | None, typer.Option("--description", "-d", help="The new description.")
     ] = None,
     new_alias: Annotated[
-        str, typer.Option("--alias", "-a", help="The new alias.")
+        str | None, typer.Option("--alias", "-a", help="The new alias.")
     ] = None,
     cwd: Annotated[
-        str,
+        str | None,
         typer.Option("--cwd", help="Working directory to run the command from."),
     ] = None,
     clear_cwd: Annotated[
         bool, typer.Option("--clear-cwd", help="Clear the stored working directory.")
     ] = False,
     shell: Annotated[
-        str,
+        str | None,
         typer.Option("--shell", help="Shell to use when running the command."),
     ] = None,
     clear_shell: Annotated[
         bool, typer.Option("--clear-shell", help="Clear the stored shell.")
     ] = False,
     env: Annotated[
-        list[str],
+        list[str] | None,
         typer.Option(
             "--env",
             help="Environment variable to set when running the command, in KEY=VALUE format.",
@@ -184,7 +184,7 @@ def update(
         bool, typer.Option("--clear-env", help="Clear stored environment variables.")
     ] = False,
     timeout: Annotated[
-        int,
+        int | None,
         typer.Option(
             "--timeout",
             help="Maximum number of seconds before the process is killed.",
@@ -194,7 +194,7 @@ def update(
         bool, typer.Option("--clear-timeout", help="Clear the stored timeout.")
     ] = False,
     set_: Annotated[
-        list[str],
+        list[str] | None,
         typer.Option(
             "--set",
             "-s",
@@ -207,7 +207,7 @@ def update(
         typer.Option("--edit", "-e", help="Edit mode."),
     ] = False,
     edit_fields: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--edit-fields",
             help="A list of fields to be edited in edit mode, separated by commas. Defaults to all fields.",
@@ -223,7 +223,7 @@ def update(
     log.debug(
         "cmd.update called. alias=%s template_provided=%s description_provided=%s new_alias_provided=%s "
         "set_used=%s, edit_mode=%s, edit_fields=%s",
-        alias,
+        current_alias,
         template is not None,
         description is not None,
         new_alias is not None,
@@ -232,7 +232,7 @@ def update(
         edit_fields,
     )
     command_handlers.run_update_command(
-        alias=alias,
+        current_alias=current_alias,
         template=template,
         description=description,
         new_alias=new_alias,
