@@ -35,7 +35,6 @@ class TestCommandRun(unittest.TestCase):
         self.assertIsNone(kwargs["run_ctx"].verbose)
         self.assertEqual(kwargs["get_run_service"], mock_container.get_run_service)
         self.assertEqual(kwargs["get_console"], mock_container.get_console)
-        self.assertEqual(kwargs["get_settings"], mock_container.get_settings)
 
     @patch("cmdbox.cli.commands.command_run.run_run_command")
     @patch("cmdbox.cli.commands.command_run.container")
@@ -130,7 +129,6 @@ class TestCommandRun(unittest.TestCase):
         self.assertIsNone(kwargs["run_ctx"].verbose)
         self.assertEqual(kwargs["get_run_service"], mock_container.get_run_service)
         self.assertEqual(kwargs["get_console"], mock_container.get_console)
-        self.assertEqual(kwargs["get_settings"], mock_container.get_settings)
 
     @patch("cmdbox.cli.commands.command_run.run_preview_command")
     @patch("cmdbox.cli.commands.command_run.container")

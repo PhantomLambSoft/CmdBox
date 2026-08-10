@@ -197,48 +197,58 @@ class RunService:
         )
         return missing
 
-    def build_context(
-        self, cmd: Command, runtime_ctx: RunContext | None
-    ) -> RunContext | None:
+    def build_context(self, cmd: Command, runtime_ctx: RunContext | None = None) -> RunContext | None:
         """
-        Constructs a runtime context by merging command-level settings with runtime-level
-        settings. Resolves priority based on input from `runtime_ctx` when available, or
-        falls back to `cmd` for default values. If no significant configuration changes
-        are detected, returns `None`.
+        Builds and returns a runtime execution context by consolidating information from the command and
+        the current runtime context.
+
+        The method integrates the environment variables, working directory, shell, timeout, output
+        capture settings, verbosity, and other runtime parameters to form a comprehensive context. If
+        certain properties are not provided in the runtime context, it falls back to values specified
+        in the command or default application settings.
 
         Args:
-            cmd (Command): The command object containing default execution settings, including
-                environment variables, working directory, shell, timeout, and more.
-            runtime_ctx (RunContext | None): An optional runtime context object that may override
-                specific command-level settings, such as environment variables and capture
-                preferences.
+            cmd (Command): The command object containing configuration and parameters for execution.
+            runtime_ctx (RunContext | None): The optional runtime context that can override specific
+                properties of the command settings.
 
         Returns:
-            RunContext | None: Returns a `RunContext` object with the resulting configuration
-            or `None` if no significant changes are produced by the merge.
+            RunContext | None: A consolidated execution context containing the merged settings to be
+                used during command execution.
         """
         stored_env = json.loads(cmd.env) if cmd.env else {}
         runtime_env = getattr(runtime_ctx, "env", None) or {}
         merged_env = {**stored_env, **runtime_env} or None
 
         cwd = (
-            runtime_ctx.cwd if runtime_ctx and runtime_ctx.cwd is not None else None
+          runtime_ctx.cwd if runtime_ctx and runtime_ctx.cwd is not None else None
         ) or cmd.cwd
-        shell = (
-            runtime_ctx.shell if runtime_ctx and runtime_ctx.shell is not None else None
-        ) or cmd.shell
-        timeout = (
-            runtime_ctx.timeout
-            if (runtime_ctx and runtime_ctx.timeout is not None)
-            else cmd.timeout
-        )
 
-        capture = runtime_ctx.capture if runtime_ctx else False
+        settings = self._get_settings()
+
+        if runtime_ctx and runtime_ctx.shell is not None:
+            shell = runtime_ctx.shell
+        elif cmd.shell is not None:
+            shell = cmd.shell
+        else:
+            shell = settings.execution_settings.default_shell
+
+        if runtime_ctx and runtime_ctx.timeout is not None:
+            timeout = runtime_ctx.timeout
+        else:
+            timeout = cmd.timeout
+
+        if runtime_ctx and runtime_ctx.capture is not None:
+            capture = runtime_ctx.capture
+        else:
+            capture = settings.execution_settings.capture_output
+
+        if runtime_ctx and runtime_ctx.verbose is not None:
+            verbose = runtime_ctx.verbose
+        else:
+            verbose = settings.execution_settings.default_verbose
+
         emit = runtime_ctx.emit if runtime_ctx else False
-        verbose = runtime_ctx.verbose if runtime_ctx else False
-
-        if not any([cwd, shell, merged_env, timeout, capture, emit, verbose]):
-            return None
 
         return RunContext(
             cwd=cwd,
