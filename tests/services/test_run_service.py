@@ -376,9 +376,7 @@ class TestBuildContext(unittest.TestCase):
     # SECTION: None/empty cases
     # =========================================================================
 
-    def test_no_stored_fields_default_runtime_context_returns_none(self):
-        # RunContext() has all defaults (None/False), so settings defaults
-        # should be used
+    def test_settings_defaults_used_when_nothing_stored_or_runtime(self):
         self.mock_settings.execution_settings.capture_output = True
         self.mock_settings.execution_settings.default_verbose = True
 
@@ -467,6 +465,11 @@ class TestBuildContext(unittest.TestCase):
         cmd = self._make_command()
         result = self.service.build_context(cmd, RunContext(timeout=10))
         self.assertEqual(result.timeout, 10)
+
+    def test_runtime_timeout_zero_is_respected(self):
+        cmd = self._make_command(timeout=30)
+        result = self.service.build_context(cmd, RunContext(timeout=0))
+        self.assertEqual(result.timeout, 0)
 
     # =========================================================================
     # SECTION: env

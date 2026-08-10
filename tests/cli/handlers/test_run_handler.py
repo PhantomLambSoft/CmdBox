@@ -20,8 +20,6 @@ class TestRunHandler(unittest.TestCase):
         self.settings.execution_settings.default_verbose = False
         self.settings.execution_settings.capture_output = False
         self.settings.execution_settings.default_shell = None
-        self.mock_settings_service = MagicMock()
-        self.mock_settings_service.return_value = self.settings
 
     def test_parse_env_none(self):
         self.assertIsNone(parse_env(None))
@@ -61,9 +59,9 @@ class TestRunHandler(unittest.TestCase):
         self.assertIsInstance(ctx, RunContext)
         self.assertIsNone(ctx.cwd)
         self.assertIsNone(ctx.env)
-        self.assertFalse(ctx.capture)
+        self.assertIsNone(ctx.capture)
         self.assertIsNone(ctx.shell)
-        self.assertFalse(ctx.verbose)
+        self.assertIsNone(ctx.verbose)
 
     def test_get_run_ctx_valid(self):
         raw_ctx = RawRunContext(
