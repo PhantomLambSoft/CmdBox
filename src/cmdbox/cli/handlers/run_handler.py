@@ -32,7 +32,7 @@ class RawRunContext:
     capture: bool | None = None
     shell: str | None = None
     timeout: int | None = None
-    emit: bool = False
+    emit: bool | None = None
     verbose: bool | None = None
 
 

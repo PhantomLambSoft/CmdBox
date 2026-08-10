@@ -19,11 +19,13 @@ class TestRunService(unittest.TestCase):
         self.mock_resolver = MagicMock()
         self.mock_executor = MagicMock()
         self.mock_profile_repo = MagicMock()
+        self.mock_settings = MagicMock()
         self.service = RunService(
             repo=self.mock_repo,
             resolver=self.mock_resolver,
             executor=self.mock_executor,
             profile_repo=self.mock_profile_repo,
+            get_settings=lambda: self.mock_settings,
         )
 
     @patch("cmdbox.services.run_service.RunService.build_context")
@@ -343,11 +345,13 @@ class TestRunService(unittest.TestCase):
 class TestBuildContext(unittest.TestCase):
 
     def setUp(self):
+        self.mock_settings = MagicMock()
         self.service = RunService(
             repo=MagicMock(),
             resolver=MagicMock(),
             executor=MagicMock(),
             profile_repo=MagicMock(),
+            get_settings=lambda: self.mock_settings,
         )
 
     def _make_command(
@@ -372,17 +376,16 @@ class TestBuildContext(unittest.TestCase):
     # SECTION: None/empty cases
     # =========================================================================
 
-    def test_no_stored_fields_no_runtime_returns_none(self):
-        cmd = self._make_command()
-        result = self.service.build_context(cmd, None)
-        self.assertIsNone(result)
-
     def test_no_stored_fields_default_runtime_context_returns_none(self):
-        # RunContext() has all defaults (None/False), so nothing meaningful
-        # to merge — should still return None
+        # RunContext() has all defaults (None/False), so settings defaults
+        # should be used
+        self.mock_settings.execution_settings.capture_output = True
+        self.mock_settings.execution_settings.default_verbose = True
+
         cmd = self._make_command()
         result = self.service.build_context(cmd, RunContext())
-        self.assertIsNone(result)
+        self.assertTrue(result.capture)
+        self.assertTrue(result.verbose)
 
     # =========================================================================
     # SECTION: cwd
@@ -433,6 +436,12 @@ class TestBuildContext(unittest.TestCase):
         cmd = self._make_command()
         result = self.service.build_context(cmd, RunContext(shell="zsh"))
         self.assertEqual(result.shell, "zsh")
+
+    def test_shell_falls_back_to_settings(self):
+        cmd = self._make_command()
+        self.mock_settings.execution_settings.default_shell = "seashell"
+        result = self.service.build_context(cmd, RunContext())
+        self.assertEqual(result.shell, "seashell")
 
     # =========================================================================
     # SECTION: timeout
@@ -526,8 +535,11 @@ class TestBuildContext(unittest.TestCase):
         result = self.service.build_context(cmd, RunContext(verbose=True))
         self.assertTrue(result.verbose)
 
-    def test_behavioral_flags_default_to_false_when_runtime_is_none(self):
+    def test_behavioral_flags_default_to_settings_when_runtime_is_none(self):
         cmd = self._make_command(cwd="/some/path")
+        self.mock_settings.execution_settings.capture_output = False
+        self.mock_settings.execution_settings.default_verbose = False
+
         result = self.service.build_context(cmd, None)
         self.assertFalse(result.capture)
         self.assertFalse(result.emit)
@@ -539,6 +551,9 @@ class TestBuildContext(unittest.TestCase):
         # has all flags False, the result is still a valid context when
         # stored fields are present.
         cmd = self._make_command(cwd="/some/path", shell="bash", timeout=30)
+        self.mock_settings.execution_settings.capture_output = False
+        self.mock_settings.execution_settings.default_verbose = False
+
         result = self.service.build_context(cmd, RunContext())
         self.assertFalse(result.capture)
         self.assertFalse(result.emit)

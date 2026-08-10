@@ -47,11 +47,11 @@ class RunContext:
 
     cwd: str | None = None
     env: Mapping[str, str] | None = None
-    capture: bool = False
+    capture: bool | None = None
     shell: str | None = None
     timeout: int | None = None
-    emit: bool = False
-    verbose: bool = False
+    emit: bool | None = None
+    verbose: bool | None = None
 
 
 class Executor:

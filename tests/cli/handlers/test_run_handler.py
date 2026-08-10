@@ -92,7 +92,6 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=None,
             run_ctx=RawRunContext(verbose=True),
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -120,7 +119,6 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=None,
             run_ctx=RawRunContext(verbose=False),
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -132,36 +130,6 @@ class TestRunHandler(unittest.TestCase):
         )
         mock_render.assert_not_called()
         mock_console.print.assert_not_called()
-
-    @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
-    def test_run_run_command_with_default_settings_value(self, mock_render):
-        self.settings.execution_settings.default_verbose = True
-        mock_run_service = MagicMock()
-        mock_console = MagicMock()
-        mock_ex_result = ExecutionResult(
-            command="echo hello", exit_code=0, stdout="hello", stderr=""
-        )
-        mock_run_service.run.return_value = mock_ex_result
-        mock_run_service.collect_missing_vars.return_value = []
-        mock_render.return_value = "rendered_result"
-
-        run_run_command(
-            alias="test-alias",
-            runtime_vars=None,
-            run_ctx=RawRunContext(verbose=None),
-            get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
-            get_console=lambda: mock_console,
-        )
-
-        mock_run_service.collect_missing_vars.assert_called_once_with(
-            "test-alias", runtime_vars=None, profile=None
-        )
-        mock_run_service.run.assert_called_once_with(
-            "test-alias", ctx=RunContext(verbose=True), runtime_vars=None, profile=None
-        )
-        mock_render.assert_called_once_with(mock_ex_result)
-        mock_console.print.assert_called_once_with("rendered_result")
 
     @patch("cmdbox.cli.handlers.run_handler.render_execution_result")
     def test_run_run_command_with_error(self, mock_render):
@@ -178,7 +146,6 @@ class TestRunHandler(unittest.TestCase):
             alias="test-alias",
             run_ctx=RawRunContext(verbose=True),
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -203,7 +170,6 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=None,
             run_ctx=raw_ctx,
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -231,7 +197,6 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=vars,
             run_ctx=raw_ctx,
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -259,7 +224,6 @@ class TestRunHandler(unittest.TestCase):
             runtime_vars=runtime_vars,
             run_ctx=RawRunContext(verbose=False),
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -289,7 +253,6 @@ class TestRunHandler(unittest.TestCase):
             alias="test-alias",
             profile=profile,
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -316,7 +279,6 @@ class TestRunHandler(unittest.TestCase):
             alias="test-alias",
             run_ctx=mock_ctx,
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
             runtime_vars=None,
         )
@@ -348,7 +310,6 @@ class TestRunHandler(unittest.TestCase):
             profile=profile,
             run_ctx=mock_ctx,
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -380,7 +341,6 @@ class TestRunHandler(unittest.TestCase):
             run_ctx=raw_ctx,
             runtime_vars=None,
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
@@ -416,7 +376,6 @@ class TestRunHandler(unittest.TestCase):
             run_ctx=mock_ctx,
             runtime_vars=runtime_vars,
             get_run_service=lambda: mock_run_service,
-            get_settings=self.mock_settings_service,
             get_console=lambda: mock_console,
         )
 
