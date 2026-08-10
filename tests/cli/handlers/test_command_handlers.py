@@ -158,7 +158,7 @@ class TestCommandHandlers(unittest.TestCase):
         mock_render.return_value = "rendered_update"
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template="new_tmpl",
             description="new_desc",
             new_alias="new_alias",
@@ -175,7 +175,10 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.update_command.assert_called_with(
-            "alias1", template="new_tmpl", description="new_desc", alias="new_alias"
+            current_alias="alias1",
+            template="new_tmpl",
+            description="new_desc",
+            alias="new_alias",
         )
         mock_render.assert_called_once_with(mock_updated_cmd)
         self.mock_console.print.assert_called_with("rendered_update")
@@ -183,7 +186,7 @@ class TestCommandHandlers(unittest.TestCase):
     def test_run_update_command_no_fields_edit_mode_false(self):
         with self.assertRaises(typer.BadParameter):
             run_update_command(
-                alias="alias1",
+                current_alias="alias1",
                 template=None,
                 description=None,
                 new_alias=None,
@@ -230,7 +233,7 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -247,7 +250,7 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.update_command.assert_called_with(
-            "alias1",
+            current_alias="alias1",
             template="new_prompt_tmpl",
             description="new_prompt_desc",
             alias="new_prompt_alias",
@@ -289,7 +292,7 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -306,7 +309,7 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.update_command.assert_called_with(
-            "alias1",
+            current_alias="alias1",
             template="new_prompt_tmpl",
         )
         mock_render.assert_called_once_with(mock_updated_cmd)
@@ -346,7 +349,7 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_cmd_services.get_command_by_id.return_value = mock_updated_cmd
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -363,7 +366,7 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.update_command.assert_called_with(
-            "alias1",
+            current_alias="alias1",
             template="new_prompt_tmpl",
             description="new_prompt_desc",
         )
@@ -405,7 +408,7 @@ class TestCommandHandlers(unittest.TestCase):
         self.mock_settings.field_aliases.alias_mapping = {"template": ["tpl"]}
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -422,7 +425,7 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.update_command.assert_called_with(
-            "alias1",
+            current_alias="alias1",
             template="new_prompt_tmpl",
         )
         mock_render.assert_called_once_with(mock_updated_cmd)
@@ -434,7 +437,7 @@ class TestCommandHandlers(unittest.TestCase):
     def test_run_update_command_in_edit_mode_with_fields_raised_error(self):
         with self.assertRaises(typer.BadParameter):
             run_update_command(
-                alias="alias1",
+                current_alias="alias1",
                 template="AmarilloByMorning",
                 description=None,
                 new_alias=None,
@@ -466,7 +469,7 @@ class TestCommandHandlers(unittest.TestCase):
         mock_render.return_value = "rendered_update"
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template="old_tmpl",
             description="old_desc",
             new_alias="alias1",
@@ -489,7 +492,7 @@ class TestCommandHandlers(unittest.TestCase):
     def test_run_update_raises_error_when_field_variable_is_also_in_set(self):
         with self.assertRaises(typer.BadParameter):
             run_update_command(
-                alias="alias1",
+                current_alias="alias1",
                 template="WriteThisDown",
                 description=None,
                 new_alias=None,
@@ -508,7 +511,7 @@ class TestCommandHandlers(unittest.TestCase):
     def test_run_update_raises_error_when_set_is_provided_with_edit_flag(self):
         with self.assertRaises(typer.BadParameter):
             run_update_command(
-                alias="alias1",
+                current_alias="alias1",
                 template=None,
                 description=None,
                 new_alias=None,
@@ -537,7 +540,7 @@ class TestCommandHandlers(unittest.TestCase):
         mock_render.return_value = "rendered_update"
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -556,7 +559,7 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.update_command.assert_called_with(
-            "alias1", cwd=None, shell=None
+            current_alias="alias1", cwd=None, shell=None
         )
         mock_render.assert_called_once_with(mock_updated_cmd)
         self.mock_console.print.assert_called_with("rendered_update")
@@ -942,7 +945,7 @@ class TestCommandHandlers(unittest.TestCase):
         self._make_cmd()
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -959,7 +962,7 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.update_command.assert_called_with(
-            "alias1", cwd="/new/path", shell="bash", timeout=30
+            current_alias="alias1", cwd="/new/path", shell="bash", timeout=30
         )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
@@ -968,7 +971,7 @@ class TestCommandHandlers(unittest.TestCase):
         self._make_cmd()
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -985,7 +988,7 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.update_command.assert_called_with(
-            "alias1", env={"FOO": "bar", "BAZ": "qux"}
+            current_alias="alias1", env={"FOO": "bar", "BAZ": "qux"}
         )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_updated")
@@ -994,7 +997,7 @@ class TestCommandHandlers(unittest.TestCase):
         self._make_cmd(env=json.dumps({"FOO": "bar"}))
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -1019,7 +1022,7 @@ class TestCommandHandlers(unittest.TestCase):
         self._make_cmd(cwd="/existing/path")
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -1044,7 +1047,7 @@ class TestCommandHandlers(unittest.TestCase):
         self._make_cmd(timeout=30)
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -1069,7 +1072,7 @@ class TestCommandHandlers(unittest.TestCase):
         self._make_cmd(env=json.dumps({"FOO": "original"}))
 
         run_update_command(
-            alias="alias1",
+            current_alias="alias1",
             template=None,
             description=None,
             new_alias=None,
@@ -1086,7 +1089,7 @@ class TestCommandHandlers(unittest.TestCase):
         )
 
         self.mock_cmd_services.update_command.assert_called_with(
-            "alias1", env={"FOO": "updated"}
+            current_alias="alias1", env={"FOO": "updated"}
         )
 
     @patch("cmdbox.cli.handlers.command_handlers.render_command_moved")

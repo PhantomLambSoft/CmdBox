@@ -119,7 +119,7 @@ def run_get_command(
 @log_action(__name__, "run_update_command")
 def run_update_command(
     *,
-    alias: str,
+    current_alias: str,
     template: Optional[str],
     description: Optional[str],
     new_alias: Optional[str],
@@ -142,7 +142,7 @@ def run_update_command(
     fields: dict[str, Any] = {}
 
     cmd_service = get_cmd_services()
-    cmd = cmd_service.get_command(alias)
+    cmd = cmd_service.get_command(current_alias)
     console = get_console()
 
     clear_flags = {
@@ -255,7 +255,7 @@ def run_update_command(
         console.info("No changes detected.")
         return
 
-    cmd_service.update_command(alias, **fields)
+    cmd_service.update_command(current_alias=current_alias, **fields)
 
     updated_cmd = cmd_service.get_command_by_id(cmd.id)
     console.print(render_command_updated(updated_cmd))
