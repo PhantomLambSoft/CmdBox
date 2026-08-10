@@ -11,6 +11,7 @@
 ### Fixed
 
 - Migration runner not migrating the database correctly.
+- Stored command context values not working.
 
 
 ## [1.2.0] - 2026-07-16
