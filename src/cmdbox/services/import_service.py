@@ -247,7 +247,7 @@ class ImportService:
         current_tags = {ct.tag.name for ct in existing.tags}
         new_tag = set(tags)
         self._cmd_service.update_command(
-            alias=alias,
+            current_alias=alias,
             template=cmd_data["template"],
             description=cmd_data.get("description", None),
             cwd=cmd_data.get("cwd", None),
