@@ -145,7 +145,6 @@ def run(
         run_ctx=ctx,
         profile=profile,
         get_run_service=container.get_run_service,
-        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 
@@ -237,7 +236,6 @@ def preview(
         run_ctx=ctx,
         profile=profile,
         get_run_service=container.get_run_service,
-        get_settings=container.get_settings,
         get_console=container.get_console,
     )
 
