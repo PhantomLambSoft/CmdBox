@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.3.1] - 2026-08-12
+
+### Fixed
+- Crash on startup on Ubuntu due to erroneous import `command_crud`.
+
 ## [1.3.0] - 2026-08-11
 
 ### Added
