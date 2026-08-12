@@ -448,14 +448,14 @@ def copy(
         ),
     ],
     new_name: Annotated[
-        str,
+        str | None,
         typer.Option(
             "--name",
             "-n",
             help="New name for the command, if it should be different than the original",
             autocompletion=complete_variable_names,
         ),
-    ],
+    ] = None,
     profile: PROFILE_OPTION = None,
 ) -> None:
     log.debug(
