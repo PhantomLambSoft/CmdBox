@@ -794,6 +794,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#move" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        move
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        copy
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -846,6 +868,34 @@
     
   
     run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    profile
   
 
     
@@ -1261,6 +1311,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#move" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        move
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        copy
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1302,6 +1374,12 @@ work across many different situations.</p>
 <li><a href="#untag">untag</a></li>
 </ul>
 <p>Some of these subcommands also have aliases available. These will be discussed in the subcommands section.</p>
+<div class="admonition tip">
+<p class="admonition-title">The --profile flag</p>
+<p>Most <code>var</code> subcommands accept <code>--profile</code> (or <code>-p</code>) to target a profile other than the currently active one, without
+switching. For example, <code>cb var get host --profile work</code> looks up <code>host</code> in the <code>work</code> profile regardless of which
+profile is currently active.</p>
+</div>
 <hr />
 <h2 id="add"><code>add</code><a class="headerlink" href="#add" title="Permanent link">&para;</a></h2>
 <p>The <code>add</code> subcommand saves a new variable to your CmdBox database.</p>
@@ -1460,6 +1538,18 @@ tag you want to add.</p>
 <h2 id="untag"><code>untag</code><a class="headerlink" href="#untag" title="Permanent link">&para;</a></h2>
 <p>The <code>untag</code> subcommand removes a tag from a stored variable. It works the same way as <code>tag</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-21-1" name="__codelineno-21-1" href="#__codelineno-21-1"></a><span class="go">&gt; cb var untag host network</span>
+</code></pre></div>
+<h2 id="move"><code>move</code><a class="headerlink" href="#move" title="Permanent link">&para;</a></h2>
+<p>Moves a variable into a different profile.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-22-1" name="__codelineno-22-1" href="#__codelineno-22-1"></a><span class="go">&gt; cb var move host personal</span>
+</code></pre></div>
+<hr />
+<h2 id="copy"><code>copy</code><a class="headerlink" href="#copy" title="Permanent link">&para;</a></h2>
+<p>Copies a variable, including its tags, into a different profile. The original is left untouched.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-23-1" name="__codelineno-23-1" href="#__codelineno-23-1"></a><span class="go">&gt; cb var copy host personal</span>
+</code></pre></div>
+<p>To give the copy a different name, use <code>--as</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-24-1" name="__codelineno-24-1" href="#__codelineno-24-1"></a><span class="go">&gt; cb var copy host personal --as host-staging</span>
 </code></pre></div>
 
 

@@ -16,7 +16,7 @@
         <link rel="prev" href="../tag/">
       
       
-        <link rel="next" href="../history/">
+        <link rel="next" href="../profile/">
       
       
         
@@ -839,6 +839,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../history/" class="md-nav__link">
         
   
@@ -1318,18 +1346,24 @@ suppress it if verbose output is on by default in your settings.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="go">&gt; cb run build --verbose</span>
 </code></pre></div>
 <hr />
+<p><strong><code>--profile</code></strong></p>
+<p>Looks up the command in the given profile rather than the currently active command profile. This only affects where the
+command is <em>found</em>, any <code>&lt;cmd:&gt;</code> or <code>&lt;var:&gt;</code> references inside its template still resolve against whatever profile is 
+currently active.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="go">&gt; cb run deploy --profile work</span>
+</code></pre></div>
 <h3 id="stored-execution-context">Stored execution context<a class="headerlink" href="#stored-execution-context" title="Permanent link">&para;</a></h3>
 <p>Values for <code>--cwd</code>, <code>--shell</code>, <code>--env</code>, and <code>--timeout</code> can be stored directly on a command
 using <code>cb cmd add</code> or <code>cb cmd update</code>. When stored, those values act as defaults every time
 the command runs without you needing to supply them at the command line.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="gp"># </span>Stored<span class="w"> </span>on<span class="w"> </span>the<span class="w"> </span><span class="nb">command</span><span class="w"> </span>at<span class="w"> </span>add<span class="w"> </span>time:
-<a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="go">&gt; cb cmd add deploy &quot;npm run deploy&quot; --cwd &quot;/home/user/projects/myapp&quot; --env NODE_ENV=production --timeout 60</span>
-<a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="gp"># </span>Running<span class="w"> </span>without<span class="w"> </span>flags<span class="w"> </span>uses<span class="w"> </span>the<span class="w"> </span>stored<span class="w"> </span>values:
-<a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="go">&gt; cb run deploy</span>
-<a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>
-<a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a><span class="gp"># </span>Running<span class="w"> </span>with<span class="w"> </span>a<span class="w"> </span>flag<span class="w"> </span>overrides<span class="w"> </span>only<span class="w"> </span>that<span class="w"> </span>value<span class="w"> </span><span class="k">for</span><span class="w"> </span>this<span class="w"> </span>run:
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="go">&gt; cb run deploy --env NODE_ENV=staging</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="gp"># </span>Stored<span class="w"> </span>on<span class="w"> </span>the<span class="w"> </span><span class="nb">command</span><span class="w"> </span>at<span class="w"> </span>add<span class="w"> </span>time:
+<a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="go">&gt; cb cmd add deploy &quot;npm run deploy&quot; --cwd &quot;/home/user/projects/myapp&quot; --env NODE_ENV=production --timeout 60</span>
+<a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+<a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="gp"># </span>Running<span class="w"> </span>without<span class="w"> </span>flags<span class="w"> </span>uses<span class="w"> </span>the<span class="w"> </span>stored<span class="w"> </span>values:
+<a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a><span class="go">&gt; cb run deploy</span>
+<a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>
+<a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="gp"># </span>Running<span class="w"> </span>with<span class="w"> </span>a<span class="w"> </span>flag<span class="w"> </span>overrides<span class="w"> </span>only<span class="w"> </span>that<span class="w"> </span>value<span class="w"> </span><span class="k">for</span><span class="w"> </span>this<span class="w"> </span>run:
+<a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="go">&gt; cb run deploy --env NODE_ENV=staging</span>
 </code></pre></div>
 <p>Runtime flags always take precedence over stored values. For <code>--env</code> specifically, the
 override is key-by-key — supplying <code>--env NODE_ENV=staging</code> at runtime overrides only
@@ -1339,7 +1373,7 @@ that key while any other stored environment variables are preserved.</p>
 <h2 id="preview"><code>preview</code><a class="headerlink" href="#preview" title="Permanent link">&para;</a></h2>
 <p>Shows the fully resolved command that would be executed without actually running it. All
 variables are resolved and substituted, so you can verify the final command before committing.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="go">&gt; cb preview ssh-connect --user maxpowers --port 22</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="go">&gt; cb preview ssh-connect --user maxpowers --port 22</span>
 </code></pre></div>
 <p><img alt="run preview output" src="../../assets/run/run-preview-output.svg" /></p>
 <p><code>preview</code> accepts the same options as <code>run</code> — <code>--cwd</code>, <code>--env</code>, <code>--shell</code>, <code>--timeout</code>,

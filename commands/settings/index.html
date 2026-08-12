@@ -731,6 +731,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../history/" class="md-nav__link">
         
   
@@ -893,6 +921,17 @@
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#profile-scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Scoping
+      
+    </span>
+  </a>
   
 </li>
       
@@ -1185,6 +1224,17 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#profile-scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile Scoping
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1211,9 +1261,11 @@
 
 
 <h1 id="settings">settings<a class="headerlink" href="#settings" title="Permanent link">&para;</a></h1>
-<p>The <code>settings</code> subcommand lets you view and edit your CmdBox configuration. Settings control
-default behaviors across the app (things like default display fields, ordering, and limits)
-so you don't have to supply the same options every time you run a command.</p>
+<p>The <code>settings</code> subcommand lets you view and edit your CmdBox configuration. Settings control default behaviors across
+the app (things like default display fields, ordering, and limits) so you don't have to supply the same options every 
+time you run a command.</p>
+<p>Settings are scoped per profile. Each profile has its own settings file, so switching your active settings profile
+changes which configuration is in effect. See <a href="#profile-scoping">Profile Scoping</a> below for details.</p>
 <p>The available subcommands for <code>settings</code> are:</p>
 <ul>
 <li><a href="#show">show</a></li>
@@ -1225,34 +1277,26 @@ so you don't have to supply the same options every time you run a command.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">&gt; cb settings show</span>
 </code></pre></div>
 <p><img alt="settings show output" src="../../assets/settings/settings-show-output.svg" /></p>
-<p>To display only specific settings, use the <code>--fields</code> flag with a comma-separated list of
-field names.</p>
+<p>To display only specific settings, use the <code>--fields</code> flag with a comma-separated list of field names.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="go">&gt; cb settings show --fields editor,data_file</span>
 </code></pre></div>
 <hr />
 <h2 id="edit"><code>edit</code><a class="headerlink" href="#edit" title="Permanent link">&para;</a></h2>
-<p>The <code>edit</code> subcommand opens your settings for editing. By default, settings are edited
-interactively in the terminal. The current settings will be displayed with their current values pre-filled.
-You can edit them directly in the terminal.</p>
+<p>The <code>edit</code> subcommand opens your settings for editing. By default, settings are edited interactively in the terminal.
+The current settings will be displayed with their current values pre-filled. You can edit them directly in the terminal.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">&gt; cb settings edit</span>
 </code></pre></div>
-<div class="admonition tip">
-<p class="admonition-title">Tip</p>
-<p>When editing settings interactively in the terminal, press <code>Esc</code> to exit edit mode without saving changes, or 
+<p>!!! tip When editing settings interactively in the terminal, press <code>Esc</code> to exit edit mode without saving changes, or
 press <code>Ctrl+S</code> to save the changes and exit edit mode.</p>
-</div>
-<p>If you prefer to edit the settings file directly, use the <code>--external</code> (or <code>-e</code>) flag.
-This opens the settings file in your default text editor.</p>
+<p>If you prefer to edit the settings file directly, use the <code>--external</code> (or <code>-e</code>) flag. This opens the settings file in
+your default text editor.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">&gt; cb settings edit --external</span>
 </code></pre></div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>When using <code>--external</code>, take care not to change field names or the file structure.
-CmdBox may not start correctly if the settings file is malformed.</p>
-</div>
+<p>!!! warning When using <code>--external</code>, take care not to change field names or the file structure. CmdBox may not start
+correctly if the settings file is malformed.</p>
 <hr />
 <h2 id="data-dir"><code>data-dir</code><a class="headerlink" href="#data-dir" title="Permanent link">&para;</a></h2>
-<p>The <code>data-dir</code> subcommand opens the directory where CmdBox stores its data in the default file explorer. This is 
+<p>The <code>data-dir</code> subcommand opens the directory where CmdBox stores its data in the default file explorer. This is
 intended as a convenience command for users who want quick access to their settings, database, or log files.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">&gt; cb settings data-dir</span>
 </code></pre></div>
@@ -1270,43 +1314,80 @@ intended as a convenience command for users who want quick access to their setti
 <tbody>
 <tr>
 <td>Windows</td>
-<td><code>%APPDATA%\PhantomLamb\CmdBox\settings.toml</code></td>
+<td><code>%APPDATA%\PhantomLamb\CmdBox\</code></td>
 </tr>
 <tr>
 <td>macOS</td>
-<td><code>~/Library/Application Support/PhantomLamb/CmdBox/settings.toml</code></td>
+<td><code>~/Library/Application Support/PhantomLamb/CmdBox/</code></td>
 </tr>
 <tr>
 <td>Linux</td>
-<td><code>~/.local/share/PhantomLamb/CmdBox/settings.toml</code></td>
+<td><code>~/.local/share/PhantomLamb/CmdBox/</code></td>
 </tr>
 </tbody>
 </table>
+<p>Your settings file lives inside this directory. See <a href="#profile-scoping">Profile Scoping</a> for which filename applies to
+your active settings profile.</p>
+<hr />
+<h2 id="profile-scoping">Profile Scoping<a class="headerlink" href="#profile-scoping" title="Permanent link">&para;</a></h2>
+<p>Settings are scoped to whichever profile is currently active for settings (see <a href="../profile/#settings"><code>cb profile settings</code></a> 
+and <a href="../profile/#status"><code>cb profile status</code></a>). Every profile gets its own settings file:</p>
+<table>
+<thead>
+<tr>
+<th>Settings profile</th>
+<th>Filename</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>default</code></td>
+<td><code>config.toml</code></td>
+</tr>
+<tr>
+<td>any other profile</td>
+<td><code>&lt;profile-name&gt;_config.toml</code></td>
+</tr>
+</tbody>
+</table>
+<p>The <code>default</code> profile keeps the original <code>config.toml</code> filename rather than <code>default_config.toml</code>, this is for backward 
+compatibility with installs that predate named profiles, so an existing settings file continues to be picked up without
+any manual renaming after upgrading.</p>
+<p><code>cb settings show</code> and <code>cb settings edit</code> always operate on whichever file corresponds to the currently active settings
+profile, there is no separate flag needed, switch profiles first if you want to view or edit a different one.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">&gt; cb profile settings work</span>
+<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="go">&gt; cb settings edit</span>
+</code></pre></div>
+<p>The above edits <code>work_config.toml</code>, not <code>config.toml</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Because settings profiles can be switched independently of command and variable profiles, it's possible for
+<code>cb settings show</code> to reflect a different profile than the one your commands are currently running under. Run
+<code>cb profile status</code> if you're ever unsure which profile applies to what.</p>
+</div>
 <hr />
 <h1 id="settings-reference">Settings Reference<a class="headerlink" href="#settings-reference" title="Permanent link">&para;</a></h1>
-<p>Below is a reference for all available settings in the <code>settings.toml</code> file, what they do, and their default values.</p>
+<p>Below is a reference for all available settings in your active settings profile's <code>.toml</code> file, what they do, and their
+default values.</p>
 <hr />
 <h3 id="ui"><code>[ui]</code><a class="headerlink" href="#ui" title="Permanent link">&para;</a></h3>
 <p>General user interface settings.</p>
 <h4 id="use_color"><code>use_color</code><a class="headerlink" href="#use_color" title="Permanent link">&para;</a></h4>
 <p><strong>Default:</strong> <code>true</code></p>
-<p>Controls whether CmdBox uses colors and styles in terminal output. Set to <code>false</code> to disable all
-styling, which can be useful in environments that do not support ANSI color codes or when piping
-output to other tools.</p>
+<p>Controls whether CmdBox uses colors and styles in terminal output. Set to <code>false</code> to disable all styling, which can be
+useful in environments that do not support ANSI color codes or when piping output to other tools.</p>
 <h4 id="pager_mode"><code>pager_mode</code><a class="headerlink" href="#pager_mode" title="Permanent link">&para;</a></h4>
 <p><strong>Default:</strong> <code>"auto"</code></p>
 <p>Controls when the interactive pager activates for <code>list</code> and <code>search</code> output. Accepts <code>"auto"</code>, <code>"always"</code>, or
 <code>"never"</code>.</p>
 <ul>
-<li><code>"auto"</code>: pages automatically once results exceed <code>pager_min_rows</code> (see below), but only when output is going
-  to a terminal.</li>
+<li><code>"auto"</code>: pages automatically once results exceed <code>pager_min_rows</code> (see below), but only when output is going to a terminal.</li>
 <li><code>"always"</code>: always pages when output is going to a terminal, regardless of result count.</li>
 <li><code>"never"</code>: never pages automatically. <code>--pager</code> on the command line still opens it for that invocation.</li>
 </ul>
 <h4 id="pager_min_rows"><code>pager_min_rows</code><a class="headerlink" href="#pager_min_rows" title="Permanent link">&para;</a></h4>
 <p><strong>Default:</strong> <code>25</code></p>
-<p>The number of result rows that triggers the pager automatically when <code>pager_mode</code> is <code>"auto"</code>. Ignored for other
-modes.</p>
+<p>The number of result rows that triggers the pager automatically when <code>pager_mode</code> is <code>"auto"</code>. Ignored for other modes.</p>
 <h4 id="pager_page_step"><code>pager_page_step</code><a class="headerlink" href="#pager_page_step" title="Permanent link">&para;</a></h4>
 <p><strong>Default:</strong> <code>15</code></p>
 <p>The number of lines scrolled per page when using <code>Ctrl+D</code>, <code>Ctrl+U</code>, <code>Page Down</code>, or <code>Page Up</code> inside the pager.</p>
@@ -1315,16 +1396,15 @@ modes.</p>
 <p>The number of lines scrolled per keypress when using <code>j</code>, <code>k</code>, <code>↓</code>, or <code>↑</code> inside the pager.</p>
 <hr />
 <h3 id="uicolors"><code>[ui.colors]</code><a class="headerlink" href="#uicolors" title="Permanent link">&para;</a></h3>
-<p>Controls the colors and text styles used throughout CmdBox's output. Each key corresponds to a
-specific UI element. Values are <a href="https://rich.readthedocs.io/en/stable/style.html">Rich style strings</a>,
-which support colors, boldness, italics, and other text attributes.</p>
+<p>Controls the colors and text styles used throughout CmdBox's output. Each key corresponds to a specific UI element.
+Values are <a href="https://rich.readthedocs.io/en/stable/style.html">Rich style strings</a>, which support colors, boldness,
+italics, and other text attributes.</p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>You do not need to define every key. You only need to change the values you want to customize.
-Leave any entry as an empty string (<code>""</code>) to use your terminal's default text style.</p>
+<p>You do not need to define every key. You only need to change the values you want to customize. Leave any entry
+as an empty string (<code>""</code>) to use your terminal's default text style.</p>
 </div>
-<p>The following table lists all available color keys, their default values, and where each style
-is applied.</p>
+<p>The following table lists all available color keys, their default values, and where each style is applied.</p>
 <table>
 <thead>
 <tr>
@@ -1483,28 +1563,27 @@ is applied.</p>
 </table>
 <hr />
 <h3 id="execution_settings"><code>[execution_settings]</code><a class="headerlink" href="#execution_settings" title="Permanent link">&para;</a></h3>
-<p>Controls how CmdBox executes commands. Each setting acts as the default value for the
-corresponding CLI flag on <code>cb cmd run</code>, and can always be overridden at runtime.</p>
+<p>Controls how CmdBox executes commands. Each setting acts as the default value for the corresponding CLI flag on
+<code>cb cmd run</code>, and can always be overridden at runtime.</p>
 <h4 id="default_shell"><code>default_shell</code><a class="headerlink" href="#default_shell" title="Permanent link">&para;</a></h4>
 <p><strong>Default:</strong> <code>"auto"</code></p>
-<p>The shell used to execute commands. When set to <code>"auto"</code>, CmdBox detects the appropriate shell
-for your platform (<code>cmd.exe</code> on Windows, the user's default shell on macOS and Linux). Set this
-to a specific shell (e.g., <code>"bash"</code>, <code>"zsh"</code>, <code>"powershell"</code>) to override the detected value.
-Can be overridden at runtime with the <code>--shell</code> flag.</p>
+<p>The shell used to execute commands. When set to <code>"auto"</code>, CmdBox detects the appropriate shell for your platform
+(<code>cmd.exe</code> on Windows, the user's default shell on macOS and Linux). Set this to a specific shell (e.g., <code>"bash"</code>,
+<code>"zsh"</code>, <code>"powershell"</code>) to override the detected value. Can be overridden at runtime with the <code>--shell</code> flag.</p>
 <h4 id="capture_output"><code>capture_output</code><a class="headerlink" href="#capture_output" title="Permanent link">&para;</a></h4>
 <p><strong>Default:</strong> <code>false</code></p>
-<p>The default value for the <code>--capture</code> flag on <code>cb cmd run</code>. When <code>true</code>, command output is
-captured and returned rather than printed directly to the terminal. Useful when running CmdBox
-inside scripts. Can be overridden at runtime with <code>--capture</code> or <code>--no-capture</code>.</p>
+<p>The default value for the <code>--capture</code> flag on <code>cb cmd run</code>. When <code>true</code>, command output is captured and returned rather
+than printed directly to the terminal. Useful when running CmdBox inside scripts. Can be overridden at runtime with
+<code>--capture</code> or <code>--no-capture</code>.</p>
 <h4 id="default_verbose"><code>default_verbose</code><a class="headerlink" href="#default_verbose" title="Permanent link">&para;</a></h4>
 <p><strong>Default:</strong> <code>false</code></p>
-<p>The default value for the <code>--verbose</code> flag on <code>cb cmd run</code>. When <code>true</code>, CmdBox prints additional
-details during command execution. Can be overridden at runtime with <code>--verbose</code> or <code>--no-verbose</code>.</p>
+<p>The default value for the <code>--verbose</code> flag on <code>cb cmd run</code>. When <code>true</code>, CmdBox prints additional details during command
+execution. Can be overridden at runtime with <code>--verbose</code> or <code>--no-verbose</code>.</p>
 <hr />
 <h3 id="default_fields"><code>[default_fields]</code><a class="headerlink" href="#default_fields" title="Permanent link">&para;</a></h3>
-<p>Controls which fields are shown by default in output and search results. Each key accepts a list
-of field names. Any field available on the underlying model can be included — these are just the
-defaults. You can always request specific fields at runtime using the <code>--fields</code> flag.</p>
+<p>Controls which fields are shown by default in output and search results. Each key accepts a list of field names. Any
+field available on the underlying model can be included — these are just the defaults. You can always request specific
+fields at runtime using the <code>--fields</code> flag.</p>
 <table>
 <thead>
 <tr>
@@ -1566,9 +1645,9 @@ defaults. You can always request specific fields at runtime using the <code>--fi
 <hr />
 <h3 id="field_aliases"><code>[field_aliases]</code><a class="headerlink" href="#field_aliases" title="Permanent link">&para;</a></h3>
 <h4 id="field_aliasesalias_mapping"><code>[field_aliases.alias_mapping]</code><a class="headerlink" href="#field_aliasesalias_mapping" title="Permanent link">&para;</a></h4>
-<p>Maps full field names to shorthand aliases you can use with the <code>--fields</code> flag. This lets you
-type <code>--fields a,d</code> instead of <code>--fields alias,description</code>, for example. CmdBox ships with
-sensible defaults, but you can add or change any mapping to match your preferred shorthand.</p>
+<p>Maps full field names to shorthand aliases you can use with the <code>--fields</code> flag. This lets you type <code>--fields a,d</code>
+instead of <code>--fields alias,description</code>, for example. CmdBox ships with sensible defaults, but you can add or change any
+mapping to match your preferred shorthand.</p>
 <table>
 <thead>
 <tr>
@@ -1608,20 +1687,18 @@ sensible defaults, but you can add or change any mapping to match your preferred
 </tbody>
 </table>
 <p>To add your own alias, add an entry under <code>[field_aliases.alias_mapping]</code>:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[field_aliases.alias_mapping]</span>
-<a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;temp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tmpl&quot;</span><span class="p">]</span><span class="w">  </span><span class="c1"># add as many aliases as you like</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="k">[field_aliases.alias_mapping]</span>
+<a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="n">template</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;t&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;temp&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tmpl&quot;</span><span class="p">]</span><span class="w">  </span><span class="c1"># add as many aliases as you like</span>
 </code></pre></div>
 <hr />
 <h3 id="logging"><code>[logging]</code><a class="headerlink" href="#logging" title="Permanent link">&para;</a></h3>
 <h4 id="console_level"><code>console_level</code><a class="headerlink" href="#console_level" title="Permanent link">&para;</a></h4>
 <p><strong>Default:</strong> <code>"CRITICAL"</code></p>
-<p>The minimum log level printed to the terminal. Defaults to <code>"CRITICAL"</code> so that internal log
-messages do not clutter command output during normal use. Set to a lower level if you need to
-inspect CmdBox's internal behavior.</p>
+<p>The minimum log level printed to the terminal. Defaults to <code>"CRITICAL"</code> so that internal log messages do not clutter
+command output during normal use. Set to a lower level if you need to inspect CmdBox's internal behavior.</p>
 <p>Accepted values (from least to most verbose): <code>"CRITICAL"</code>, <code>"ERROR"</code>, <code>"WARNING"</code>, <code>"INFO"</code>, <code>"DEBUG"</code></p>
 <h4 id="loggingfile"><code>[logging.file]</code><a class="headerlink" href="#loggingfile" title="Permanent link">&para;</a></h4>
-<p>Controls log file output. Log files are written to the same application data directory as the
-settings file.</p>
+<p>Controls log file output. Log files are written to the same application data directory as the settings file.</p>
 <table>
 <thead>
 <tr>

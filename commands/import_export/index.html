@@ -731,6 +731,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../history/" class="md-nav__link">
         
   
@@ -831,6 +859,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#profile-scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dependencies-are-included-automatically" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -924,6 +963,17 @@
     <span class="md-ellipsis">
       
         Conflicts
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profile-scoping_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile scoping
       
     </span>
   </a>
@@ -1237,6 +1287,17 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#profile-scoping" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#dependencies-are-included-automatically" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1337,6 +1398,17 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#profile-scoping_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profile scoping
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#-preview" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1405,25 +1477,34 @@ or commit to a repository.</p>
 <p>The <code>export</code> command group writes commands and/or variables to a JSON file. There are
 three subcommands depending on what you want to export: <a href="#export-cmds"><code>cmds</code></a>,
 <a href="#export-vars"><code>vars</code></a>, or <a href="#export-all"><code>all</code></a>.</p>
+<h3 id="profile-scoping">Profile scoping<a class="headerlink" href="#profile-scoping" title="Permanent link">&para;</a></h3>
+<p>Every export command accepts <code>--profile</code> (or <code>-p</code>) to choose which profile's commands are exported, and <code>--var-profile</code>
+to choose which profile any <code>&lt;var:&gt;</code> dependencies are resolved from. Both default to whichever profile is currently 
+active for that purpose. <code>export vars</code> only accepts <code>--var-profile</code>, there's no command axis to it.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">&gt; cb export cmds deploy --profile work</span>
+</code></pre></div>
+<p>The exported file records which profiles were used, via <code>command_profile</code> and <code>variable_profile</code> fields at the top 
+level. These are purely informational, <code>import</code> does not read them, the destination profile is always chosen explicitly 
+at import time.</p>
 <h3 id="dependencies-are-included-automatically">Dependencies are included automatically<a class="headerlink" href="#dependencies-are-included-automatically" title="Permanent link">&para;</a></h3>
 <p>If a command references another command with <code>&lt;cmd:name&gt;</code>, or a variable with
 <code>&lt;var:name&gt;</code>, that reference won't resolve correctly on the receiving end unless the
 referenced item is included too. To prevent broken exports, <code>export cmds</code> and
 <code>export vars</code> always pull in everything a requested item depends on, transitively.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">&gt; cb export cmds deploy</span>
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">Export Complete</span>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="go">  Saved to: ./cmdbox-cmds-2026-06-17.json</span>
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="go">  Commands</span>
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="go">    deploy</span>
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="go">    build-image     (dependency)</span>
-<a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="go">    login-ecr       (dependency)</span>
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>
-<a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="go">  Variables</span>
-<a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="go">    registry-url    (dependency)</span>
-<a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
-<a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="go">2 commands, 1 variable exported</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="go">&gt; cb export cmds deploy</span>
+<a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+<a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="go">Export Complete</span>
+<a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="go">  Saved to: ./cmdbox-cmds-2026-06-17.json</span>
+<a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+<a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="go">  Commands</span>
+<a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="go">    deploy</span>
+<a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="go">    build-image     (dependency)</span>
+<a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="go">    login-ecr       (dependency)</span>
+<a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a>
+<a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="go">  Variables</span>
+<a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="go">    registry-url    (dependency)</span>
+<a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>
+<a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="go">2 commands, 1 variable exported</span>
 </code></pre></div>
 <p>Here, requesting <code>deploy</code> pulled in <code>build-image</code> and <code>login-ecr</code> because <code>deploy</code>
 references them, and <code>registry-url</code> because <code>build-image</code> references it. Items pulled in
@@ -1437,23 +1518,23 @@ The rest of the export still proceeds.</p>
 <p>By default, the export is saved to the current directory with a generated filename, such
 as <code>cmdbox-cmds-2026-06-17.json</code>. Use the <code>--output</code> (or <code>-o</code>) flag to choose a different
 location.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="go">&gt; cb export cmds deploy --output ./backups/</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">&gt; cb export cmds deploy --output ./backups/</span>
 </code></pre></div>
 <p>If the path given to <code>--output</code> is an existing directory, the generated filename is placed
 inside it. If it's a filename, the export is written there directly.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">&gt; cb export cmds deploy --output ./backups/deploy-export.json</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">&gt; cb export cmds deploy --output ./backups/deploy-export.json</span>
 </code></pre></div>
 <h3 id="export-cmds"><code>export cmds</code><a class="headerlink" href="#export-cmds" title="Permanent link">&para;</a></h3>
 <p>Exports commands to a JSON file. With no arguments, every command in your database is
 exported.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">&gt; cb export cmds</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">&gt; cb export cmds</span>
 </code></pre></div>
 <p>To export specific commands (along with their dependencies), provide their aliases.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">&gt; cb export cmds deploy build-image</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="go">&gt; cb export cmds deploy build-image</span>
 </code></pre></div>
 <p>To export commands by tag instead, use the <code>--tag</code> flag. This is ignored if any aliases
 are also given.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="go">&gt; cb export cmds --tag k8s</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">&gt; cb export cmds --tag k8s</span>
 </code></pre></div>
 <h4 id="-flatten"><code>--flatten</code><a class="headerlink" href="#-flatten" title="Permanent link">&para;</a></h4>
 <p>By default, <code>&lt;cmd:name&gt;</code> and <code>&lt;var:name&gt;</code> references inside a template are kept as
@@ -1461,7 +1542,7 @@ placeholders in the export, and the referenced items are included separately (as
 above). The <code>--flatten</code> flag instead inlines every reference directly into the
 template text, recursively, producing fully self-contained commands with no further
 dependencies.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">&gt; cb export cmds deploy --flatten</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="go">&gt; cb export cmds deploy --flatten</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
@@ -1472,19 +1553,19 @@ command that doesn't depend on anything else existing in the destination databas
 <h3 id="export-vars"><code>export vars</code><a class="headerlink" href="#export-vars" title="Permanent link">&para;</a></h3>
 <p>Exports variables to a JSON file. With no arguments, every variable in your database is
 exported.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="go">&gt; cb export vars</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="go">&gt; cb export vars</span>
 </code></pre></div>
 <p>To export specific variables (along with any variables they reference), provide their
 names.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="go">&gt; cb export vars aws-region registry-url</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="go">&gt; cb export vars aws-region registry-url</span>
 </code></pre></div>
 <p>To export variables by tag instead, use the <code>--tag</code> flag. This is ignored if any names
 are also given.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="go">&gt; cb export vars --tag aws</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="go">&gt; cb export vars --tag aws</span>
 </code></pre></div>
 <p><code>--flatten</code> works the same way as it does for <a href="#flatten"><code>export cmds</code></a>, expanding nested
 <code>&lt;var:name&gt;</code> references into their final values instead of keeping them as references.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="go">&gt; cb export vars registry-url --flatten</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="go">&gt; cb export vars registry-url --flatten</span>
 </code></pre></div>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -1495,16 +1576,16 @@ sharing it.</p>
 <h3 id="export-all"><code>export all</code><a class="headerlink" href="#export-all" title="Permanent link">&para;</a></h3>
 <p>Exports every command and every variable in your database in a single file. This is the
 quickest way to take a full backup or move your entire setup to another machine.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="go">&gt; cb export all</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="go">&gt; cb export all</span>
 </code></pre></div>
 <p><code>--output</code> and <code>--flatten</code> work the same as on the other export subcommands.
 <code>--flatten</code> applies to both commands and variables.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="go">&gt; cb export all --output ./backups/full-backup.json --flatten</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="go">&gt; cb export all --output ./backups/full-backup.json --flatten</span>
 </code></pre></div>
 <hr />
 <h2 id="import"><code>import</code><a class="headerlink" href="#import" title="Permanent link">&para;</a></h2>
 <p>The <code>import</code> command reads a JSON export file and adds its contents to your database.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json</span>
 </code></pre></div>
 <p>It works with any file produced by <code>export cmds</code>, <code>export vars</code>, or <code>export all</code> — the
 importer reads whichever commands and variables are present in the file.</p>
@@ -1512,35 +1593,43 @@ importer reads whichever commands and variables are present in the file.</p>
 <p>If an item in the file already exists in your database (matched by alias for commands,
 or by name for variables), it's skipped by default and a warning is printed. Nothing
 about the existing item is changed.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
-<a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="go">Import Complete</span>
-<a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a><span class="go">  Commands: 1 created, 2 skipped</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json</span>
+<a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>
+<a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a><span class="go">Import Complete</span>
+<a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="go">  Commands: 1 created, 2 skipped</span>
 </code></pre></div>
 <p>To replace existing items instead, use the <code>--overwrite</code> flag.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json --overwrite</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json --overwrite</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Tags</p>
 <p>Tags referenced by an imported command or variable are created automatically if
 they don't already exist in your database.</p>
 </div>
+<h3 id="profile-scoping_1">Profile scoping<a class="headerlink" href="#profile-scoping_1" title="Permanent link">&para;</a></h3>
+<p>By default, <code>import</code> writes into the currently active command profile. Use <code>--profile</code> to target a different one.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-08-30.json --profile work</span>
+</code></pre></div>
+<p>Conflict detection (skip vs. <code>--overwrite</code>) checks for existing items <em>within the target profile only</em>, an alias that
+already exists in a different profile does not block the import.</p>
+<p>Both commands and variables from a file land in the same target profile, <code>import</code> does not support splitting them 
+across two profiles the way <code>export</code> can pull from two source profiles.</p>
 <h3 id="-preview"><code>--preview</code><a class="headerlink" href="#-preview" title="Permanent link">&para;</a></h3>
 <p>To see what an import would do without making any changes, use the <code>--preview</code> flag.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-16-1" name="__codelineno-16-1" href="#__codelineno-16-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json --preview</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json --preview</span>
 </code></pre></div>
 <p><img alt="import preview output" src="../../assets/import/import-preview-output.svg" /></p>
 <p>This is useful for checking what's in a file before committing to it, especially when
 combined with <code>--overwrite</code> to see exactly what would be replaced.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-17-1" name="__codelineno-17-1" href="#__codelineno-17-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json --overwrite --preview</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-19-1" name="__codelineno-19-1" href="#__codelineno-19-1"></a><span class="go">&gt; cb import ./cmdbox-cmds-2026-06-17.json --overwrite --preview</span>
 </code></pre></div>
 <h3 id="circular-references">Circular references<a class="headerlink" href="#circular-references" title="Permanent link">&para;</a></h3>
 <p>If an export file contains a circular reference (for example, a command that depends on
 itself through a chain of <code>&lt;cmd:...&gt;</code> references), the import is rejected before anything
 is written, and the cycle is reported.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-18-1" name="__codelineno-18-1" href="#__codelineno-18-1"></a><span class="go">&gt; cb import ./broken-export.json</span>
-<a id="__codelineno-18-2" name="__codelineno-18-2" href="#__codelineno-18-2"></a>
-<a id="__codelineno-18-3" name="__codelineno-18-3" href="#__codelineno-18-3"></a><span class="go">Import rejected — circular reference detected: cmd:a -&gt; cmd:b -&gt; cmd:a</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-20-1" name="__codelineno-20-1" href="#__codelineno-20-1"></a><span class="go">&gt; cb import ./broken-export.json</span>
+<a id="__codelineno-20-2" name="__codelineno-20-2" href="#__codelineno-20-2"></a>
+<a id="__codelineno-20-3" name="__codelineno-20-3" href="#__codelineno-20-3"></a><span class="go">Import rejected — circular reference detected: cmd:a -&gt; cmd:b -&gt; cmd:a</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>

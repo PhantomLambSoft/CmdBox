@@ -800,6 +800,34 @@
   
   
     <li class="md-nav__item">
+      <a href="profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="history/" class="md-nav__link">
         
   
@@ -1181,6 +1209,10 @@
 <td>Execute saved commands by alias.</td>
 </tr>
 <tr>
+<td><a href="profile/"><code>profile</code></a></td>
+<td>Manage named profiles and switch between them.</td>
+</tr>
+<tr>
 <td><a href="history/"><code>history</code></a></td>
 <td>View and re-run past command executions.</td>
 </tr>
@@ -1200,16 +1232,14 @@
 subcommand for this — just use the alias directly:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">&gt; cb git-graph</span>
 </code></pre></div>
-<p>The <code>run</code> subcommand is available when you need more control over how a command executes, such
-as setting a working directory, passing environment variables, or previewing the resolved
-command before running it:</p>
+<p>The <code>run</code> subcommand is available when you need more control over how a command executes, such as setting a working
+directory, passing environment variables, or previewing the resolved command before running it:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="go">&gt; cb run git-graph --cwd C:\Projects\myapp --verbose</span>
 </code></pre></div>
 <p>See the <a href="run/"><code>run</code> reference</a> for the full list of options.</p>
 <hr />
 <h2 id="getting-help">Getting Help<a class="headerlink" href="#getting-help" title="Permanent link">&para;</a></h2>
-<p>Every subcommand supports the <code>--help</code> flag, which displays its available options and usage
-directly in the terminal:</p>
+<p>Every subcommand supports the <code>--help</code> flag, which displays its available options and usage directly in the terminal:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">&gt; cb --help</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="go">&gt; cb cmd --help</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="go">&gt; cb cmd add --help</span>

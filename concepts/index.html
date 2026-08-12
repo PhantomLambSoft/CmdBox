@@ -726,6 +726,34 @@
   
   
     <li class="md-nav__item">
+      <a href="../commands/profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../commands/history/" class="md-nav__link">
         
   
@@ -1156,6 +1184,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profiles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#shell-integration" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1485,6 +1524,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profiles
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#shell-integration" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1771,6 +1821,18 @@ can have multiple tags, and lists can be filtered by tag at any time.</p>
 display fields, sort order, result limits, and more. Use the
 <a href="../commands/settings/"><code>settings</code> reference</a> to view your current configuration and make
 changes.</p>
+<hr />
+<h2 id="profiles">Profiles<a class="headerlink" href="#profiles" title="Permanent link">&para;</a></h2>
+<p>Profiles let you maintain separate sets of commands, variables, and settings. This is useful for separating work and
+personal commands, keeping the same alias across different projects, or maintaining different variable values across
+environments without duplicating commands.</p>
+<p>Command, variable, and settings profiles are independently switchable. By default, switching profiles moves all three
+together, but they can be split apart when you need commands to stay put while only variables change (or vice versa).
+See the <a href="../commands/profile/"><code>profile</code> reference</a> for the full command set, and <a href="../commands/profile/#status">
+<code>cb profile status</code></a> for checking which profile is currently active for each.</p>
+<p>Every install always has a <code>default</code> profile, which cannot be renamed or deleted. Any command or variable created
+without specifying a profile lands in whichever profile is currently active.</p>
+<p>Tags remain global across all profiles, they are not profile-scoped.</p>
 <hr />
 <h2 id="shell-integration">Shell Integration<a class="headerlink" href="#shell-integration" title="Permanent link">&para;</a></h2>
 <p>By default, <code>cb</code> runs commands in a background process separate from your current terminal

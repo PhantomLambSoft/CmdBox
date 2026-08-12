@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://PhantomLambSoft.github.io/CmdBox/commands/history/">
       
       
-        <link rel="prev" href="../run/">
+        <link rel="prev" href="../profile/">
       
       
         <link rel="next" href="../import_export/">
@@ -728,6 +728,34 @@
                 
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    profile
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
     
   
   
@@ -1233,6 +1261,12 @@ anything.</p>
 <li><a href="#last">last</a></li>
 <li><a href="#clear">clear</a></li>
 </ul>
+<div class="admonition tip">
+<p class="admonition-title">The --profile flag</p>
+<p><code>list</code>, <code>show</code>, <code>rerun</code>, and <code>clear</code> all accept <code>--profile</code> (or <code>-p</code>) to target a profile other than the currently
+active one. For <code>show</code> and <code>rerun</code>, note that an index-style reference (e.g. <code>cb history show 3</code>) is resolved 
+<em>within</em> the given profile, "3rd most recent" means something different in each profile's own history.</p>
+</div>
 <hr />
 <h2 id="list"><code>list</code><a class="headerlink" href="#list" title="Permanent link">&para;</a></h2>
 <p>The <code>list</code> subcommand displays your most recent command executions.</p>

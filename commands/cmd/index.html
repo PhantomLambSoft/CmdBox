@@ -828,6 +828,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#move" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        move
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        copy
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -908,6 +930,34 @@
     
   
     run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../profile/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    profile
   
 
     
@@ -1385,6 +1435,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#move" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        move
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#copy" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        copy
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1430,6 +1502,12 @@
 applies to every subcommand on this page, including their aliases (<code>cb ls</code> works the same as <code>cb cmd list</code>).</p>
 <p>If you have a stored command whose alias happens to match one of these subcommand names, the shorthand will
 route to the <code>cmd</code> subcommand rather than running your stored command. Use <code>cb run &lt;alias&gt;</code> in that case.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">The --profile flag</p>
+<p>Most <code>cmd</code> subcommands accept <code>--profile</code> (or <code>-p</code>) to target a profile other than the currently active one, without
+switching. For example, <code>cb cmd get deploy --profile work</code> looks up <code>deploy</code> in the <code>work</code> profile regardless of 
+which profile is currently active.</p>
 </div>
 <h2 id="add"><code>add</code><a class="headerlink" href="#add" title="Permanent link">&para;</a></h2>
 <p>The <code>add</code> subcommand adds new commands to your CmdBox database.</p>
@@ -1749,6 +1827,21 @@ to remove.</p>
 <h2 id="untag"><code>untag</code><a class="headerlink" href="#untag" title="Permanent link">&para;</a></h2>
 <p>Untag works the same as <code>tag</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-29-1" name="__codelineno-29-1" href="#__codelineno-29-1"></a><span class="gp">$ </span>cb<span class="w"> </span>cmd<span class="w"> </span>untag<span class="w"> </span>pip-outdated<span class="w"> </span>dev
+</code></pre></div>
+<h2 id="move"><code>move</code><a class="headerlink" href="#move" title="Permanent link">&para;</a></h2>
+<p>Moves a command into a different profile. The command's alias, tags, and execution history stay attached to it, only its
+profile changes.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-30-1" name="__codelineno-30-1" href="#__codelineno-30-1"></a><span class="go">&gt; cb cmd move deploy personal</span>
+</code></pre></div>
+<p>If a command with the same alias already exists in the target profile, this fails the same way creating a duplicate
+alias would.</p>
+<hr />
+<h2 id="copy"><code>copy</code><a class="headerlink" href="#copy" title="Permanent link">&para;</a></h2>
+<p>Copies a command, including its tags, into a different profile. The original command is left untouched.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-31-1" name="__codelineno-31-1" href="#__codelineno-31-1"></a><span class="go">&gt; cb cmd copy deploy personal</span>
+</code></pre></div>
+<p>To give the copy a different alias, use <code>--as</code>:</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-32-1" name="__codelineno-32-1" href="#__codelineno-32-1"></a><span class="go">&gt; cb cmd copy deploy personal --as deploy-staging</span>
 </code></pre></div>
 
 
