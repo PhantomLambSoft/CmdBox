@@ -529,7 +529,9 @@ class TestCommandServices(unittest.TestCase):
             profile=target_profile,
         )
         self.mock_repo.add_tags.assert_called_once_with(copy_cmd, [source_tag])
-        self.mock_repo.get_by_id.assert_called_once_with(copy_cmd.id)
+        self.mock_repo.get_by_id.assert_called_once_with(
+            copy_cmd.id, profile=target_profile
+        )
         mock_db.atomic.assert_called_once()
 
     def test_get_tags_internal(self):
