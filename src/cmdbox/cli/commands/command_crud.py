@@ -1,4 +1,3 @@
-from idlelib import autocomplete
 from typing import Annotated, Optional
 import logging
 
