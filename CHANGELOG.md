@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.3.0] - 2026-08-11
 
 ### Added
 - Named profile support.
@@ -42,7 +42,7 @@
 - Alias commands (`cb <alias>`, `cb tags`, etc.) crashed on fresh install.
 
 ### Changed
-- Removed the `click` dependencey added in the yanked 1.1.2 release.
+- Removed the `click` dependency added in the yanked 1.1.2 release.
 
 
 ## [1.1.2] - 2026-07-08 [YANKED]
