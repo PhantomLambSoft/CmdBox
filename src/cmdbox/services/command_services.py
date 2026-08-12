@@ -329,7 +329,7 @@ class CommandServices:
             if source_tags:
                 self._repo.add_tags(copy, source_tags)
 
-        return self._repo.get_by_id(copy.id)
+        return self._repo.get_by_id(copy.id, profile=target_profile)
 
     def _get_tags(self, tags: Sequence[str] | None) -> list[Tag]:
         """
