@@ -44,6 +44,7 @@ See the [full comparison here](https://phantomlambsoft.github.io/CmdBox/comparis
 - Parameterized templates with saved and runtime variables
 - Stored execution context per command (working directory, shell, environment variables, and timeout) with runtime
   overrides
+- Named profiles for separating commands, variables, and settings across contexts (work, personal, per-project)
 - Command execution history with the ability to rerun past executions
 - Tag-based organization and filtering
 - Field-based search across commands, variables, and tags
@@ -89,6 +90,26 @@ ssh admin@10.0.0.5 -p 22
 
 # Supply a different value at runtime to override a saved one
 cb ssh-connect --host 192.168.1.1
+```
+
+#### Separate commands across profiles
+
+```bash
+# Create a profile
+cb profile add work
+# and switch to it
+cb profile work
+
+# Commands and variables created now belong to "work"
+cb cmd add deploy "git push origin main && fly deploy"
+
+# Switch back, "default" has its own separate set
+cb profile default
+cb cmd add deploy "npm run deploy"
+
+# The same alias exists independently in each profile
+cb profile work
+cb deploy   # runs the work deploy
 ```
 
 ---
