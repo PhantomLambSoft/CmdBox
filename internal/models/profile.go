@@ -8,7 +8,8 @@ type Profile struct {
 	ID          uint   `gorm:"primaryKey"`
 	Name        string `gorm:"uniqueIndex;not null"`
 	Description *string
-	DateCreated time.Time `gorm:"not null"`
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
 	LastUsed    *time.Time
 }
 
@@ -21,7 +22,8 @@ func (Profile) TableName() string {
 //
 // All FK's have OnDelete:RESTRICT to prevent them from being deleted if they are currently active.
 type ProfileState struct {
-	ID uint `gorm:"primaryKey"`
+	ID        uint `gorm:"primaryKey"`
+	UpdatedAt *time.Time
 
 	ActiveCommandProfileID uint    `gorm:"not null"`
 	ActiveCommandProfile   Profile `gorm:"foreignKey:ActiveCommandProfileID;constraint:OnDelete:RESTRICT"`
