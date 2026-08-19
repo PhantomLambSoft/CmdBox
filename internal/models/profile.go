@@ -13,10 +13,6 @@ type Profile struct {
 	LastUsed    *time.Time
 }
 
-func (Profile) TableName() string {
-	return "profile"
-}
-
 // ProfileState is a singleton row that tracks which profile is currently active for commands, variables, and settings
 // independently of one another.
 //
@@ -33,10 +29,6 @@ type ProfileState struct {
 
 	ActiveSettingsProfileID uint    `gorm:"not null"`
 	ActiveSettingsProfile   Profile `gorm:"foreignKey:ActiveSettingsProfileID;constraint:OnDelete:RESTRICT"`
-}
-
-func (ProfileState) TableName() string {
-	return "profile_state"
 }
 
 // Linked reports whether all three active profiles currently point to the same profile.
