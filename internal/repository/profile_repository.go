@@ -11,15 +11,6 @@ import (
 	"github.com/PhantomLambSoft/CmdBox/internal/repository/validate"
 )
 
-var (
-	ErrProfileNotFound      = errors.New("profile not found")
-	ErrProfileNameExists    = errors.New("a profile with that name already exists")
-	ErrDefaultProfileName   = errors.New("the default profile cannot be renamed")
-	ErrDefaultProfileDelete = errors.New("the default profile cannot be deleted")
-	ErrProfileInUse         = errors.New("profile is currently active and cannot be deleted. Switch to another profile first")
-	ErrProfileHasContent    = errors.New("profile still has commands or variables assigned to it")
-)
-
 const DefaultProfileName = "default"
 
 type ProfileRepository interface {
