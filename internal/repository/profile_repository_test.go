@@ -11,9 +11,10 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/PhantomLambSoft/CmdBox/internal/models"
+	"github.com/PhantomLambSoft/CmdBox/internal/repository/validate"
 )
 
-func setupProfileRepositoryTest(t *testing.T) (*profileRepository, *gorm.DB) {
+func setupProfileRepositoryTest(t *testing.T) (ProfileRepository, *gorm.DB) {
 	t.Helper()
 
 	dsn := fmt.Sprintf("file:profile-repo-%d?mode=memory&cache=shared", time.Now().UnixNano())
@@ -53,7 +54,7 @@ func setupProfileRepositoryTest(t *testing.T) (*profileRepository, *gorm.DB) {
 		t.Fatalf("seed profile state: %v", err)
 	}
 
-	return &profileRepository{db: db}, db
+	return NewProfileRepository(db, validate.NewProfileValidator(nil)), db
 }
 
 func strPtr(v string) *string {
@@ -431,7 +432,7 @@ func TestProfileRepositoryGetState(t *testing.T) {
 	}
 }
 
-func TestProfileRepositorySetActiveProfiles(t *testing.T) {
+func TestProfileRepositorySetActiveProfile(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 	commandProfile := createProfile(t, db, "active-command", nil)
 	variableProfile := createProfile(t, db, "active-variable", nil)
@@ -443,39 +444,39 @@ func TestProfileRepositorySetActiveProfiles(t *testing.T) {
 			t.Fatalf("GetState() error = %v", err)
 		}
 
-		stateAfter, err := repo.SetActiveProfiles(nil, nil, nil)
+		stateAfter, err := repo.SetActiveProfile(nil, nil, nil)
 		if err != nil {
-			t.Fatalf("SetActiveProfiles(nil,nil,nil) error = %v", err)
+			t.Fatalf("SetActiveProfile(nil,nil,nil) error = %v", err)
 		}
 
 		if stateAfter.ID != stateBefore.ID ||
 			stateAfter.ActiveCommandProfileID != stateBefore.ActiveCommandProfileID ||
 			stateAfter.ActiveVariableProfileID != stateBefore.ActiveVariableProfileID ||
 			stateAfter.ActiveSettingsProfileID != stateBefore.ActiveSettingsProfileID {
-			t.Fatalf("SetActiveProfiles(nil,nil,nil) changed active ids: before=%+v after=%+v", *stateBefore, *stateAfter)
+			t.Fatalf("SetActiveProfile(nil,nil,nil) changed active ids: before=%+v after=%+v", *stateBefore, *stateAfter)
 		}
 	})
 
 	t.Run("updates each field independently", func(t *testing.T) {
-		state, err := repo.SetActiveProfiles(&commandProfile.ID, nil, nil)
+		state, err := repo.SetActiveProfile(&commandProfile.ID, nil, nil)
 		if err != nil {
-			t.Fatalf("SetActiveProfiles(command) error = %v", err)
+			t.Fatalf("SetActiveProfile(command) error = %v", err)
 		}
 		if state.ActiveCommandProfileID != commandProfile.ID {
 			t.Fatalf("active command id = %d, want %d", state.ActiveCommandProfileID, commandProfile.ID)
 		}
 
-		state, err = repo.SetActiveProfiles(nil, &variableProfile.ID, nil)
+		state, err = repo.SetActiveProfile(nil, &variableProfile.ID, nil)
 		if err != nil {
-			t.Fatalf("SetActiveProfiles(variable) error = %v", err)
+			t.Fatalf("SetActiveProfile(variable) error = %v", err)
 		}
 		if state.ActiveVariableProfileID != variableProfile.ID {
 			t.Fatalf("active variable id = %d, want %d", state.ActiveVariableProfileID, variableProfile.ID)
 		}
 
-		state, err = repo.SetActiveProfiles(nil, nil, &settingsProfile.ID)
+		state, err = repo.SetActiveProfile(nil, nil, &settingsProfile.ID)
 		if err != nil {
-			t.Fatalf("SetActiveProfiles(settings) error = %v", err)
+			t.Fatalf("SetActiveProfile(settings) error = %v", err)
 		}
 		if state.ActiveSettingsProfileID != settingsProfile.ID {
 			t.Fatalf("active settings id = %d, want %d", state.ActiveSettingsProfileID, settingsProfile.ID)
@@ -483,12 +484,12 @@ func TestProfileRepositorySetActiveProfiles(t *testing.T) {
 	})
 
 	t.Run("updates multiple fields in one call", func(t *testing.T) {
-		state, err := repo.SetActiveProfiles(&commandProfile.ID, &variableProfile.ID, &settingsProfile.ID)
+		state, err := repo.SetActiveProfile(&commandProfile.ID, &variableProfile.ID, &settingsProfile.ID)
 		if err != nil {
-			t.Fatalf("SetActiveProfiles(all) error = %v", err)
+			t.Fatalf("SetActiveProfile(all) error = %v", err)
 		}
 		if state.ActiveCommandProfileID != commandProfile.ID || state.ActiveVariableProfileID != variableProfile.ID || state.ActiveSettingsProfileID != settingsProfile.ID {
-			t.Fatalf("SetActiveProfiles(all) unexpected state = %+v", *state)
+			t.Fatalf("SetActiveProfile(all) unexpected state = %+v", *state)
 		}
 
 		persisted, err := repo.GetState()
