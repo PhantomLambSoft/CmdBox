@@ -9,36 +9,35 @@ type CommandValidatorConfig struct {
 	MaxAliasLength  int
 }
 
-var ReservedNames = []string{
-	"help",
-	"init",
-	"add",
-	"get",
-	"update",
-	"edit",
-	"list",
-	"ls",
-	"search",
-	"find",
-	"delete",
-	"del",
-	"rm",
-	"remove",
-	"tag",
-	"untag",
-	// Reserved because they are options to the run command and can conflict when dynamically called
-	"preview",
-	"cwd",
-	"env",
-	"capture",
-	"shell",
-	"emit",
-	"verbose",
-}
-
 func DefaultCommandValidatorConfig() CommandValidatorConfig {
-	set := make(map[string]struct{}, len(ReservedNames))
-	for _, r := range ReservedNames {
+	reservedNames := []string{
+		"help",
+		"init",
+		"add",
+		"get",
+		"update",
+		"edit",
+		"list",
+		"ls",
+		"search",
+		"find",
+		"delete",
+		"del",
+		"rm",
+		"remove",
+		"tag",
+		"untag",
+		// Reserved because they are options to the run command and can conflict when dynamically called
+		"preview",
+		"cwd",
+		"env",
+		"capture",
+		"shell",
+		"emit",
+		"verbose",
+	}
+	set := make(map[string]struct{}, len(reservedNames))
+	for _, r := range reservedNames {
 		set[r] = struct{}{}
 	}
 	return CommandValidatorConfig{
