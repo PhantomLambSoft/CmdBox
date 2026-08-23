@@ -27,13 +27,13 @@ func NewProfileValidator(config *ProfileValidatorConfig) *ProfileValidator {
 
 // ValidateCreate validates the profile name and description before profile creation.
 // Returns an error if the name is invalid.
-func (v *ProfileValidator) ValidateCreate(name, description string) error {
+func (v *ProfileValidator) ValidateCreate(name string) error {
 	return v.ValidateName(name)
 }
 
 // ValidateUpdate validates the provided profile name and description during an update operation.
 // Returns an error if the name is invalid.
-func (v *ProfileValidator) ValidateUpdate(name, description *string) error {
+func (v *ProfileValidator) ValidateUpdate(name *string) error {
 	if name != nil {
 		if err := v.ValidateName(*name); err != nil {
 			return err
