@@ -6,7 +6,7 @@ import "time"
 // execution context is stored and used when the command is executed.
 type Command struct {
 	ID          uint   `gorm:"primaryKey"`
-	Name        string `gorm:"uniqueIndex:idx_command_alias_profile;not null"`
+	Alias       string `gorm:"uniqueIndex:idx_command_alias_profile;not null"`
 	Template    string `gorm:"not null"`
 	Description string `gorm:"size:255"`
 
