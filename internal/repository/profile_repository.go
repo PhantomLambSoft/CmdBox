@@ -8,11 +8,12 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/PhantomLambSoft/CmdBox/internal/models"
+	"github.com/PhantomLambSoft/CmdBox/internal/repository/validate"
 )
 
 var (
 	ErrProfileNotFound      = errors.New("profile not found")
-	ErrProfileNameExists    = errors.New("profile with that name already exists")
+	ErrProfileNameExists    = errors.New("a profile with that name already exists")
 	ErrDefaultProfileName   = errors.New("the default profile cannot be renamed")
 	ErrDefaultProfileDelete = errors.New("the default profile cannot be deleted")
 	ErrProfileInUse         = errors.New("profile is currently active and cannot be deleted. Switch to another profile first")
@@ -21,7 +22,6 @@ var (
 
 const DefaultProfileName = "default"
 
-// ProfileRepository defines operations for managing and interacting with profile entities and their state.
 type ProfileRepository interface {
 	Create(name string, description *string) (*models.Profile, error)
 	GetByName(name string) (*models.Profile, error)
@@ -29,22 +29,29 @@ type ProfileRepository interface {
 	List() ([]models.Profile, error)
 	Update(id uint, name *string, description *string) (*models.Profile, error)
 	Delete(id uint, force bool) error
-	// TouchLastUsed updates the last used timestamp of a profile
 	TouchLastUsed(id uint) error
 
 	GetState() (*models.ProfileState, error)
-	SetActiveProfiles(commandProfileId, variableProfileId, settingsProfileId *uint) (*models.ProfileState, error)
+	SetActiveProfile(commandProfileID, variableProfileID, settingsProfileID *uint) (*models.ProfileState, error)
 }
 
 type profileRepository struct {
-	db *gorm.DB
+	db        *gorm.DB
+	validator *validate.ProfileValidator
 }
 
-func NewProfileRepository(db *gorm.DB) ProfileRepository {
-	return &profileRepository{db: db}
+func NewProfileRepository(db *gorm.DB, validator *validate.ProfileValidator) ProfileRepository {
+	if validator == nil {
+		validator = validate.NewProfileValidator(nil)
+	}
+	return &profileRepository{db: db, validator: validator}
 }
 
 func (r *profileRepository) Create(name string, description *string) (*models.Profile, error) {
+	if err := r.validator.ValidateCreate(name); err != nil {
+		return nil, err
+	}
+
 	_, err := r.GetByName(name)
 	if err == nil {
 		return nil, ErrProfileNameExists
@@ -101,6 +108,10 @@ func (r *profileRepository) Update(id uint, name *string, description *string) (
 		return nil, err
 	}
 
+	if err := r.validator.ValidateUpdate(name); err != nil {
+		return nil, err
+	}
+
 	if name != nil && *name != profile.Name {
 		if profile.Name == DefaultProfileName {
 			return nil, ErrDefaultProfileName
@@ -142,15 +153,15 @@ func (r *profileRepository) Delete(id uint, force bool) error {
 	}
 
 	if !force {
-		var commandCount, varCount int64
+		var commandCount, variableCount int64
 		if err := r.db.Model(&models.Command{}).Where("profile_id = ?", id).Count(&commandCount).Error; err != nil {
 			return fmt.Errorf("counting commands for profile id %d: %w", id, err)
 		}
-		if err := r.db.Model(&models.Variable{}).Where("profile_id = ?", id).Count(&varCount).Error; err != nil {
+		if err := r.db.Model(&models.Variable{}).Where("profile_id = ?", id).Count(&variableCount).Error; err != nil {
 			return fmt.Errorf("counting variables for profile id %d: %w", id, err)
 		}
-		if commandCount > 0 || varCount > 0 {
-			return fmt.Errorf("%w: %d command(s), %d variable(s)", ErrProfileHasContent, commandCount, varCount)
+		if commandCount > 0 || variableCount > 0 {
+			return fmt.Errorf("%w: %d command(s), %d variable(s)", ErrProfileHasContent, commandCount, variableCount)
 		}
 	}
 
@@ -180,7 +191,7 @@ func (r *profileRepository) GetState() (*models.ProfileState, error) {
 	return &state, nil
 }
 
-func (r *profileRepository) SetActiveProfiles(commandProfileID, variableProfileID, settingsProfileID *uint) (*models.ProfileState, error) {
+func (r *profileRepository) SetActiveProfile(commandProfileID, variableProfileID, settingsProfileID *uint) (*models.ProfileState, error) {
 	state, err := r.GetState()
 	if err != nil {
 		return nil, err
@@ -196,12 +207,11 @@ func (r *profileRepository) SetActiveProfiles(commandProfileID, variableProfileI
 	if settingsProfileID != nil {
 		updates["active_settings_profile_id"] = *settingsProfileID
 	}
-
 	if len(updates) == 0 {
 		return state, nil
 	}
 
-	if err := r.db.Model(&models.ProfileState{}).Where("id = ? ", state.ID).Updates(updates).Error; err != nil {
+	if err := r.db.Model(&models.ProfileState{}).Where("id = ?", state.ID).Updates(updates).Error; err != nil {
 		return nil, fmt.Errorf("updating active profiles: %w", err)
 	}
 
