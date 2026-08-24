@@ -8,7 +8,7 @@ type Command struct {
 	ID          uint   `gorm:"primaryKey"`
 	Alias       string `gorm:"uniqueIndex:idx_command_alias_profile;not null"`
 	Template    string `gorm:"not null"`
-	Description string
+	Description *string
 
 	Cwd     *string
 	Shell   *string
