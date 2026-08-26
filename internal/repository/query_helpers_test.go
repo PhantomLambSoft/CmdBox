@@ -275,7 +275,16 @@ func TestSearchWithRelevanceEmptyInputsNoop(t *testing.T) {
 
 	t.Run("empty query returns nil without querying", func(t *testing.T) {
 		var dest []searchResult
-		err := searchWithRelevance(db, "search_items", "", []string{"name"}, allowed, "id ASC", 10, "", nil, &dest)
+		err := searchWithRelevance(searchWithRelevanceInput{
+			DB:                   db,
+			Table:                "search_items",
+			Query:                "",
+			Fields:               []string{"name"},
+			AllowedColumns:       allowed,
+			SecondaryOrderColumn: "id ASC",
+			Limit:                10,
+			Dest:                 &dest,
+		})
 		if err != nil {
 			t.Fatalf("searchWithRelevance() error = %v", err)
 		}
@@ -286,7 +295,16 @@ func TestSearchWithRelevanceEmptyInputsNoop(t *testing.T) {
 
 	t.Run("no fields returns nil without querying", func(t *testing.T) {
 		var dest []searchResult
-		err := searchWithRelevance(db, "search_items", "apple", nil, allowed, "id ASC", 10, "", nil, &dest)
+		err := searchWithRelevance(searchWithRelevanceInput{
+			DB:                   db,
+			Table:                "search_items",
+			Query:                "apple",
+			Fields:               nil,
+			AllowedColumns:       allowed,
+			SecondaryOrderColumn: "id ASC",
+			Limit:                10,
+			Dest:                 &dest,
+		})
 		if err != nil {
 			t.Fatalf("searchWithRelevance() error = %v", err)
 		}
@@ -301,7 +319,16 @@ func TestSearchWithRelevanceInvalidField(t *testing.T) {
 	allowed := map[string]bool{"name": true}
 
 	var dest []searchResult
-	err := searchWithRelevance(db, "search_items", "apple", []string{"name", "secret"}, allowed, "id ASC", 10, "", nil, &dest)
+	err := searchWithRelevance(searchWithRelevanceInput{
+		DB:                   db,
+		Table:                "search_items",
+		Query:                "apple",
+		Fields:               []string{"name", "secret"},
+		AllowedColumns:       allowed,
+		SecondaryOrderColumn: "id ASC",
+		Limit:                10,
+		Dest:                 &dest,
+	})
 	if err == nil {
 		t.Fatalf("searchWithRelevance() error = nil, want error")
 	}
@@ -317,7 +344,16 @@ func TestSearchWithRelevanceNoMatches(t *testing.T) {
 	allowed := map[string]bool{"name": true}
 
 	var dest []searchResult
-	err := searchWithRelevance(db, "search_items", "apple", []string{"name"}, allowed, "id ASC", 10, "", nil, &dest)
+	err := searchWithRelevance(searchWithRelevanceInput{
+		DB:                   db,
+		Table:                "search_items",
+		Query:                "apple",
+		Fields:               []string{"name"},
+		AllowedColumns:       allowed,
+		SecondaryOrderColumn: "id ASC",
+		Limit:                10,
+		Dest:                 &dest,
+	})
 	if err != nil {
 		t.Fatalf("searchWithRelevance() error = %v", err)
 	}
@@ -337,7 +373,16 @@ func TestSearchWithRelevanceRanksCloserMatchesHigher(t *testing.T) {
 	allowed := map[string]bool{"name": true}
 
 	var dest []searchResult
-	err := searchWithRelevance(db, "search_items", "apple", []string{"name"}, allowed, "id ASC", 10, "", nil, &dest)
+	err := searchWithRelevance(searchWithRelevanceInput{
+		DB:                   db,
+		Table:                "search_items",
+		Query:                "apple",
+		Fields:               []string{"name"},
+		AllowedColumns:       allowed,
+		SecondaryOrderColumn: "id ASC",
+		Limit:                10,
+		Dest:                 &dest,
+	})
 	if err != nil {
 		t.Fatalf("searchWithRelevance() error = %v", err)
 	}
@@ -368,7 +413,16 @@ func TestSearchWithRelevanceIsCaseInsensitive(t *testing.T) {
 	allowed := map[string]bool{"name": true}
 
 	var dest []searchResult
-	err := searchWithRelevance(db, "search_items", "APPLE", []string{"name"}, allowed, "id ASC", 10, "", nil, &dest)
+	err := searchWithRelevance(searchWithRelevanceInput{
+		DB:                   db,
+		Table:                "search_items",
+		Query:                "APPLE",
+		Fields:               []string{"name"},
+		AllowedColumns:       allowed,
+		SecondaryOrderColumn: "id ASC",
+		Limit:                10,
+		Dest:                 &dest,
+	})
 	if err != nil {
 		t.Fatalf("searchWithRelevance() error = %v", err)
 	}
@@ -388,7 +442,16 @@ func TestSearchWithRelevanceMultipleFieldsUsesBestMatch(t *testing.T) {
 	allowed := map[string]bool{"name": true, "description": true}
 
 	var dest []searchResult
-	err := searchWithRelevance(db, "search_items", "apple", []string{"name", "description"}, allowed, "id ASC", 10, "", nil, &dest)
+	err := searchWithRelevance(searchWithRelevanceInput{
+		DB:                   db,
+		Table:                "search_items",
+		Query:                "apple",
+		Fields:               []string{"name", "description"},
+		AllowedColumns:       allowed,
+		SecondaryOrderColumn: "id ASC",
+		Limit:                10,
+		Dest:                 &dest,
+	})
 	if err != nil {
 		t.Fatalf("searchWithRelevance() error = %v", err)
 	}
@@ -409,7 +472,18 @@ func TestSearchWithRelevanceExtraWhereFiltersResults(t *testing.T) {
 	allowed := map[string]bool{"name": true}
 
 	var dest []searchResult
-	err := searchWithRelevance(db, "search_items", "apple", []string{"name"}, allowed, "id ASC", 10, "profile_id = ?", []any{uint(2)}, &dest)
+	err := searchWithRelevance(searchWithRelevanceInput{
+		DB:                   db,
+		Table:                "search_items",
+		Query:                "apple",
+		Fields:               []string{"name"},
+		AllowedColumns:       allowed,
+		SecondaryOrderColumn: "id ASC",
+		Limit:                10,
+		ExtraWhere:           "profile_id = ?",
+		ExtraArgs:            []any{uint(2)},
+		Dest:                 &dest,
+	})
 	if err != nil {
 		t.Fatalf("searchWithRelevance() error = %v", err)
 	}
@@ -428,7 +502,16 @@ func TestSearchWithRelevanceRespectsLimit(t *testing.T) {
 	allowed := map[string]bool{"name": true}
 
 	var dest []searchResult
-	err := searchWithRelevance(db, "search_items", "apple", []string{"name"}, allowed, "id ASC", 2, "", nil, &dest)
+	err := searchWithRelevance(searchWithRelevanceInput{
+		DB:                   db,
+		Table:                "search_items",
+		Query:                "apple",
+		Fields:               []string{"name"},
+		AllowedColumns:       allowed,
+		SecondaryOrderColumn: "id ASC",
+		Limit:                2,
+		Dest:                 &dest,
+	})
 	if err != nil {
 		t.Fatalf("searchWithRelevance() error = %v", err)
 	}

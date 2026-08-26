@@ -70,44 +70,36 @@ func isUniqueConstraintViolation(err error, table, column string) bool {
 		strings.Contains(msg, table+"."+column)
 }
 
+// searchWithRelevanceInput defines the input structure for executing a full-text search with relevance ranking calculations.
+type searchWithRelevanceInput struct {
+	DB                   *gorm.DB
+	Table                string
+	Query                string
+	Fields               []string
+	AllowedColumns       map[string]bool
+	SecondaryOrderColumn string
+	Limit                int
+	ExtraWhere           string
+	ExtraArgs            []any
+	Dest                 any
+}
+
 // searchWithRelevance performs a full-text search on the specified table, calculating relevance for query ranking.
-// db: Database connection instance.
-// table: Name of the target table for the search.
-// query: The search query string.
-// fields: List of fields to search within the table.
-// allowedColumns: Map of fields allowed for searching to ensure security.
-// secondaryOrderColumn: Column to use for secondary sorting after relevance ranking.
-// limit: Maximum number of results to return.
-// extraWhere: Additional SQL where conditions to apply to the query.
-// extraArgs: Arguments for the extra where conditions.
-// dest: Destination to store the query result.
-// Returns an error if the query execution fails or invalid fields are provided.
-func searchWithRelevance(
-	db *gorm.DB,
-	table string,
-	query string,
-	fields []string,
-	allowedColumns map[string]bool,
-	secondaryOrderColumn string,
-	limit int,
-	extraWhere string,
-	extraArgs []any,
-	dest any,
-) error {
-	if query == "" || len(fields) == 0 {
+func searchWithRelevance(input searchWithRelevanceInput) error {
+	if input.Query == "" || len(input.Fields) == 0 {
 		return nil
 	}
 
-	queryLower := strings.ToLower(query)
+	queryLower := strings.ToLower(input.Query)
 	queryLen := len(queryLower)
 
-	relevanceExprs := make([]string, 0, len(fields))
+	relevanceExprs := make([]string, 0, len(input.Fields))
 	var relevanceArgs []any
-	orClauses := make([]string, 0, len(fields))
+	orClauses := make([]string, 0, len(input.Fields))
 	var whereArgs []any
 
-	for _, field := range fields {
-		if !allowedColumns[field] {
+	for _, field := range input.Fields {
+		if !input.AllowedColumns[field] {
 			return fmt.Errorf("invalid search field: %s", field)
 		}
 
@@ -130,17 +122,17 @@ func searchWithRelevance(
 	args := append([]any{}, relevanceArgs...)
 	args = append(args, whereArgs...)
 
-	if extraWhere != "" {
-		where = "(" + where + ") AND " + extraWhere
-		args = append(args, extraArgs...)
+	if input.ExtraWhere != "" {
+		where = "(" + where + ") AND " + input.ExtraWhere
+		args = append(args, input.ExtraArgs...)
 	}
 
 	sql := fmt.Sprintf(
 		"SELECT %s.*, %s AS relevance FROM %s WHERE %s ORDER BY relevance DESC, %s LIMIT ?",
-		table, relevanceSQL, table, where, secondaryOrderColumn,
+		input.Table, relevanceSQL, input.Table, where, input.SecondaryOrderColumn,
 	)
-	args = append(args, limit)
+	args = append(args, input.Limit)
 
-	return db.Raw(sql, args...).Scan(dest).Error
+	return input.DB.Raw(sql, args...).Scan(input.Dest).Error
 
 }
