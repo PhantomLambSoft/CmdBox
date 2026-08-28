@@ -89,20 +89,6 @@ func NewCommandRepository(db *gorm.DB, profileRepo ProfileRepository, validator 
 	return &commandRepository{db: db, profileRepo: profileRepo, validator: validator}
 }
 
-// resolveProfileID determines the profile ID to use, returning the provided ID if non-nil or the active profile ID otherwise.
-// It queries the active profile state from the profile repository if the input ID is nil.
-// Returns the resolved profile ID or an error if the profile state retrieval fails.
-func (r *commandRepository) resolveProfileID(profileID *uint) (uint, error) {
-	if profileID != nil {
-		return *profileID, nil
-	}
-	state, err := r.profileRepo.GetState()
-	if err != nil {
-		return 0, err
-	}
-	return state.ActiveCommandProfileID, nil
-}
-
 // encodeEnv encodes a map of environment variables into a JSON string and returns a pointer to the encoded string or an error.
 func encodeEnv(env map[string]string) (*string, error) {
 	if len(env) == 0 {
@@ -140,7 +126,7 @@ func (r *commandRepository) Create(input CommandCreateConfig) (*models.Command, 
 		return nil, err
 	}
 
-	profileID, err := r.resolveProfileID(input.ProfileID)
+	profileID, err := resolveProfileID(input.ProfileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +157,7 @@ func (r *commandRepository) Create(input CommandCreateConfig) (*models.Command, 
 }
 
 func (r *commandRepository) GetByAlias(alias string, profileID *uint) (*models.Command, error) {
-	pid, err := r.resolveProfileID(profileID)
+	pid, err := resolveProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +174,7 @@ func (r *commandRepository) GetByAlias(alias string, profileID *uint) (*models.C
 }
 
 func (r *commandRepository) GetByID(id uint, profileID *uint) (*models.Command, error) {
-	pid, err := r.resolveProfileID(profileID)
+	pid, err := resolveProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -370,7 +356,7 @@ func (r *commandRepository) ListAll(orderBy string, limit int, profileID *uint) 
 	if err != nil {
 		return nil, err
 	}
-	pid, err := r.resolveProfileID(profileID)
+	pid, err := resolveProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -400,7 +386,7 @@ func (r *commandRepository) ListByTags(tags []models.Tag, orderBy string, limit 
 	if err != nil {
 		return nil, err
 	}
-	pid, err := r.resolveProfileID(profileID)
+	pid, err := resolveProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -430,7 +416,7 @@ func (r *commandRepository) Search(query string, fields []string, limit int, pro
 	if limit <= 0 {
 		limit = 25
 	}
-	pid, err := r.resolveProfileID(profileID)
+	pid, err := resolveProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}

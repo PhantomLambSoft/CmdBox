@@ -8,6 +8,20 @@ import (
 	"gorm.io/gorm"
 )
 
+// resolveProfileID determines the profile ID to use, returning the provided ID if non-nil or the active
+// profile ID otherwise. It queries the active profile state from the supplied profile repository if the input ID
+// is nil. Returns the resolved profile ID or an error if the profile state retrieval fails.
+func resolveProfileID(profileID *uint, profileRepo ProfileRepository) (uint, error) {
+	if profileID != nil {
+		return *profileID, nil
+	}
+	state, err := profileRepo.GetState()
+	if err != nil {
+		return 0, err
+	}
+	return state.ActiveCommandProfileID, nil
+}
+
 // resolveOrderClause validates and converts an order_by token into an SQL-compliant order clause (ASC/DESC).
 func resolveOrderClause(token string, allowedColumns map[string]bool) (string, error) {
 	token = strings.TrimSpace(token)
