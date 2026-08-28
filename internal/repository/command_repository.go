@@ -176,7 +176,6 @@ func (r *commandRepository) GetByAlias(alias string, profileID *uint) (*models.C
 		return nil, err
 	}
 
-	alias = strings.ToLower(alias)
 	var command models.Command
 	err = r.db.Where("alias = ? AND profile_id = ?", alias, pid).First(&command).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {

@@ -34,6 +34,12 @@ func setupCommandRepositoryTest(t *testing.T) (CommandRepository, ProfileReposit
 		}
 	})
 
+	// SQLite does not enforce foreign keys by default; enable it so FK constraints
+	// declared on the models (e.g. CommandTag.TagID) are actually enforced in tests.
+	if err := db.Exec("PRAGMA foreign_keys = ON").Error; err != nil {
+		t.Fatalf("enable foreign keys: %v", err)
+	}
+
 	if err := db.AutoMigrate(
 		&models.Profile{},
 		&models.ProfileState{},
@@ -277,13 +283,10 @@ func TestCommandRepositoryGetByAlias(t *testing.T) {
 		}
 	})
 
-	t.Run("query is lowercased before lookup", func(t *testing.T) {
-		got, err := repo.GetByAlias("BUILD", nil)
-		if err != nil {
-			t.Fatalf("GetByAlias() error = %v", err)
-		}
-		if got.ID != cmd.ID {
-			t.Fatalf("GetByAlias() id = %d, want %d", got.ID, cmd.ID)
+	t.Run("lookup is case-sensitive", func(t *testing.T) {
+		_, err := repo.GetByAlias("BUILD", nil)
+		if !errors.Is(err, ErrUnknownAlias) {
+			t.Fatalf("GetByAlias(\"BUILD\") error = %v, want ErrUnknownAlias", err)
 		}
 	})
 
@@ -319,11 +322,41 @@ func TestCommandRepositoryGetByAlias(t *testing.T) {
 		}
 	})
 
-	t.Run("known issue: mixed-case alias is unreachable after creation", func(t *testing.T) {
-		t.Skip("documenting known bug, not asserting behavior: Create/Update preserve alias case " +
-			"but GetByAlias always lowercases its lookup value before querying, so a command created " +
-			"with any uppercase letter in its alias (e.g. \"MixedCase\") can never be found again via " +
-			"GetByAlias. See command_repository.go Create() and GetByAlias().")
+	t.Run("preserves and retrieves mixed-case alias exactly", func(t *testing.T) {
+		mixed := mustCreateCommand(t, repo, CommandCreateConfig{Alias: "MixedCase", Template: "echo mixed"})
+
+		got, err := repo.GetByAlias("MixedCase", nil)
+		if err != nil {
+			t.Fatalf("GetByAlias(\"MixedCase\") error = %v", err)
+		}
+		if got.ID != mixed.ID {
+			t.Fatalf("GetByAlias(\"MixedCase\") id = %d, want %d", got.ID, mixed.ID)
+		}
+
+		_, err = repo.GetByAlias("mixedcase", nil)
+		if !errors.Is(err, ErrUnknownAlias) {
+			t.Fatalf("GetByAlias(\"mixedcase\") error = %v, want ErrUnknownAlias", err)
+		}
+	})
+
+	t.Run("aliases differing only by case coexist in the same profile", func(t *testing.T) {
+		capitalized := mustCreateCommand(t, repo, CommandCreateConfig{Alias: "Build", Template: "echo capitalized"})
+
+		lower, err := repo.GetByAlias("build", nil)
+		if err != nil {
+			t.Fatalf("GetByAlias(\"build\") error = %v", err)
+		}
+		if lower.ID != cmd.ID {
+			t.Fatalf("GetByAlias(\"build\") id = %d, want %d", lower.ID, cmd.ID)
+		}
+
+		upper, err := repo.GetByAlias("Build", nil)
+		if err != nil {
+			t.Fatalf("GetByAlias(\"Build\") error = %v", err)
+		}
+		if upper.ID != capitalized.ID {
+			t.Fatalf("GetByAlias(\"Build\") id = %d, want %d", upper.ID, capitalized.ID)
+		}
 	})
 }
 
@@ -1028,13 +1061,10 @@ func TestCommandRepositoryAddTagsPropagatesTransactionError(t *testing.T) {
 	repo, _, _ := setupCommandRepositoryTest(t)
 	cmd := mustCreateCommand(t, repo, CommandCreateConfig{Alias: "tag-fail", Template: "echo hi"})
 
-	// Reference a tag id that was never persisted; if the schema enforces the
-	// foreign key, inserting the link fails and the error should be wrapped.
+	// Reference a tag id that was never persisted; the foreign key on
+	// CommandTag.TagID makes the insert fail, and the error should be wrapped.
 	bogusTag := models.Tag{ID: 999999, Name: "bogus"}
 	_, err := repo.AddTags(cmd, []models.Tag{bogusTag})
-	if err == nil {
-		t.Skip("foreign key on command_tags.tag_id is not enforced by this sqlite configuration; cannot exercise the transaction failure path")
-	}
 	if !errors.Is(err, ErrTagAttachFailed) {
 		t.Fatalf("AddTags() error = %v, want ErrTagAttachFailed", err)
 	}
