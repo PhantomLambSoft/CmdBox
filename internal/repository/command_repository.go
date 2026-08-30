@@ -126,7 +126,7 @@ func (r *commandRepository) Create(input CommandCreateConfig) (*models.Command, 
 		return nil, err
 	}
 
-	profileID, err := resolveProfileID(input.ProfileID, r.profileRepo)
+	profileID, err := resolveCommandProfileID(input.ProfileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -151,13 +151,13 @@ func (r *commandRepository) Create(input CommandCreateConfig) (*models.Command, 
 		if isUniqueConstraintViolation(err, "commands", "alias") {
 			return nil, fmt.Errorf("%w: %q", ErrAliasConflict, alias)
 		}
-		return nil, fmt.Errorf("creating command %q:%w", alias, err)
+		return nil, fmt.Errorf("creating command %q: %w", alias, err)
 	}
 	return command, nil
 }
 
 func (r *commandRepository) GetByAlias(alias string, profileID *uint) (*models.Command, error) {
-	pid, err := resolveProfileID(profileID, r.profileRepo)
+	pid, err := resolveCommandProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -168,13 +168,13 @@ func (r *commandRepository) GetByAlias(alias string, profileID *uint) (*models.C
 		return nil, fmt.Errorf("%w: %q", ErrUnknownAlias, alias)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("looking up alias %q:%w", alias, err)
+		return nil, fmt.Errorf("looking up alias %q: %w", alias, err)
 	}
 	return &command, err
 }
 
 func (r *commandRepository) GetByID(id uint, profileID *uint) (*models.Command, error) {
-	pid, err := resolveProfileID(profileID, r.profileRepo)
+	pid, err := resolveCommandProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (r *commandRepository) GetByID(id uint, profileID *uint) (*models.Command, 
 		return nil, fmt.Errorf("%w: id %d", ErrUnknownCommand, id)
 	}
 	if err != nil {
-		return nil, fmt.Errorf("looking up command %d:%w", id, err)
+		return nil, fmt.Errorf("looking up command %d: %w", id, err)
 	}
 	return &command, nil
 }
@@ -356,7 +356,7 @@ func (r *commandRepository) ListAll(orderBy string, limit int, profileID *uint) 
 	if err != nil {
 		return nil, err
 	}
-	pid, err := resolveProfileID(profileID, r.profileRepo)
+	pid, err := resolveCommandProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -386,7 +386,7 @@ func (r *commandRepository) ListByTags(tags []models.Tag, orderBy string, limit 
 	if err != nil {
 		return nil, err
 	}
-	pid, err := resolveProfileID(profileID, r.profileRepo)
+	pid, err := resolveCommandProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
@@ -416,7 +416,7 @@ func (r *commandRepository) Search(query string, fields []string, limit int, pro
 	if limit <= 0 {
 		limit = 25
 	}
-	pid, err := resolveProfileID(profileID, r.profileRepo)
+	pid, err := resolveCommandProfileID(profileID, r.profileRepo)
 	if err != nil {
 		return nil, err
 	}
