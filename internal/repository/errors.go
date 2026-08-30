@@ -21,6 +21,10 @@ var (
 	ErrUnKnownName     = errors.New("no variable found with that name")
 	ErrUnknownVariable = errors.New("no variable found with that id")
 
+	ErrTagNameConflict = errors.New("a tag with that name already exists")
+	ErrUnknownTagName  = errors.New("no tag found with that name")
+	ErrUnknownTag      = errors.New("no tag found with that id")
+
 	ErrTagAttachFailed        = errors.New("could not attach tags")
 	ErrTagDetachFailed        = errors.New("could not detach tags")
 	ErrNoUpdateTarget         = errors.New("nothing provided for update")
