@@ -12,11 +12,17 @@ var (
 	ErrProfileHasContent    = errors.New("profile still has commands or variables assigned to it")
 
 	// Command errors
-	ErrAliasConflict          = errors.New("a command with that alias already exists")
-	ErrUnknownAlias           = errors.New("no command found with that alias")
-	ErrUnknownCommand         = errors.New("no command found with that id")
-	ErrTagAttachFailed        = errors.New("could not attach tags to command")
-	ErrTagDetachFailed        = errors.New("could not detach tags from command")
-	ErrNoUpdateTarget         = errors.New("no command provided for update")
+	ErrAliasConflict  = errors.New("a command with that alias already exists")
+	ErrUnknownAlias   = errors.New("no command found with that alias")
+	ErrUnknownCommand = errors.New("no command found with that id")
+
+	// Variable errors
+	ErrNameConflict    = errors.New("a variable with that name already exists")
+	ErrUnKnownName     = errors.New("no variable found with that name")
+	ErrUnknownVariable = errors.New("no variable found with that id")
+
+	ErrTagAttachFailed        = errors.New("could not attach tags")
+	ErrTagDetachFailed        = errors.New("could not detach tags")
+	ErrNoUpdateTarget         = errors.New("nothing provided for update")
 	ErrConflictingClearAndSet = errors.New("cannot both set and clear the same field")
 )
