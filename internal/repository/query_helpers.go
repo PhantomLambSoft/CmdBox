@@ -5,13 +5,15 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/PhantomLambSoft/CmdBox/internal/models"
 	"gorm.io/gorm"
 )
 
 // resolveProfileID determines the profile ID to use, returning the provided ID if non-nil or the active
-// profile ID otherwise. It queries the active profile state from the supplied profile repository if the input ID
-// is nil. Returns the resolved profile ID or an error if the profile state retrieval fails.
-func resolveProfileID(profileID *uint, profileRepo ProfileRepository) (uint, error) {
+// profile ID selected by activeField otherwise. It queries the active profile state from the supplied profile
+// repository if the input ID is nil. Returns the resolved profile ID or an error if the profile state retrieval
+// fails.
+func resolveProfileID(profileID *uint, profileRepo ProfileRepository, activeField func(*models.ProfileState) uint) (uint, error) {
 	if profileID != nil {
 		return *profileID, nil
 	}
@@ -19,7 +21,17 @@ func resolveProfileID(profileID *uint, profileRepo ProfileRepository) (uint, err
 	if err != nil {
 		return 0, err
 	}
-	return state.ActiveCommandProfileID, nil
+	return activeField(state), nil
+}
+
+// resolveCommandProfileID resolves a profile ID against the active command profile.
+func resolveCommandProfileID(profileID *uint, profileRepo ProfileRepository) (uint, error) {
+	return resolveProfileID(profileID, profileRepo, func(s *models.ProfileState) uint { return s.ActiveCommandProfileID })
+}
+
+// resolveVariableProfileID resolves a profile ID against the active variable profile.
+func resolveVariableProfileID(profileID *uint, profileRepo ProfileRepository) (uint, error) {
+	return resolveProfileID(profileID, profileRepo, func(s *models.ProfileState) uint { return s.ActiveVariableProfileID })
 }
 
 // resolveOrderClause validates and converts an order_by token into an SQL-compliant order clause (ASC/DESC).
