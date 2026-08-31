@@ -25,6 +25,8 @@ var (
 	ErrUnknownTagName  = errors.New("no tag found with that name")
 	ErrUnknownTag      = errors.New("no tag found with that id")
 
+	ErrUnknownCommandHistory = errors.New("no command history found with that id")
+
 	ErrTagAttachFailed        = errors.New("could not attach tags")
 	ErrTagDetachFailed        = errors.New("could not detach tags")
 	ErrNoUpdateTarget         = errors.New("nothing provided for update")
