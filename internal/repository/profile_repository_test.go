@@ -175,7 +175,7 @@ func TestProfileRepositoryGetByNameAndID(t *testing.T) {
 func TestProfileRepositoryList(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 
-	profiles, err := repo.List()
+	profiles, err := repo.ListAll()
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
 	}
@@ -186,7 +186,7 @@ func TestProfileRepositoryList(t *testing.T) {
 	createProfile(t, db, "zeta", nil)
 	createProfile(t, db, "alpha", nil)
 
-	profiles, err = repo.List()
+	profiles, err = repo.ListAll()
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
 	}
@@ -388,7 +388,7 @@ func TestProfileRepositoryTouchLastUsed(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 	profile := createProfile(t, db, "touch-me", nil)
 
-	if err := repo.TouchLastUsed(profile.ID); err != nil {
+	if err := repo.RecordUse(profile.ID); err != nil {
 		t.Fatalf("TouchLastUsed() error = %v", err)
 	}
 
@@ -403,7 +403,7 @@ func TestProfileRepositoryTouchLastUsed(t *testing.T) {
 		t.Fatalf("TouchLastUsed() LastUsed before CreatedAt")
 	}
 
-	if err := repo.TouchLastUsed(profile.ID + 111111); !errors.Is(err, ErrProfileNotFound) {
+	if err := repo.RecordUse(profile.ID + 111111); !errors.Is(err, ErrProfileNotFound) {
 		t.Fatalf("TouchLastUsed() missing error = %v, want ErrProfileNotFound", err)
 	}
 }

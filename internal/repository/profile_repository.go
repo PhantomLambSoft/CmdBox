@@ -17,10 +17,10 @@ type ProfileRepository interface {
 	Create(name string, description *string) (*models.Profile, error)
 	GetByName(name string) (*models.Profile, error)
 	GetByID(id uint) (*models.Profile, error)
-	List() ([]models.Profile, error)
+	ListAll() ([]models.Profile, error)
 	Update(id uint, name *string, description *string) (*models.Profile, error)
 	Delete(id uint, force bool) error
-	TouchLastUsed(id uint) error
+	RecordUse(id uint) error
 
 	GetState() (*models.ProfileState, error)
 	SetActiveProfile(commandProfileID, variableProfileID, settingsProfileID *uint) (*models.ProfileState, error)
@@ -85,7 +85,7 @@ func (r *profileRepository) GetByID(id uint) (*models.Profile, error) {
 	return &profile, nil
 }
 
-func (r *profileRepository) List() ([]models.Profile, error) {
+func (r *profileRepository) ListAll() ([]models.Profile, error) {
 	var profiles []models.Profile
 	if err := r.db.Order("name").Find(&profiles).Error; err != nil {
 		return nil, fmt.Errorf("listing profiles: %w", err)
@@ -162,7 +162,7 @@ func (r *profileRepository) Delete(id uint, force bool) error {
 	return nil
 }
 
-func (r *profileRepository) TouchLastUsed(id uint) error {
+func (r *profileRepository) RecordUse(id uint) error {
 	result := r.db.Model(&models.Profile{}).Where("id = ?", id).Update("last_used", time.Now())
 	if result.Error != nil {
 		return fmt.Errorf("touching last_used for profile id %d: %w", id, result.Error)
