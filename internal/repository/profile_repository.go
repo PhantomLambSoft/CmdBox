@@ -24,6 +24,10 @@ type ProfileRepository interface {
 
 	GetState() (*models.ProfileState, error)
 	SetActiveProfile(commandProfileID, variableProfileID, settingsProfileID *uint) (*models.ProfileState, error)
+
+	GetActiveCommandProfile() (*models.Profile, error)
+	GetActiveVariableProfile() (*models.Profile, error)
+	GetActiveSettingsProfile() (*models.Profile, error)
 }
 
 type profileRepository struct {
@@ -207,4 +211,28 @@ func (r *profileRepository) SetActiveProfile(commandProfileID, variableProfileID
 	}
 
 	return r.GetState()
+}
+
+func (r *profileRepository) GetActiveCommandProfile() (*models.Profile, error) {
+	var state models.ProfileState
+	if err := r.db.Preload("ActiveCommandProfile").First(&state, 1).Error; err != nil {
+		return nil, fmt.Errorf("loading profile state: %w", err)
+	}
+	return &state.ActiveCommandProfile, nil
+}
+
+func (r *profileRepository) GetActiveVariableProfile() (*models.Profile, error) {
+	var state models.ProfileState
+	if err := r.db.Preload("ActiveVariableProfile").First(&state, 1).Error; err != nil {
+		return nil, fmt.Errorf("loading profile state: %w", err)
+	}
+	return &state.ActiveVariableProfile, nil
+}
+
+func (r *profileRepository) GetActiveSettingsProfile() (*models.Profile, error) {
+	var state models.ProfileState
+	if err := r.db.Preload("ActiveSettingsProfile").First(&state, 1).Error; err != nil {
+		return nil, fmt.Errorf("loading profile state: %w", err)
+	}
+	return &state.ActiveSettingsProfile, nil
 }

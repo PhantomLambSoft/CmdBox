@@ -504,3 +504,82 @@ func TestProfileRepositorySetActiveProfile(t *testing.T) {
 		}
 	})
 }
+
+func TestProfileRepositoryGetActiveProfiles(t *testing.T) {
+	repo, db := setupProfileRepositoryTest(t)
+	commandProfile := createProfile(t, db, "active-command", nil)
+	variableProfile := createProfile(t, db, "active-variable", nil)
+	settingsProfile := createProfile(t, db, "active-settings", nil)
+
+	t.Run("returns the default profile for each slot before any change", func(t *testing.T) {
+		cmd, err := repo.GetActiveCommandProfile()
+		if err != nil {
+			t.Fatalf("GetActiveCommandProfile() error = %v", err)
+		}
+		if cmd.ID != 1 || cmd.Name != DefaultProfileName {
+			t.Fatalf("GetActiveCommandProfile() = %+v, want id=1 name=%q", cmd, DefaultProfileName)
+		}
+
+		v, err := repo.GetActiveVariableProfile()
+		if err != nil {
+			t.Fatalf("GetActiveVariableProfile() error = %v", err)
+		}
+		if v.ID != 1 || v.Name != DefaultProfileName {
+			t.Fatalf("GetActiveVariableProfile() = %+v, want id=1 name=%q", v, DefaultProfileName)
+		}
+
+		s, err := repo.GetActiveSettingsProfile()
+		if err != nil {
+			t.Fatalf("GetActiveSettingsProfile() error = %v", err)
+		}
+		if s.ID != 1 || s.Name != DefaultProfileName {
+			t.Fatalf("GetActiveSettingsProfile() = %+v, want id=1 name=%q", s, DefaultProfileName)
+		}
+	})
+
+	t.Run("reflects changes made via SetActiveProfile", func(t *testing.T) {
+		if _, err := repo.SetActiveProfile(&commandProfile.ID, &variableProfile.ID, &settingsProfile.ID); err != nil {
+			t.Fatalf("SetActiveProfile() error = %v", err)
+		}
+
+		cmd, err := repo.GetActiveCommandProfile()
+		if err != nil {
+			t.Fatalf("GetActiveCommandProfile() error = %v", err)
+		}
+		if cmd.ID != commandProfile.ID || cmd.Name != "active-command" {
+			t.Fatalf("GetActiveCommandProfile() = %+v, want id=%d name=active-command", cmd, commandProfile.ID)
+		}
+
+		v, err := repo.GetActiveVariableProfile()
+		if err != nil {
+			t.Fatalf("GetActiveVariableProfile() error = %v", err)
+		}
+		if v.ID != variableProfile.ID || v.Name != "active-variable" {
+			t.Fatalf("GetActiveVariableProfile() = %+v, want id=%d name=active-variable", v, variableProfile.ID)
+		}
+
+		s, err := repo.GetActiveSettingsProfile()
+		if err != nil {
+			t.Fatalf("GetActiveSettingsProfile() error = %v", err)
+		}
+		if s.ID != settingsProfile.ID || s.Name != "active-settings" {
+			t.Fatalf("GetActiveSettingsProfile() = %+v, want id=%d name=active-settings", s, settingsProfile.ID)
+		}
+	})
+
+	t.Run("wraps the error when profile state is missing", func(t *testing.T) {
+		if err := db.Delete(&models.ProfileState{}, 1).Error; err != nil {
+			t.Fatalf("delete state row error = %v", err)
+		}
+
+		if _, err := repo.GetActiveCommandProfile(); err == nil || !strings.Contains(err.Error(), "loading profile state") {
+			t.Fatalf("GetActiveCommandProfile() error = %v, want wrapped loading error", err)
+		}
+		if _, err := repo.GetActiveVariableProfile(); err == nil || !strings.Contains(err.Error(), "loading profile state") {
+			t.Fatalf("GetActiveVariableProfile() error = %v, want wrapped loading error", err)
+		}
+		if _, err := repo.GetActiveSettingsProfile(); err == nil || !strings.Contains(err.Error(), "loading profile state") {
+			t.Fatalf("GetActiveSettingsProfile() error = %v, want wrapped loading error", err)
+		}
+	})
+}
