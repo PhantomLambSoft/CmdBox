@@ -281,6 +281,43 @@ func TestVariableRepositoryGetByName(t *testing.T) {
 			t.Fatalf("GetByName(active) id = %d, want %d", got.ID, v.ID)
 		}
 	})
+
+	t.Run("preserves and retrieves mixed-case name exactly", func(t *testing.T) {
+		mixed := mustCreateVariable(t, repo, VariableCreateConfig{Name: "MixedCase", Value: "x"})
+
+		got, err := repo.GetByName("MixedCase", nil)
+		if err != nil {
+			t.Fatalf("GetByName(\"MixedCase\") error = %v", err)
+		}
+		if got.ID != mixed.ID {
+			t.Fatalf("GetByName(\"MixedCase\") id = %d, want %d", got.ID, mixed.ID)
+		}
+
+		_, err = repo.GetByName("mixedcase", nil)
+		if !errors.Is(err, ErrUnKnownName) {
+			t.Fatalf("GetByName(\"mixedcase\") error = %v, want ErrUnKnownName", err)
+		}
+	})
+
+	t.Run("names differing only by case coexist in the same profile", func(t *testing.T) {
+		capitalized := mustCreateVariable(t, repo, VariableCreateConfig{Name: "Greeting", Value: "x"})
+
+		lower, err := repo.GetByName("greeting", nil)
+		if err != nil {
+			t.Fatalf("GetByName(\"greeting\") error = %v", err)
+		}
+		if lower.ID != v.ID {
+			t.Fatalf("GetByName(\"greeting\") id = %d, want %d", lower.ID, v.ID)
+		}
+
+		upper, err := repo.GetByName("Greeting", nil)
+		if err != nil {
+			t.Fatalf("GetByName(\"Greeting\") error = %v", err)
+		}
+		if upper.ID != capitalized.ID {
+			t.Fatalf("GetByName(\"Greeting\") id = %d, want %d", upper.ID, capitalized.ID)
+		}
+	})
 }
 
 // --- GetByID ---
