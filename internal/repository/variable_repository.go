@@ -28,8 +28,9 @@ type VariableCreateConfig struct {
 }
 
 type VariableUpdateConfig struct {
-	Name  *string
-	Value *string
+	Name      *string
+	Value     *string
+	ProfileID *uint
 }
 
 type VariableRepository interface {
@@ -153,6 +154,9 @@ func (r *variableRepository) Update(variable *models.Variable, input VariableUpd
 	}
 	if input.Value != nil {
 		variable.Value = mergedValue
+	}
+	if input.ProfileID != nil {
+		variable.ProfileID = *input.ProfileID
 	}
 
 	if err := r.db.Save(variable).Error; err != nil {

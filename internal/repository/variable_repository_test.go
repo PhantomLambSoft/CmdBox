@@ -463,6 +463,64 @@ func TestVariableRepositoryUpdateFields(t *testing.T) {
 			t.Fatalf("Name = %q, want %q", updated.Name, "cross-profile")
 		}
 	})
+
+	t.Run("moves variable to a new profile", func(t *testing.T) {
+		origin := createTestProfile(t, db, "move-origin")
+		target := createTestProfile(t, db, "move-target")
+		v, err := repo.Create(VariableCreateConfig{Name: "movable", Value: "x", ProfileID: &origin.ID})
+		if err != nil {
+			t.Fatalf("Create() error = %v", err)
+		}
+
+		updated, err := repo.Update(v, VariableUpdateConfig{ProfileID: &target.ID})
+		if err != nil {
+			t.Fatalf("Update() error = %v", err)
+		}
+		if updated.ProfileID != target.ID {
+			t.Fatalf("ProfileID = %d, want %d", updated.ProfileID, target.ID)
+		}
+
+		if _, err := repo.GetByID(v.ID, &origin.ID); !errors.Is(err, ErrUnknownVariable) {
+			t.Fatalf("GetByID(origin) error = %v, want ErrUnknownVariable", err)
+		}
+		persisted, err := repo.GetByID(v.ID, &target.ID)
+		if err != nil {
+			t.Fatalf("GetByID(target) error = %v", err)
+		}
+		if persisted.Name != "movable" {
+			t.Fatalf("persisted name = %q, want %q", persisted.Name, "movable")
+		}
+	})
+
+	t.Run("nil ProfileID leaves profile unchanged", func(t *testing.T) {
+		origin := createTestProfile(t, db, "stay-origin")
+		v, err := repo.Create(VariableCreateConfig{Name: "stationary", Value: "x", ProfileID: &origin.ID})
+		if err != nil {
+			t.Fatalf("Create() error = %v", err)
+		}
+
+		newValue := "y"
+		updated, err := repo.Update(v, VariableUpdateConfig{Value: &newValue})
+		if err != nil {
+			t.Fatalf("Update() error = %v", err)
+		}
+		if updated.ProfileID != origin.ID {
+			t.Fatalf("ProfileID = %d, want unchanged %d", updated.ProfileID, origin.ID)
+		}
+	})
+
+	t.Run("rejects move that conflicts with existing name in target profile", func(t *testing.T) {
+		target := createTestProfile(t, db, "conflict-target")
+		if _, err := repo.Create(VariableCreateConfig{Name: "taken-in-target", Value: "x", ProfileID: &target.ID}); err != nil {
+			t.Fatalf("Create() error = %v", err)
+		}
+		v := mustCreateVariable(t, repo, VariableCreateConfig{Name: "taken-in-target", Value: "y"})
+
+		_, err := repo.Update(v, VariableUpdateConfig{ProfileID: &target.ID})
+		if !errors.Is(err, ErrNameConflict) {
+			t.Fatalf("Update() error = %v, want ErrNameConflict", err)
+		}
+	})
 }
 
 // --- Delete ---
