@@ -833,6 +833,115 @@ func TestVariableRepositorySearch(t *testing.T) {
 	})
 }
 
+// --- WithTx ---
+
+func TestVariableRepositoryWithTx(t *testing.T) {
+	t.Run("operations persist after commit", func(t *testing.T) {
+		repo, _, db := setupVariableRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		if _, err := txRepo.Create(VariableCreateConfig{Name: "tx-commit", Value: "hi"}); err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+		if err := tx.Commit().Error; err != nil {
+			t.Fatalf("commit tx: %v", err)
+		}
+
+		if _, err := repo.GetByName("tx-commit", nil); err != nil {
+			t.Fatalf("GetByName() after commit error = %v", err)
+		}
+	})
+
+	t.Run("operations discarded on rollback", func(t *testing.T) {
+		repo, _, db := setupVariableRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		if _, err := txRepo.Create(VariableCreateConfig{Name: "tx-rollback", Value: "hi"}); err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+		if err := tx.Rollback().Error; err != nil {
+			t.Fatalf("rollback tx: %v", err)
+		}
+
+		if _, err := repo.GetByName("tx-rollback", nil); !errors.Is(err, ErrUnKnownName) {
+			t.Fatalf("GetByName() after rollback error = %v, want ErrUnKnownName", err)
+		}
+	})
+
+	t.Run("preserves validator", func(t *testing.T) {
+		repo, _, db := setupVariableRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		_, err := txRepo.Create(VariableCreateConfig{Name: "help", Value: "hi"})
+		if !errors.Is(err, validate.ErrValidation) {
+			t.Fatalf("Create() within tx error = %v, want ErrValidation", err)
+		}
+		if err := tx.Rollback().Error; err != nil {
+			t.Fatalf("rollback tx: %v", err)
+		}
+	})
+
+	t.Run("preserves profile resolution", func(t *testing.T) {
+		repo, _, db := setupVariableRepositoryTest(t)
+		other := createTestProfile(t, db, "tx-var-profile")
+
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		v, err := txRepo.Create(VariableCreateConfig{Name: "tx-scoped", Value: "hi", ProfileID: &other.ID})
+		if err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+		if v.ProfileID != other.ID {
+			t.Fatalf("ProfileID = %d, want %d", v.ProfileID, other.ID)
+		}
+		if err := tx.Commit().Error; err != nil {
+			t.Fatalf("commit tx: %v", err)
+		}
+	})
+
+	t.Run("reads within the transaction see uncommitted writes", func(t *testing.T) {
+		repo, _, db := setupVariableRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		created, err := txRepo.Create(VariableCreateConfig{Name: "tx-visible", Value: "hi"})
+		if err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+
+		got, err := txRepo.GetByID(created.ID, nil)
+		if err != nil {
+			t.Fatalf("GetByID() within tx error = %v", err)
+		}
+		if got.Name != "tx-visible" {
+			t.Fatalf("GetByID() within tx = %+v, want name=tx-visible", got)
+		}
+
+		if err := tx.Rollback().Error; err != nil {
+			t.Fatalf("rollback tx: %v", err)
+		}
+	})
+}
+
 // --- misc ---
 
 func TestNewVariableRepositoryDefaultValidator(t *testing.T) {

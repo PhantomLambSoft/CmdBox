@@ -33,6 +33,8 @@ type VariableUpdateConfig struct {
 }
 
 type VariableRepository interface {
+	WithTx(tx *gorm.DB) *variableRepository
+
 	Create(input VariableCreateConfig) (*models.Variable, error)
 	GetByName(name string, profileID *uint) (*models.Variable, error)
 	GetByID(id uint, profileID *uint) (*models.Variable, error)
@@ -58,6 +60,14 @@ func NewVariableRepository(db *gorm.DB, profileRepo ProfileRepository, validator
 		validator = validate.NewVariableValidator(nil)
 	}
 	return &variableRepository{db: db, profileRepo: profileRepo, validator: validator}
+}
+
+func (r *variableRepository) WithTx(tx *gorm.DB) *variableRepository {
+	return &variableRepository{
+		db:          tx,
+		profileRepo: r.profileRepo.WithTx(tx),
+		validator:   r.validator,
+	}
 }
 
 func (r *variableRepository) Create(input VariableCreateConfig) (*models.Variable, error) {
