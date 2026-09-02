@@ -621,6 +621,57 @@ func TestCommandRepositoryUpdateFields(t *testing.T) {
 			t.Fatalf("Alias = %q, want %q", updated.Alias, "cross-profile")
 		}
 	})
+
+	t.Run("moves command to a different profile", func(t *testing.T) {
+		cmd := mustCreateCommand(t, repo, CommandCreateConfig{Alias: "move-me", Template: "echo hi"})
+		target := createTestProfile(t, db, "move-target")
+
+		updated, err := repo.Update(cmd, CommandUpdateConfig{ProfileID: &target.ID})
+		if err != nil {
+			t.Fatalf("Update() error = %v", err)
+		}
+		if updated.ProfileID != target.ID {
+			t.Fatalf("ProfileID = %d, want %d", updated.ProfileID, target.ID)
+		}
+
+		persisted, err := repo.GetByID(cmd.ID, &target.ID)
+		if err != nil {
+			t.Fatalf("GetByID(new profile) error = %v", err)
+		}
+		if persisted.ProfileID != target.ID {
+			t.Fatalf("persisted ProfileID = %d, want %d", persisted.ProfileID, target.ID)
+		}
+
+		if _, err := repo.GetByID(cmd.ID, nil); !errors.Is(err, ErrUnknownCommand) {
+			t.Fatalf("GetByID(old profile) error = %v, want ErrUnknownCommand", err)
+		}
+	})
+
+	t.Run("moving into profile with conflicting alias returns ErrAliasConflict", func(t *testing.T) {
+		other := createTestProfile(t, db, "move-conflict-target")
+		if _, err := repo.Create(CommandCreateConfig{Alias: "dup-move", Template: "echo other", ProfileID: &other.ID}); err != nil {
+			t.Fatalf("Create() error = %v", err)
+		}
+		cmd := mustCreateCommand(t, repo, CommandCreateConfig{Alias: "dup-move", Template: "echo hi"})
+
+		_, err := repo.Update(cmd, CommandUpdateConfig{ProfileID: &other.ID})
+		if !errors.Is(err, ErrAliasConflict) {
+			t.Fatalf("Update() error = %v, want ErrAliasConflict", err)
+		}
+	})
+
+	t.Run("leaves profile unchanged when ProfileID is nil", func(t *testing.T) {
+		cmd := mustCreateCommand(t, repo, CommandCreateConfig{Alias: "profile-noop", Template: "echo hi"})
+		originalProfileID := cmd.ProfileID
+
+		updated, err := repo.Update(cmd, CommandUpdateConfig{})
+		if err != nil {
+			t.Fatalf("Update() error = %v", err)
+		}
+		if updated.ProfileID != originalProfileID {
+			t.Fatalf("ProfileID = %d, want unchanged %d", updated.ProfileID, originalProfileID)
+		}
+	})
 }
 
 // --- Delete ---
@@ -1007,6 +1058,97 @@ func TestCommandRepositorySearch(t *testing.T) {
 		}
 		if len(commands) != 0 {
 			t.Fatalf("commands = %+v, want empty", commands)
+		}
+	})
+}
+
+// --- WithTx ---
+
+func TestCommandRepositoryWithTx(t *testing.T) {
+	t.Run("operations persist after commit", func(t *testing.T) {
+		repo, _, db := setupCommandRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		if _, err := txRepo.Create(CommandCreateConfig{Alias: "tx-commit", Template: "echo hi"}); err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+		if err := tx.Commit().Error; err != nil {
+			t.Fatalf("commit tx: %v", err)
+		}
+
+		if _, err := repo.GetByAlias("tx-commit", nil); err != nil {
+			t.Fatalf("GetByAlias() after commit error = %v", err)
+		}
+	})
+
+	t.Run("operations discarded on rollback", func(t *testing.T) {
+		repo, _, db := setupCommandRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		if _, err := txRepo.Create(CommandCreateConfig{Alias: "tx-rollback", Template: "echo hi"}); err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+		if err := tx.Rollback().Error; err != nil {
+			t.Fatalf("rollback tx: %v", err)
+		}
+
+		if _, err := repo.GetByAlias("tx-rollback", nil); !errors.Is(err, ErrUnknownAlias) {
+			t.Fatalf("GetByAlias() after rollback error = %v, want ErrUnknownAlias", err)
+		}
+	})
+
+	t.Run("preserves validator", func(t *testing.T) {
+		repo, _, db := setupCommandRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		_, err := txRepo.Create(CommandCreateConfig{Alias: "help", Template: "echo hi"})
+		if !errors.Is(err, validate.ErrValidation) {
+			t.Fatalf("Create() within tx error = %v, want ErrValidation", err)
+		}
+		if err := tx.Rollback().Error; err != nil {
+			t.Fatalf("rollback tx: %v", err)
+		}
+	})
+
+	t.Run("preserves profile resolution", func(t *testing.T) {
+		repo, _, db := setupCommandRepositoryTest(t)
+		other := createTestProfile(t, db, "tx-profile")
+
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		cmd, err := txRepo.Create(CommandCreateConfig{Alias: "tx-scoped", Template: "echo hi", ProfileID: &other.ID})
+		if err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+		if cmd.ProfileID != other.ID {
+			t.Fatalf("ProfileID = %d, want %d", cmd.ProfileID, other.ID)
+		}
+		if err := tx.Commit().Error; err != nil {
+			t.Fatalf("commit tx: %v", err)
+		}
+
+		got, err := repo.GetByAlias("tx-scoped", &other.ID)
+		if err != nil {
+			t.Fatalf("GetByAlias() error = %v", err)
+		}
+		if got.ID != cmd.ID {
+			t.Fatalf("GetByAlias() id = %d, want %d", got.ID, cmd.ID)
 		}
 	})
 }

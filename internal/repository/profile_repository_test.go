@@ -583,3 +583,90 @@ func TestProfileRepositoryGetActiveProfiles(t *testing.T) {
 		}
 	})
 }
+
+// --- WithTx ---
+
+func TestProfileRepositoryWithTx(t *testing.T) {
+	t.Run("operations persist after commit", func(t *testing.T) {
+		repo, db := setupProfileRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		if _, err := txRepo.Create("tx-commit", nil); err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+		if err := tx.Commit().Error; err != nil {
+			t.Fatalf("commit tx: %v", err)
+		}
+
+		if _, err := repo.GetByName("tx-commit"); err != nil {
+			t.Fatalf("GetByName() after commit error = %v", err)
+		}
+	})
+
+	t.Run("operations discarded on rollback", func(t *testing.T) {
+		repo, db := setupProfileRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		if _, err := txRepo.Create("tx-rollback", nil); err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+		if err := tx.Rollback().Error; err != nil {
+			t.Fatalf("rollback tx: %v", err)
+		}
+
+		if _, err := repo.GetByName("tx-rollback"); !errors.Is(err, ErrProfileNotFound) {
+			t.Fatalf("GetByName() after rollback error = %v, want ErrProfileNotFound", err)
+		}
+	})
+
+	t.Run("preserves validator", func(t *testing.T) {
+		repo, db := setupProfileRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		_, err := txRepo.Create("has space", nil)
+		if err == nil {
+			t.Fatalf("Create() within tx error = nil, want validation error")
+		}
+		if err := tx.Rollback().Error; err != nil {
+			t.Fatalf("rollback tx: %v", err)
+		}
+	})
+
+	t.Run("reads within the transaction see uncommitted writes", func(t *testing.T) {
+		repo, db := setupProfileRepositoryTest(t)
+		tx := db.Begin()
+		if tx.Error != nil {
+			t.Fatalf("begin tx: %v", tx.Error)
+		}
+		txRepo := repo.WithTx(tx)
+
+		created, err := txRepo.Create("tx-visible", nil)
+		if err != nil {
+			t.Fatalf("Create() within tx error = %v", err)
+		}
+
+		got, err := txRepo.GetByID(created.ID)
+		if err != nil {
+			t.Fatalf("GetByID() within tx error = %v", err)
+		}
+		if got.Name != "tx-visible" {
+			t.Fatalf("GetByID() within tx = %+v, want name=tx-visible", got)
+		}
+
+		if err := tx.Rollback().Error; err != nil {
+			t.Fatalf("rollback tx: %v", err)
+		}
+	})
+}

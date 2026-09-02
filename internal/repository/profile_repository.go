@@ -14,6 +14,8 @@ import (
 const DefaultProfileName = "default"
 
 type ProfileRepository interface {
+	WithTx(tx *gorm.DB) ProfileRepository
+
 	Create(name string, description *string) (*models.Profile, error)
 	GetByName(name string) (*models.Profile, error)
 	GetByID(id uint) (*models.Profile, error)
@@ -40,6 +42,11 @@ func NewProfileRepository(db *gorm.DB, validator *validate.ProfileValidator) Pro
 		validator = validate.NewProfileValidator(nil)
 	}
 	return &profileRepository{db: db, validator: validator}
+}
+
+// WithTx creates a new instance of profileRepository using the provided database transaction.
+func (r *profileRepository) WithTx(tx *gorm.DB) ProfileRepository {
+	return &profileRepository{db: tx, validator: r.validator}
 }
 
 func (r *profileRepository) Create(name string, description *string) (*models.Profile, error) {

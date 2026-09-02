@@ -56,9 +56,12 @@ type CommandUpdateConfig struct {
 
 	Timeout      *int
 	ClearTimeout bool
+	ProfileID    *uint
 }
 
 type CommandRepository interface {
+	WithTx(tx *gorm.DB) *commandRepository
+
 	Create(input CommandCreateConfig) (*models.Command, error)
 	GetByAlias(alias string, profileID *uint) (*models.Command, error)
 	GetByID(id uint, profileID *uint) (*models.Command, error)
@@ -118,6 +121,15 @@ func validateNoClearAndSet(input CommandUpdateConfig) error {
 		return fmt.Errorf("%w: env", ErrConflictingClearAndSet)
 	}
 	return nil
+}
+
+// WithTx creates a new instance of commandRepository using the provided database transaction.
+func (r *commandRepository) WithTx(tx *gorm.DB) *commandRepository {
+	return &commandRepository{
+		db:          tx,
+		validator:   r.validator,
+		profileRepo: r.profileRepo.WithTx(tx),
+	}
 }
 
 func (r *commandRepository) Create(input CommandCreateConfig) (*models.Command, error) {
@@ -219,6 +231,9 @@ func (r *commandRepository) Update(command *models.Command, input CommandUpdateC
 	}
 	if input.Description != nil {
 		command.Description = input.Description
+	}
+	if input.ProfileID != nil {
+		command.ProfileID = *input.ProfileID
 	}
 
 	switch {
