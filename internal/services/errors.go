@@ -9,6 +9,7 @@ import (
 var (
 	ErrEmptyFieldSelection = errors.New("no fields specified")
 	ErrUnknownHistoryIndex = errors.New("no history at this index")
+	ErrNoTargetProfile     = errors.New("no target profile specified")
 	ErrImportCycle         = errors.New("import cycle detected")
 	ErrImportFile          = errors.New("import file not found")
 )
