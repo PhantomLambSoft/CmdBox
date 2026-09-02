@@ -44,15 +44,15 @@ type CommandService interface {
 	CreateCommand(input CreateCommandConfig) (*models.Command, error)
 	UpdateCommand(alias string, profileName *string, input UpdateCommandConfig) (*models.Command, error)
 	DeleteCommand(alias string, profileName *string) error
-	AddTags(alias string, tags []string, profileName *string) (repository.TagAttachResult, error)
-	RemoveTags(alias string, tags []string, profileName *string) (repository.TagDetachResult, error)
+	AddTags(alias string, tagNames []string, profileName *string) (repository.TagAttachResult, error)
+	RemoveTags(alias string, tagNames []string, profileName *string) (repository.TagDetachResult, error)
 	GetCommand(alias string, profileName *string) (*models.Command, error)
-	GetCommandOrNone(alias string, profileName *string) (*models.Command, error)
+	GetCommandOrNil(alias string, profileName *string) (*models.Command, error)
 	GetCommandByID(id uint, profileName *string) (*models.Command, error)
-	ListCommands(orderBy string, tags []string, limit *int, profileName *string) ([]models.Command, error)
+	ListCommands(orderBy string, tagNames []string, limit *int, profileName *string) ([]models.Command, error)
 	SearchCommands(query string, fields []string, limit *int, profileName *string) ([]models.Command, error)
-	MoveCommand(alias string, targetProfile, profileName *string) (*models.Command, error)
-	CopyCommand(alias string, targetProfile, newAlias, profileName *string) (*models.Command, error)
+	MoveCommand(alias string, targetProfileName, profileName *string) (*models.Command, error)
+	CopyCommand(alias string, targetProfileName, newAlias, profileName *string) (*models.Command, error)
 }
 
 type commandService struct {
@@ -172,32 +172,32 @@ func (s *commandService) DeleteCommand(alias string, profileName *string) error 
 	return nil
 }
 
-func (s *commandService) AddTags(alias string, tags []string, profileName *string) (repository.TagAttachResult, error) {
+func (s *commandService) AddTags(alias string, tagNames []string, profileName *string) (repository.TagAttachResult, error) {
 	cmd, err := s.GetCommand(alias, profileName)
 	if err != nil {
 		return repository.TagAttachResult{}, fmt.Errorf("getting command: %w", err)
 	}
 
-	actualTags, err := s.getTags(tags)
+	tags, err := s.getTags(tagNames)
 	if err != nil {
 		return repository.TagAttachResult{}, fmt.Errorf("getting tags: %w", err)
 	}
 
-	return s.commandRepo.AddTags(cmd, actualTags)
+	return s.commandRepo.AddTags(cmd, tags)
 }
 
-func (s *commandService) RemoveTags(alias string, tags []string, profileName *string) (repository.TagDetachResult, error) {
+func (s *commandService) RemoveTags(alias string, tagNames []string, profileName *string) (repository.TagDetachResult, error) {
 	cmd, err := s.GetCommand(alias, profileName)
 	if err != nil {
 		return repository.TagDetachResult{}, fmt.Errorf("getting command: %w", err)
 	}
 
-	actualTags, err := s.getTags(tags)
+	tags, err := s.getTags(tagNames)
 	if err != nil {
 		return repository.TagDetachResult{}, fmt.Errorf("getting tags: %w", err)
 	}
 
-	return s.commandRepo.RemoveTags(cmd, actualTags)
+	return s.commandRepo.RemoveTags(cmd, tags)
 }
 
 func (s *commandService) GetCommand(alias string, profileName *string) (*models.Command, error) {
@@ -209,7 +209,7 @@ func (s *commandService) GetCommand(alias string, profileName *string) (*models.
 	return s.commandRepo.GetByAlias(alias, &profile.ID)
 }
 
-func (s *commandService) GetCommandOrNone(alias string, profileName *string) (*models.Command, error) {
+func (s *commandService) GetCommandOrNil(alias string, profileName *string) (*models.Command, error) {
 	cmd, err := s.GetCommand(alias, profileName)
 	if err != nil {
 		if errors.Is(err, repository.ErrUnknownAlias) {
@@ -230,7 +230,7 @@ func (s *commandService) GetCommandByID(id uint, profileName *string) (*models.C
 
 func (s *commandService) ListCommands(
 	orderBy string,
-	tags []string,
+	tagNames []string,
 	limit *int,
 	profileName *string,
 ) ([]models.Command, error) {
@@ -244,12 +244,12 @@ func (s *commandService) ListCommands(
 		resolvedLimit = *limit
 	}
 
-	if len(tags) > 0 {
-		actualTags, err := s.getTags(tags)
+	if len(tagNames) > 0 {
+		tags, err := s.getTags(tagNames)
 		if err != nil {
 			return nil, fmt.Errorf("getting tags: %w", err)
 		}
-		return s.commandRepo.ListByTags(actualTags, orderBy, resolvedLimit, &profile.ID)
+		return s.commandRepo.ListByTags(tags, orderBy, resolvedLimit, &profile.ID)
 	}
 	return s.commandRepo.ListAll(orderBy, resolvedLimit, &profile.ID)
 }
@@ -360,19 +360,8 @@ func (s *commandService) CopyCommand(
 }
 
 // getTags retrieves a list of tags by their names using the tag repository and returns them or an error if any occurs.
-func (s *commandService) getTags(tags []string) ([]models.Tag, error) {
-	if len(tags) <= 0 {
-		return nil, nil
-	}
-	var retTags []models.Tag
-	for _, name := range tags {
-		t, err := s.tagRepo.GetByName(name)
-		if err != nil {
-			return nil, fmt.Errorf("getting tag: %w", err)
-		}
-		retTags = append(retTags, *t)
-	}
-	return retTags, nil
+func (s *commandService) getTags(tagNames []string) ([]models.Tag, error) {
+	return getTags(tagNames, s.tagRepo)
 }
 
 // parseEnv parses a JSON-encoded string into a map of environment variables and returns it or an error if parsing fails.

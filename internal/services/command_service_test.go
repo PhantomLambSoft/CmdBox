@@ -426,7 +426,7 @@ func TestCommandServiceGetCommand(t *testing.T) {
 func TestCommandServiceGetCommandOrNone(t *testing.T) {
 	t.Run("returns nil, nil when alias missing", func(t *testing.T) {
 		svc, _, _, _, _ := setupCommandServiceTest(t)
-		cmd, err := svc.GetCommandOrNone("missing", nil)
+		cmd, err := svc.GetCommandOrNil("missing", nil)
 		if err != nil {
 			t.Fatalf("GetCommandOrNone() error = %v, want nil", err)
 		}
@@ -439,7 +439,7 @@ func TestCommandServiceGetCommandOrNone(t *testing.T) {
 		svc, _, _, _, _ := setupCommandServiceTest(t)
 		created := mustCreateServiceCommand(t, svc, CreateCommandConfig{Alias: "build", Template: "echo hi"})
 
-		cmd, err := svc.GetCommandOrNone("build", nil)
+		cmd, err := svc.GetCommandOrNil("build", nil)
 		if err != nil {
 			t.Fatalf("GetCommandOrNone() error = %v", err)
 		}
@@ -450,7 +450,7 @@ func TestCommandServiceGetCommandOrNone(t *testing.T) {
 
 	t.Run("does not swallow non-alias errors", func(t *testing.T) {
 		svc, _, _, _, _ := setupCommandServiceTest(t)
-		_, err := svc.GetCommandOrNone("build", strPtr("nope"))
+		_, err := svc.GetCommandOrNil("build", strPtr("nope"))
 		if err == nil {
 			t.Fatalf("GetCommandOrNone() error = nil, want error resolving profile")
 		}
