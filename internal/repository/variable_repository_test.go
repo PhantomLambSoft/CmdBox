@@ -224,7 +224,18 @@ func TestVariableRepositoryCreate(t *testing.T) {
 // pulling in every ProfileRepository test helper.
 func profileRepoSetActive(db *gorm.DB, commandProfileID, variableProfileID, settingsProfileID *uint) (*models.ProfileState, error) {
 	profileRepo := NewProfileRepository(db, validate.NewProfileValidator(nil))
-	return profileRepo.SetActiveProfile(commandProfileID, variableProfileID, settingsProfileID)
+
+	config := SetProfileConfig{}
+	if commandProfileID != nil {
+		config.CommandProfile = &models.Profile{ID: *commandProfileID}
+	}
+	if variableProfileID != nil {
+		config.VariableProfile = &models.Profile{ID: *variableProfileID}
+	}
+	if settingsProfileID != nil {
+		config.SettingsProfile = &models.Profile{ID: *settingsProfileID}
+	}
+	return profileRepo.SetActiveProfile(config)
 }
 
 // --- GetByName ---

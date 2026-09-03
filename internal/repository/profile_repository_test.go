@@ -245,6 +245,79 @@ func TestProfileRepositoryList(t *testing.T) {
 	})
 }
 
+func TestProfileRepositorySearch(t *testing.T) {
+	repo, db := setupProfileRepositoryTest(t)
+	createProfile(t, db, "apple", strPtr("a fruit"))
+	createProfile(t, db, "green-apple", strPtr("a green fruit"))
+	createProfile(t, db, "banana", strPtr("a yellow fruit"))
+
+	t.Run("uses default fields when none provided", func(t *testing.T) {
+		profiles, err := repo.Search("apple", nil, 0)
+		if err != nil {
+			t.Fatalf("Search() error = %v", err)
+		}
+		if len(profiles) != 2 {
+			t.Fatalf("len(profiles) = %d, want 2; profiles = %+v", len(profiles), profiles)
+		}
+		if profiles[0].Name != "apple" {
+			t.Fatalf("profiles[0].Name = %q, want %q (closest match first)", profiles[0].Name, "apple")
+		}
+	})
+
+	t.Run("matches against description field by default", func(t *testing.T) {
+		profiles, err := repo.Search("yellow", nil, 0)
+		if err != nil {
+			t.Fatalf("Search() error = %v", err)
+		}
+		if len(profiles) != 1 || profiles[0].Name != "banana" {
+			t.Fatalf("profiles = %+v, want only [banana]", profiles)
+		}
+	})
+
+	t.Run("respects explicit fields", func(t *testing.T) {
+		profiles, err := repo.Search("apple", []string{"name"}, 0)
+		if err != nil {
+			t.Fatalf("Search() error = %v", err)
+		}
+		wantNames := map[string]bool{"apple": true, "green-apple": true}
+		if len(profiles) != 2 {
+			t.Fatalf("len(profiles) = %d, want 2; profiles = %+v", len(profiles), profiles)
+		}
+		for _, p := range profiles {
+			if !wantNames[p.Name] {
+				t.Fatalf("unexpected profile in results: %q", p.Name)
+			}
+		}
+	})
+
+	t.Run("respects limit", func(t *testing.T) {
+		profiles, err := repo.Search("apple", nil, 1)
+		if err != nil {
+			t.Fatalf("Search() error = %v", err)
+		}
+		if len(profiles) != 1 {
+			t.Fatalf("len(profiles) = %d, want 1", len(profiles))
+		}
+	})
+
+	t.Run("invalid explicit field returns error", func(t *testing.T) {
+		_, err := repo.Search("apple", []string{"bogus"}, 0)
+		if err == nil {
+			t.Fatalf("Search() error = nil, want error")
+		}
+	})
+
+	t.Run("no matches returns empty slice", func(t *testing.T) {
+		profiles, err := repo.Search("nonexistent", nil, 0)
+		if err != nil {
+			t.Fatalf("Search() error = %v", err)
+		}
+		if len(profiles) != 0 {
+			t.Fatalf("profiles = %+v, want empty", profiles)
+		}
+	})
+}
+
 func TestProfileRepositoryUpdate(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 	target := createProfile(t, db, "dev", strPtr("old description"))
@@ -525,33 +598,91 @@ func TestProfileRepositoryGetState(t *testing.T) {
 	}
 }
 
+func TestProfileRepositoryGetStateWithProfiles(t *testing.T) {
+	repo, db := setupProfileRepositoryTest(t)
+
+	t.Run("preloads the default profile in every slot before any change", func(t *testing.T) {
+		state, err := repo.GetStateWithProfiles()
+		if err != nil {
+			t.Fatalf("GetStateWithProfiles() error = %v", err)
+		}
+		if state.ActiveCommandProfile.ID != 1 || state.ActiveCommandProfile.Name != DefaultProfileName {
+			t.Fatalf("ActiveCommandProfile = %+v, want id=1 name=%q", state.ActiveCommandProfile, DefaultProfileName)
+		}
+		if state.ActiveVariableProfile.ID != 1 || state.ActiveVariableProfile.Name != DefaultProfileName {
+			t.Fatalf("ActiveVariableProfile = %+v, want id=1 name=%q", state.ActiveVariableProfile, DefaultProfileName)
+		}
+		if state.ActiveSettingsProfile.ID != 1 || state.ActiveSettingsProfile.Name != DefaultProfileName {
+			t.Fatalf("ActiveSettingsProfile = %+v, want id=1 name=%q", state.ActiveSettingsProfile, DefaultProfileName)
+		}
+	})
+
+	t.Run("reflects changes made via SetActiveProfile", func(t *testing.T) {
+		commandProfile := createProfile(t, db, "state-command", nil)
+		variableProfile := createProfile(t, db, "state-variable", nil)
+		settingsProfile := createProfile(t, db, "state-settings", nil)
+
+		if _, err := repo.SetActiveProfile(SetProfileConfig{
+			CommandProfile:  &commandProfile,
+			VariableProfile: &variableProfile,
+			SettingsProfile: &settingsProfile,
+		}); err != nil {
+			t.Fatalf("SetActiveProfile() error = %v", err)
+		}
+
+		state, err := repo.GetStateWithProfiles()
+		if err != nil {
+			t.Fatalf("GetStateWithProfiles() error = %v", err)
+		}
+		if state.ActiveCommandProfile.ID != commandProfile.ID || state.ActiveCommandProfile.Name != "state-command" {
+			t.Fatalf("ActiveCommandProfile = %+v, want id=%d name=state-command", state.ActiveCommandProfile, commandProfile.ID)
+		}
+		if state.ActiveVariableProfile.ID != variableProfile.ID || state.ActiveVariableProfile.Name != "state-variable" {
+			t.Fatalf("ActiveVariableProfile = %+v, want id=%d name=state-variable", state.ActiveVariableProfile, variableProfile.ID)
+		}
+		if state.ActiveSettingsProfile.ID != settingsProfile.ID || state.ActiveSettingsProfile.Name != "state-settings" {
+			t.Fatalf("ActiveSettingsProfile = %+v, want id=%d name=state-settings", state.ActiveSettingsProfile, settingsProfile.ID)
+		}
+	})
+
+	t.Run("wraps the error when profile state is missing", func(t *testing.T) {
+		if err := db.Delete(&models.ProfileState{}, 1).Error; err != nil {
+			t.Fatalf("delete state row error = %v", err)
+		}
+
+		if _, err := repo.GetStateWithProfiles(); err == nil || !strings.Contains(err.Error(), "loading profile state with profiles") {
+			t.Fatalf("GetStateWithProfiles() missing state error = %v, want wrapped loading error", err)
+		}
+	})
+}
+
 func TestProfileRepositorySetActiveProfile(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 	commandProfile := createProfile(t, db, "active-command", nil)
 	variableProfile := createProfile(t, db, "active-variable", nil)
 	settingsProfile := createProfile(t, db, "active-settings", nil)
 
-	t.Run("no-op when all args nil", func(t *testing.T) {
+	t.Run("no-op when config is empty", func(t *testing.T) {
 		stateBefore, err := repo.GetState()
 		if err != nil {
 			t.Fatalf("GetState() error = %v", err)
 		}
 
-		stateAfter, err := repo.SetActiveProfile(nil, nil, nil)
+		stateAfter, err := repo.SetActiveProfile(SetProfileConfig{})
 		if err != nil {
-			t.Fatalf("SetActiveProfile(nil,nil,nil) error = %v", err)
+			t.Fatalf("SetActiveProfile(empty) error = %v", err)
 		}
 
 		if stateAfter.ID != stateBefore.ID ||
 			stateAfter.ActiveCommandProfileID != stateBefore.ActiveCommandProfileID ||
 			stateAfter.ActiveVariableProfileID != stateBefore.ActiveVariableProfileID ||
 			stateAfter.ActiveSettingsProfileID != stateBefore.ActiveSettingsProfileID {
-			t.Fatalf("SetActiveProfile(nil,nil,nil) changed active ids: before=%+v after=%+v", *stateBefore, *stateAfter)
+			t.Fatalf("SetActiveProfile(empty) changed active ids: before=%+v after=%+v", *stateBefore, *stateAfter)
 		}
 	})
 
 	t.Run("updates each field independently", func(t *testing.T) {
-		state, err := repo.SetActiveProfile(&commandProfile.ID, nil, nil)
+		state, err := repo.SetActiveProfile(SetProfileConfig{CommandProfile: &commandProfile})
 		if err != nil {
 			t.Fatalf("SetActiveProfile(command) error = %v", err)
 		}
@@ -559,7 +690,7 @@ func TestProfileRepositorySetActiveProfile(t *testing.T) {
 			t.Fatalf("active command id = %d, want %d", state.ActiveCommandProfileID, commandProfile.ID)
 		}
 
-		state, err = repo.SetActiveProfile(nil, &variableProfile.ID, nil)
+		state, err = repo.SetActiveProfile(SetProfileConfig{VariableProfile: &variableProfile})
 		if err != nil {
 			t.Fatalf("SetActiveProfile(variable) error = %v", err)
 		}
@@ -567,7 +698,7 @@ func TestProfileRepositorySetActiveProfile(t *testing.T) {
 			t.Fatalf("active variable id = %d, want %d", state.ActiveVariableProfileID, variableProfile.ID)
 		}
 
-		state, err = repo.SetActiveProfile(nil, nil, &settingsProfile.ID)
+		state, err = repo.SetActiveProfile(SetProfileConfig{SettingsProfile: &settingsProfile})
 		if err != nil {
 			t.Fatalf("SetActiveProfile(settings) error = %v", err)
 		}
@@ -577,7 +708,11 @@ func TestProfileRepositorySetActiveProfile(t *testing.T) {
 	})
 
 	t.Run("updates multiple fields in one call", func(t *testing.T) {
-		state, err := repo.SetActiveProfile(&commandProfile.ID, &variableProfile.ID, &settingsProfile.ID)
+		state, err := repo.SetActiveProfile(SetProfileConfig{
+			CommandProfile:  &commandProfile,
+			VariableProfile: &variableProfile,
+			SettingsProfile: &settingsProfile,
+		})
 		if err != nil {
 			t.Fatalf("SetActiveProfile(all) error = %v", err)
 		}
@@ -631,7 +766,11 @@ func TestProfileRepositoryGetActiveProfiles(t *testing.T) {
 	})
 
 	t.Run("reflects changes made via SetActiveProfile", func(t *testing.T) {
-		if _, err := repo.SetActiveProfile(&commandProfile.ID, &variableProfile.ID, &settingsProfile.ID); err != nil {
+		if _, err := repo.SetActiveProfile(SetProfileConfig{
+			CommandProfile:  &commandProfile,
+			VariableProfile: &variableProfile,
+			SettingsProfile: &settingsProfile,
+		}); err != nil {
 			t.Fatalf("SetActiveProfile() error = %v", err)
 		}
 

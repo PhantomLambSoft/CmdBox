@@ -23,9 +23,17 @@ var profileOrderableColumns = map[string]bool{
 	"last_used":   true,
 }
 
+var defaultProfileSearchFields = []string{"name", "description"}
+
 type ProfileUpdateConfig struct {
 	Name        *string
 	Description *string
+}
+
+type SetProfileConfig struct {
+	CommandProfile  *models.Profile
+	VariableProfile *models.Profile
+	SettingsProfile *models.Profile
 }
 
 type ProfileRepository interface {
@@ -35,12 +43,14 @@ type ProfileRepository interface {
 	GetByName(name string) (*models.Profile, error)
 	GetByID(id uint) (*models.Profile, error)
 	ListAll(orderBy string, limit int) ([]models.Profile, error)
+	Search(query string, fields []string, limit int) ([]models.Profile, error)
 	Update(profile *models.Profile, input ProfileUpdateConfig) (*models.Profile, error)
 	Delete(profile *models.Profile, force bool) error
 	RecordUse(profile *models.Profile) error
 
 	GetState() (*models.ProfileState, error)
-	SetActiveProfile(commandProfileID, variableProfileID, settingsProfileID *uint) (*models.ProfileState, error)
+	GetStateWithProfiles() (*models.ProfileState, error)
+	SetActiveProfile(config SetProfileConfig) (*models.ProfileState, error)
 
 	GetActiveCommandProfile() (*models.Profile, error)
 	GetActiveVariableProfile() (*models.Profile, error)
@@ -131,6 +141,32 @@ func (r *profileRepository) ListAll(orderBy string, limit int) ([]models.Profile
 	if err := q.Limit(limit).Find(&profiles).Error; err != nil {
 		return nil, fmt.Errorf("listing profiles: %w", err)
 	}
+	return profiles, nil
+}
+
+func (r *profileRepository) Search(query string, fields []string, limit int) ([]models.Profile, error) {
+	if len(fields) == 0 {
+		fields = defaultProfileSearchFields
+	}
+	if limit <= 0 {
+		limit = 25
+	}
+
+	var profiles []models.Profile
+	searchInput := searchWithRelevanceInput{
+		DB:                   r.db,
+		Table:                "profiles",
+		Query:                query,
+		Fields:               fields,
+		AllowedColumns:       profileOrderableColumns,
+		SecondaryOrderColumn: "name",
+		Limit:                limit,
+		Dest:                 &profiles,
+	}
+	if err := searchWithRelevance(searchInput); err != nil {
+		return nil, err
+	}
+
 	return profiles, nil
 }
 
@@ -229,21 +265,33 @@ func (r *profileRepository) GetState() (*models.ProfileState, error) {
 	return &state, nil
 }
 
-func (r *profileRepository) SetActiveProfile(commandProfileID, variableProfileID, settingsProfileID *uint) (*models.ProfileState, error) {
+func (r *profileRepository) GetStateWithProfiles() (*models.ProfileState, error) {
+	var state models.ProfileState
+	if err := r.db.
+		Preload("ActiveCommandProfile").
+		Preload("ActiveVariableProfile").
+		Preload("ActiveSettingsProfile").
+		First(&state, 1).Error; err != nil {
+		return nil, fmt.Errorf("loading profile state with profiles: %w", err)
+	}
+	return &state, nil
+}
+
+func (r *profileRepository) SetActiveProfile(config SetProfileConfig) (*models.ProfileState, error) {
 	state, err := r.GetState()
 	if err != nil {
 		return nil, err
 	}
 
 	updates := map[string]interface{}{}
-	if commandProfileID != nil {
-		updates["active_command_profile_id"] = *commandProfileID
+	if config.CommandProfile != nil {
+		updates["active_command_profile_id"] = config.CommandProfile.ID
 	}
-	if variableProfileID != nil {
-		updates["active_variable_profile_id"] = *variableProfileID
+	if config.VariableProfile != nil {
+		updates["active_variable_profile_id"] = config.VariableProfile.ID
 	}
-	if settingsProfileID != nil {
-		updates["active_settings_profile_id"] = *settingsProfileID
+	if config.SettingsProfile != nil {
+		updates["active_settings_profile_id"] = config.SettingsProfile.ID
 	}
 	if len(updates) == 0 {
 		return state, nil
