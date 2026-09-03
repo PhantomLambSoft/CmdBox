@@ -1293,7 +1293,7 @@ as you like, and you can filter your lists by tag to quickly find what you need.
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="go">? Enter description: Commands related to Docker.</span>
 </code></pre></div>
 <p>This same tag can be added in one line.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="go">&gt; cb tag add docker &quot;Commands related to Docker.&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="go">&gt; cb tag add docker "Commands related to Docker."</span>
 </code></pre></div>
 <p>Notice that name and description are provided without a flag. They are not optional fields.</p>
 <p>If you want to be prompted for every field, use the <code>--interactive</code> (or <code>-i</code>) flag.</p>
@@ -1316,7 +1316,7 @@ as you like, and you can filter your lists by tag to quickly find what you need.
 </div>
 <p>The <code>update</code> subcommand makes changes to a tag you already have stored.</p>
 <p>You can update a specific field by providing the appropriate flag and the new value.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">&gt; cb tag update docker --description &quot;Docker and container-related commands.&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">&gt; cb tag update docker --description "Docker and container-related commands."</span>
 </code></pre></div>
 <p>To rename a tag, use the <code>--name</code> flag. The tag will be updated across all commands and
 variables that use it.</p>
@@ -1324,7 +1324,7 @@ variables that use it.</p>
 </code></pre></div>
 <p>Multiple fields can be updated at once using the <code>--set</code> flag with <code>key=value</code> pairs. Each pair should be separated 
 by a comma and no white-space.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">&gt; cb tag update docker --set name=containers,description=&quot;Docker and container-related commands.&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="go">&gt; cb tag update docker --set name=containers,description="Docker and container-related commands."</span>
 </code></pre></div>
 <div class="admonition tip">
 <p class="admonition-title">Autocomplete</p>

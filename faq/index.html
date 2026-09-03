@@ -1670,7 +1670,7 @@ variables, and tags.</p>
 <h3 id="cmdbox-is-not-recognized-after-installing">CmdBox is not recognized after installing<a class="headerlink" href="#cmdbox-is-not-recognized-after-installing" title="Permanent link">&para;</a></h3>
 <p>This usually means your Python scripts directory is not in your system PATH. To fix this,
 find the location of your Python scripts folder:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">&gt; python -c &quot;import sysconfig; print(sysconfig.get_path(&#39;scripts&#39;))&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="go">&gt; python -c "import sysconfig; print(sysconfig.get_path('scripts'))"</span>
 </code></pre></div>
 <p>Then add that path to your system's PATH environment variable. On Windows, you can do this
 through <strong>System Properties &gt; Environment Variables</strong>.</p>

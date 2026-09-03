@@ -1253,7 +1253,7 @@
 <h2 id="1-save-your-first-command">1. Save Your First Command<a class="headerlink" href="#1-save-your-first-command" title="Permanent link">&para;</a></h2>
 <p>Pick a command you use regularly. For this example we'll save a command that sends four test
 pings to your own machine to verify that your network is working.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">&gt; cb cmd add ping-test &quot;ping -n 4 127.0.0.1&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="go">&gt; cb cmd add ping-test "ping -n 4 127.0.0.1"</span>
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1273,7 +1273,7 @@ just <code>cb</code> followed by the alias.</p>
 <h2 id="4-save-a-command-with-a-variable">4. Save a Command With a Variable<a class="headerlink" href="#4-save-a-command-with-a-variable" title="Permanent link">&para;</a></h2>
 <p>Variables make commands reusable. They can be supplied at runtime or saved ahead of time so
 they fill in automatically. For this example we'll supply the variable at runtime.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">&gt; cb cmd add greet &quot;echo Hello, &lt;name&gt;!&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="go">&gt; cb cmd add greet "echo Hello, &lt;name&gt;!"</span>
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="go">&gt; cb greet --name Beautiful</span>
 </code></pre></div>

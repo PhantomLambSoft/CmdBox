@@ -1269,7 +1269,7 @@ one you're using.</p>
 <p>When you run a command in a terminal, the shell (PowerShell, cmd, bash, zsh) reads the full line and breaks it into
 arguments <em>before</em> handing them to the program you're running. Quotes are one of the tools the shell uses to do that
 grouping. For example:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cb cmd add echo-test &quot;echo hello world&quot;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>cb cmd add echo-test "echo hello world"
 </code></pre></div>
 <p>Here, <code>"echo hello world"</code> tells the shell "treat these three words as one argument." The shell removes the quote
 characters as part of that parsing. By the time CmdBox receives the <code>template</code> argument, it is just:</p>
@@ -1278,11 +1278,11 @@ characters as part of that parsing. By the time CmdBox receives the <code>templa
 <p>No quotes, because the shell already did its job.</p>
 <p>Compare that to the interactive prompt:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>cmdbox&gt; cb cmd add echo-test
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Template: &quot;echo hello world&quot;
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>Template: "echo hello world"
 </code></pre></div>
 <p>There's no shell parsing happening at this point. Prompt input is read as raw text, so if you type quote characters,
 they are saved as literal characters in the template:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>&quot;echo hello world&quot;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>"echo hello world"
 </code></pre></div>
 <h2 id="why-it-matters">Why it matters<a class="headerlink" href="#why-it-matters" title="Permanent link">&para;</a></h2>
 <p>CmdBox runs single-line templates directly, and multi-line templates by writing them to a temporary script file. Either
@@ -1316,18 +1316,18 @@ and later executed.</p>
 <h2 id="getting-the-result-you-want">Getting the result you want<a class="headerlink" href="#getting-the-result-you-want" title="Permanent link">&para;</a></h2>
 <p>If your goal is for a template to run and print <code>hello world</code> as it would if you typed it directly into a terminal,
 enter it inline exactly as you would type it yourself:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>cb cmd add echo-test &quot;echo hello world&quot;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>cb cmd add echo-test "echo hello world"
 </code></pre></div>
 <p>The outer quotes here exist only so your shell treats the whole phrase as a single argument to <code>cb cmd add</code>, since
 <code>alias</code> and <code>template</code> are separate positional arguments. Once stored, the template is the plain text
 <code>echo hello world</code>, and it will run the same way it would if you typed that line yourself.</p>
 <p>If you need the <em>stored template itself</em> to contain quote characters, for example to group words together at execution
 time, add them as part of the phrase rather than around the whole thing:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cb cmd add echo-test &quot;echo &#39;hello world&#39;&quot;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>cb cmd add echo-test "echo 'hello world'"
 </code></pre></div>
 <p>Here, the outer double quotes are stripped by your shell as usual, and the inner single quotes survive because they're
 part of the argument text, not shell syntax. The stored template becomes:</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>echo &#39;hello world&#39;
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>echo 'hello world'
 </code></pre></div>
 <p>which runs and prints <code>hello world</code> on a single line.</p>
 <h2 id="rule-of-thumb">Rule of thumb<a class="headerlink" href="#rule-of-thumb" title="Permanent link">&para;</a></h2>
