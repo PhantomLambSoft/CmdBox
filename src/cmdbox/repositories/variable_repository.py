@@ -81,7 +81,6 @@ class VariableRepository(BaseRepository[Variable]):
         """
         if profile is None:
             profile = self.profile_repository.get_state().active_variable_profile_id
-        name = name.lower()
         return Variable.get_or_none(
             (Variable.name == name) & (Variable.profile == profile)
         )

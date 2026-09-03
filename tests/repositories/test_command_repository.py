@@ -255,12 +255,28 @@ class TestCommandRepository(unittest.TestCase):
         with self.assertRaises(UnknownAliasError):
             self.assertIsNone(self.repo.get_by_alias(alias="test_two"))
 
-    def test_alias_capitalization_does_not_affect_result(self):
-        """Command aliases should be case-insensitive."""
+    def test_alias_capitalization_affects_results(self):
+        """Command aliases should be case-sensitive."""
         command = Command.create(
             alias="test", template="echo test", description="Test command", profile=1
         )
-        self.assertEqual(command, self.repo.get_by_alias(alias="TesT"))
+        self.assertEqual(command, self.repo.get_by_alias(alias="test"))
+        with self.assertRaises(UnknownAliasError):
+            self.assertEqual(command, self.repo.get_by_alias(alias="TesT"))
+
+    def test_similar_alias_with_different_capitalization_returns_different_commands(
+        self,
+    ):
+        """Command aliases should be case-sensitive."""
+        command_one = Command.create(
+            alias="test", template="echo test", description="Test command", profile=1
+        )
+        command_two = Command.create(
+            alias="TesT", template="echo test", description="Test command", profile=1
+        )
+        self.assertNotEqual(command_one, command_two)
+        self.assertEqual(command_one, self.repo.get_by_alias(alias="test"))
+        self.assertEqual(command_two, self.repo.get_by_alias(alias="TesT"))
 
     def test_get_by_blank_alias_raises_exception(self):
         """A blank alias should be treated as an unknown alias."""
