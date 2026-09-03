@@ -40,7 +40,6 @@ func (s *tagService) CreateTag(name string, description *string) (*models.Tag, e
 		Description: description,
 	}
 
-	var tag *models.Tag
 	tag, err := s.tagRepo.Create(input)
 	if err != nil {
 		return nil, err
