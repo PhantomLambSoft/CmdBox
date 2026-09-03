@@ -112,6 +112,21 @@ class TestProfileRepository(unittest.TestCase):
         with self.assertRaises(UnknownProfileError):
             self.repo.get_by_id(999)
 
+    def test_profile_names_are_case_insensitive(self):
+        one = self.repo.create(name="test")
+        with self.assertRaises(UnknownProfileError):
+            self.repo.get_by_name("TesT")
+
+    def test_similar_profile_names_with_different_capitalization_return_different_results(
+        self,
+    ):
+        one = self.repo.create(name="test")
+        two = self.repo.create(name="TesT")
+        retrieved = self.repo.get_by_name("test")
+        self.assertEqual(one, retrieved)
+        retrieved = self.repo.get_by_name("TesT")
+        self.assertEqual(two, retrieved)
+
     # =================================================================================
     # SECTION: UPDATE TESTS
     # =================================================================================

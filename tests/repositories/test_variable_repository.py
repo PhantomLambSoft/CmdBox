@@ -143,10 +143,22 @@ class TestVariableRepository(unittest.TestCase):
         var = self.repo.get_by_name("invalid_name")
         self.assertIsNone(var)
 
-    def test_variable_name_capitalisation_does_not_matter(self):
-        variable = Variable.create(name="test", value="test_value", profile=1)
+    def test_variable_name_capitalisation_does_matter(self):
+        Variable.create(name="test", value="test_value", profile=1)
         var = self.repo.get_by_name("TEST")
-        self.assertEqual(variable, var)
+        self.assertIsNone(var)
+
+    def test_similar_names_with_different_capitalization_returns_different_variables(
+        self,
+    ):
+        one = Variable.create(name="test", value="test_value", profile=1)
+        two = Variable.create(name="TesT", value="test_value", profile=1)
+        var = self.repo.get_by_name("TEST")
+        self.assertIsNone(var)
+        var = self.repo.get_by_name("TesT")
+        self.assertEqual(two, var)
+        var = self.repo.get_by_name("test")
+        self.assertEqual(one, var)
 
     # =================================================================================
     # SECTION: GET TESTS

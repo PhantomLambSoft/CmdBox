@@ -110,7 +110,6 @@ class CommandRepository(BaseRepository[Command]):
         """
         if profile is None:
             profile = self.profile_repo.get_state().active_command_profile_id
-        alias = alias.lower()
         cmd = Command.get_or_none(
             (Command.alias == alias) & (Command.profile == profile)
         )
