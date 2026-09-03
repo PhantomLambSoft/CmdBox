@@ -1,6 +1,6 @@
 # Changelog
 
-### [1.3.2] - 2026-09-03
+## [1.3.2] - 2026-09-03
 
 ### Fixed
 - Commands/variables with capatalized letters in their aliases/names could not be recalled.
