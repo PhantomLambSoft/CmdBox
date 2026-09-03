@@ -9,7 +9,7 @@ import (
 )
 
 type UpdateTagConfig struct {
-	Name        *string
+	NewName     *string
 	Description *string
 }
 
@@ -55,7 +55,7 @@ func (s *tagService) UpdateTag(name string, config *UpdateTagConfig) (*models.Ta
 	}
 
 	input := repository.TagUpdateConfig{
-		Name:        config.Name,
+		Name:        config.NewName,
 		Description: config.Description,
 	}
 

@@ -182,7 +182,7 @@ func TestVariableServiceUpdateVariable(t *testing.T) {
 		mustCreateServiceVariable(t, svc, CreateVariableConfig{Name: "rename-me", Value: "old"})
 
 		newName := "renamed"
-		updated, err := svc.UpdateVariable("rename-me", nil, UpdateVariableConfig{Name: &newName})
+		updated, err := svc.UpdateVariable("rename-me", nil, UpdateVariableConfig{NewName: &newName})
 		if err != nil {
 			t.Fatalf("UpdateVariable() error = %v", err)
 		}
@@ -204,7 +204,7 @@ func TestVariableServiceUpdateVariable(t *testing.T) {
 		mustCreateServiceVariable(t, svc, CreateVariableConfig{Name: "renaming", Value: "x"})
 
 		newName := "help"
-		_, err := svc.UpdateVariable("renaming", nil, UpdateVariableConfig{Name: &newName})
+		_, err := svc.UpdateVariable("renaming", nil, UpdateVariableConfig{NewName: &newName})
 		if !errors.Is(err, validate.ErrValidation) {
 			t.Fatalf("UpdateVariable() error = %v, want ErrValidation", err)
 		}

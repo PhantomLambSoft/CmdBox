@@ -17,8 +17,8 @@ type CreateVariableConfig struct {
 }
 
 type UpdateVariableConfig struct {
-	Name  *string
-	Value *string
+	NewName *string
+	Value   *string
 }
 
 type VariableService interface {
@@ -121,7 +121,7 @@ func (s *variableService) UpdateVariable(
 	}
 
 	config := repository.VariableUpdateConfig{
-		Name:  input.Name,
+		Name:  input.NewName,
 		Value: input.Value,
 	}
 
