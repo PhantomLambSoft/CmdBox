@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"gorm.io/gorm"
@@ -13,16 +14,30 @@ import (
 
 const DefaultProfileName = "default"
 
+var profileOrderableColumns = map[string]bool{
+	"id":          true,
+	"name":        true,
+	"description": true,
+	"created_at":  true,
+	"updated_at":  true,
+	"last_used":   true,
+}
+
+type ProfileUpdateConfig struct {
+	Name        *string
+	Description *string
+}
+
 type ProfileRepository interface {
 	WithTx(tx *gorm.DB) ProfileRepository
 
 	Create(name string, description *string) (*models.Profile, error)
 	GetByName(name string) (*models.Profile, error)
 	GetByID(id uint) (*models.Profile, error)
-	ListAll() ([]models.Profile, error)
-	Update(id uint, name *string, description *string) (*models.Profile, error)
-	Delete(id uint, force bool) error
-	RecordUse(id uint) error
+	ListAll(orderBy string, limit int) ([]models.Profile, error)
+	Update(profile *models.Profile, input ProfileUpdateConfig) (*models.Profile, error)
+	Delete(profile *models.Profile, force bool) error
+	RecordUse(profile *models.Profile) error
 
 	GetState() (*models.ProfileState, error)
 	SetActiveProfile(commandProfileID, variableProfileID, settingsProfileID *uint) (*models.ProfileState, error)
@@ -96,51 +111,69 @@ func (r *profileRepository) GetByID(id uint) (*models.Profile, error) {
 	return &profile, nil
 }
 
-func (r *profileRepository) ListAll() ([]models.Profile, error) {
+func (r *profileRepository) ListAll(orderBy string, limit int) ([]models.Profile, error) {
+	if orderBy == "" {
+		orderBy = "name"
+	}
+	if limit <= 0 {
+		limit = 25
+	}
+	orderClauses, err := resolveOrdering(orderBy, profileOrderableColumns)
+	if err != nil {
+		return nil, err
+	}
+
 	var profiles []models.Profile
-	if err := r.db.Order("name").Find(&profiles).Error; err != nil {
+	q := r.db.Model(&models.Profile{})
+	for _, clause := range orderClauses {
+		q = q.Order(clause)
+	}
+	if err := q.Limit(limit).Find(&profiles).Error; err != nil {
 		return nil, fmt.Errorf("listing profiles: %w", err)
 	}
 	return profiles, nil
 }
 
-func (r *profileRepository) Update(id uint, name *string, description *string) (*models.Profile, error) {
-	profile, err := r.GetByID(id)
-	if err != nil {
+func (r *profileRepository) Update(profile *models.Profile, input ProfileUpdateConfig) (*models.Profile, error) {
+	if profile == nil {
+		return nil, ErrNoUpdateTarget
+	}
+
+	mergedName := profile.Name
+	if input.Name != nil {
+		mergedName = strings.TrimSpace(*input.Name)
+	}
+
+	if err := r.validator.ValidateUpdate(&mergedName); err != nil {
 		return nil, err
 	}
 
-	if err := r.validator.ValidateUpdate(name); err != nil {
-		return nil, err
-	}
-
-	if name != nil && *name != profile.Name {
+	if input.Name != nil && mergedName != profile.Name {
 		if profile.Name == DefaultProfileName {
 			return nil, ErrDefaultProfileName
 		}
-		if _, err := r.GetByName(*name); err == nil {
+		if _, err := r.GetByName(mergedName); err == nil {
 			return nil, ErrProfileNameExists
 		} else if !errors.Is(err, ErrProfileNotFound) {
 			return nil, err
 		}
-		profile.Name = *name
+		profile.Name = mergedName
 	}
 
-	if description != nil {
-		profile.Description = description
+	if input.Description != nil {
+		profile.Description = input.Description
 	}
 
 	if err := r.db.Save(profile).Error; err != nil {
-		return nil, fmt.Errorf("updating profile id %d: %w", id, err)
+		return nil, fmt.Errorf("updating profile %s: %w", profile.Name, err)
 	}
 
 	return profile, nil
 }
 
-func (r *profileRepository) Delete(id uint, force bool) error {
-	profile, err := r.GetByID(id)
-	if err != nil {
-		return err
+func (r *profileRepository) Delete(profile *models.Profile, force bool) error {
+	if profile == nil {
+		return nil
 	}
 	if profile.Name == DefaultProfileName {
 		return ErrDefaultProfileDelete
@@ -150,6 +183,9 @@ func (r *profileRepository) Delete(id uint, force bool) error {
 	if err != nil {
 		return err
 	}
+
+	id := profile.ID
+
 	if id == state.ActiveCommandProfileID || id == state.ActiveVariableProfileID || id == state.ActiveSettingsProfileID {
 		return ErrProfileInUse
 	}
@@ -173,10 +209,10 @@ func (r *profileRepository) Delete(id uint, force bool) error {
 	return nil
 }
 
-func (r *profileRepository) RecordUse(id uint) error {
-	result := r.db.Model(&models.Profile{}).Where("id = ?", id).Update("last_used", time.Now())
+func (r *profileRepository) RecordUse(profile *models.Profile) error {
+	result := r.db.Model(&models.Profile{}).Where("id = ?", profile.ID).Update("last_used", time.Now())
 	if result.Error != nil {
-		return fmt.Errorf("touching last_used for profile id %d: %w", id, result.Error)
+		return fmt.Errorf("touching last_used for profile %s: %w", profile.Name, result.Error)
 	}
 	if result.RowsAffected == 0 {
 		return ErrProfileNotFound

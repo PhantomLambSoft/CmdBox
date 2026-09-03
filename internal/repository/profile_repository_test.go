@@ -175,7 +175,7 @@ func TestProfileRepositoryGetByNameAndID(t *testing.T) {
 func TestProfileRepositoryList(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 
-	profiles, err := repo.ListAll()
+	profiles, err := repo.ListAll("", 0)
 	if err != nil {
 		t.Fatalf("List() error = %v", err)
 	}
@@ -186,16 +186,63 @@ func TestProfileRepositoryList(t *testing.T) {
 	createProfile(t, db, "zeta", nil)
 	createProfile(t, db, "alpha", nil)
 
-	profiles, err = repo.ListAll()
-	if err != nil {
-		t.Fatalf("List() error = %v", err)
-	}
+	t.Run("defaults to ordering by name", func(t *testing.T) {
+		profiles, err := repo.ListAll("", 0)
+		if err != nil {
+			t.Fatalf("ListAll() error = %v", err)
+		}
 
-	gotNames := []string{profiles[0].Name, profiles[1].Name, profiles[2].Name}
-	wantNames := []string{"alpha", DefaultProfileName, "zeta"}
-	if strings.Join(gotNames, ",") != strings.Join(wantNames, ",") {
-		t.Fatalf("List() order = %v, want %v", gotNames, wantNames)
-	}
+		gotNames := []string{profiles[0].Name, profiles[1].Name, profiles[2].Name}
+		wantNames := []string{"alpha", DefaultProfileName, "zeta"}
+		if strings.Join(gotNames, ",") != strings.Join(wantNames, ",") {
+			t.Fatalf("ListAll() order = %v, want %v", gotNames, wantNames)
+		}
+	})
+
+	t.Run("respects explicit order field", func(t *testing.T) {
+		profiles, err := repo.ListAll("-name", 0)
+		if err != nil {
+			t.Fatalf("ListAll() error = %v", err)
+		}
+		if profiles[0].Name != "zeta" {
+			t.Fatalf("ListAll() first = %q, want %q", profiles[0].Name, "zeta")
+		}
+	})
+
+	t.Run("respects limit", func(t *testing.T) {
+		profiles, err := repo.ListAll("", 1)
+		if err != nil {
+			t.Fatalf("ListAll() error = %v", err)
+		}
+		if len(profiles) != 1 {
+			t.Fatalf("len(profiles) = %d, want 1", len(profiles))
+		}
+	})
+
+	t.Run("invalid order field returns error", func(t *testing.T) {
+		_, err := repo.ListAll("bogus", 0)
+		if err == nil {
+			t.Fatalf("ListAll() error = nil, want error")
+		}
+	})
+
+	t.Run("orders by last_used", func(t *testing.T) {
+		target, err := repo.GetByName("zeta")
+		if err != nil {
+			t.Fatalf("GetByName() error = %v", err)
+		}
+		if err := repo.RecordUse(target); err != nil {
+			t.Fatalf("RecordUse() error = %v", err)
+		}
+
+		profiles, err := repo.ListAll("-last_used", 0)
+		if err != nil {
+			t.Fatalf("ListAll(last_used) error = %v", err)
+		}
+		if profiles[0].Name != "zeta" {
+			t.Fatalf("ListAll(-last_used) first = %q, want %q", profiles[0].Name, "zeta")
+		}
+	})
 }
 
 func TestProfileRepositoryUpdate(t *testing.T) {
@@ -203,34 +250,45 @@ func TestProfileRepositoryUpdate(t *testing.T) {
 	target := createProfile(t, db, "dev", strPtr("old description"))
 	_ = createProfile(t, db, "qa", nil)
 
-	t.Run("returns not found", func(t *testing.T) {
-		newName := "new-name"
-		_, err := repo.Update(target.ID+12345, &newName, nil)
-		if !errors.Is(err, ErrProfileNotFound) {
-			t.Fatalf("Update() error = %v, want ErrProfileNotFound", err)
+	t.Run("nil profile returns ErrNoUpdateTarget", func(t *testing.T) {
+		_, err := repo.Update(nil, ProfileUpdateConfig{})
+		if !errors.Is(err, ErrNoUpdateTarget) {
+			t.Fatalf("Update(nil) error = %v, want ErrNoUpdateTarget", err)
 		}
 	})
 
 	t.Run("prevents renaming default profile", func(t *testing.T) {
+		defaultProfile, err := repo.GetByID(1)
+		if err != nil {
+			t.Fatalf("GetByID() error = %v", err)
+		}
 		newName := "renamed-default"
-		_, err := repo.Update(1, &newName, nil)
+		_, err = repo.Update(defaultProfile, ProfileUpdateConfig{Name: &newName})
 		if !errors.Is(err, ErrDefaultProfileName) {
 			t.Fatalf("Update() error = %v, want ErrDefaultProfileName", err)
 		}
 	})
 
 	t.Run("prevents duplicate name", func(t *testing.T) {
+		devProfile, err := repo.GetByName("dev")
+		if err != nil {
+			t.Fatalf("GetByName() error = %v", err)
+		}
 		newName := "qa"
-		_, err := repo.Update(target.ID, &newName, nil)
+		_, err = repo.Update(devProfile, ProfileUpdateConfig{Name: &newName})
 		if !errors.Is(err, ErrProfileNameExists) {
 			t.Fatalf("Update() error = %v, want ErrProfileNameExists", err)
 		}
 	})
 
 	t.Run("updates name and description", func(t *testing.T) {
+		devProfile, err := repo.GetByName("dev")
+		if err != nil {
+			t.Fatalf("GetByName() error = %v", err)
+		}
 		newName := "dev-renamed"
 		newDescription := "new description"
-		updated, err := repo.Update(target.ID, &newName, &newDescription)
+		updated, err := repo.Update(devProfile, ProfileUpdateConfig{Name: &newName, Description: &newDescription})
 		if err != nil {
 			t.Fatalf("Update() error = %v", err)
 		}
@@ -251,7 +309,11 @@ func TestProfileRepositoryUpdate(t *testing.T) {
 	})
 
 	t.Run("leaves description unchanged when description argument is nil", func(t *testing.T) {
-		updated, err := repo.Update(target.ID, nil, nil)
+		devProfile, err := repo.GetByName("dev-renamed")
+		if err != nil {
+			t.Fatalf("GetByName() error = %v", err)
+		}
+		updated, err := repo.Update(devProfile, ProfileUpdateConfig{})
 		if err != nil {
 			t.Fatalf("Update() with nil description pointer error = %v", err)
 		}
@@ -261,9 +323,13 @@ func TestProfileRepositoryUpdate(t *testing.T) {
 	})
 
 	t.Run("default profile unchanged when name is same", func(t *testing.T) {
+		defaultProfile, err := repo.GetByID(1)
+		if err != nil {
+			t.Fatalf("GetByID() error = %v", err)
+		}
 		sameName := DefaultProfileName
 		description := "updated default description"
-		updated, err := repo.Update(1, &sameName, &description)
+		updated, err := repo.Update(defaultProfile, ProfileUpdateConfig{Name: &sameName, Description: &description})
 		if err != nil {
 			t.Fatalf("Update() error = %v", err)
 		}
@@ -274,20 +340,35 @@ func TestProfileRepositoryUpdate(t *testing.T) {
 			t.Fatalf("default profile description not updated")
 		}
 	})
+
+	t.Run("trims whitespace from new name before validating", func(t *testing.T) {
+		padded := createProfile(t, db, "pad-me", nil)
+		newName := "  padded-name  "
+		updated, err := repo.Update(&padded, ProfileUpdateConfig{Name: &newName})
+		if err != nil {
+			t.Fatalf("Update() error = %v", err)
+		}
+		if updated.Name != "padded-name" {
+			t.Fatalf("Update() name = %q, want %q", updated.Name, "padded-name")
+		}
+	})
 }
 
 func TestProfileRepositoryDelete(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 
-	t.Run("returns not found", func(t *testing.T) {
-		err := repo.Delete(999999, false)
-		if !errors.Is(err, ErrProfileNotFound) {
-			t.Fatalf("Delete() error = %v, want ErrProfileNotFound", err)
+	t.Run("nil profile is a no-op", func(t *testing.T) {
+		if err := repo.Delete(nil, false); err != nil {
+			t.Fatalf("Delete(nil) error = %v, want nil", err)
 		}
 	})
 
 	t.Run("prevents deleting default profile", func(t *testing.T) {
-		err := repo.Delete(1, false)
+		defaultProfile, err := repo.GetByID(1)
+		if err != nil {
+			t.Fatalf("GetByID() error = %v", err)
+		}
+		err = repo.Delete(defaultProfile, false)
 		if !errors.Is(err, ErrDefaultProfileDelete) {
 			t.Fatalf("Delete() error = %v, want ErrDefaultProfileDelete", err)
 		}
@@ -327,7 +408,7 @@ func TestProfileRepositoryDelete(t *testing.T) {
 				profile := createProfile(t, db, "active-"+tc.target, nil)
 				tc.apply(profile.ID)
 
-				err := repo.Delete(profile.ID, false)
+				err := repo.Delete(&profile, false)
 				if !errors.Is(err, ErrProfileInUse) {
 					t.Fatalf("Delete() error = %v, want ErrProfileInUse", err)
 				}
@@ -346,7 +427,7 @@ func TestProfileRepositoryDelete(t *testing.T) {
 		createCommand(t, db, profile.ID, "test-command")
 		createVariable(t, db, profile.ID, "test-variable")
 
-		err := repo.Delete(profile.ID, false)
+		err := repo.Delete(&profile, false)
 		if err == nil {
 			t.Fatalf("Delete() error = nil, want ErrProfileHasContent")
 		}
@@ -360,7 +441,7 @@ func TestProfileRepositoryDelete(t *testing.T) {
 		createCommand(t, db, profile.ID, "force-command")
 		createVariable(t, db, profile.ID, "force-variable")
 
-		if err := repo.Delete(profile.ID, true); err != nil {
+		if err := repo.Delete(&profile, true); err != nil {
 			t.Fatalf("Delete(force=true) error = %v", err)
 		}
 
@@ -373,7 +454,7 @@ func TestProfileRepositoryDelete(t *testing.T) {
 	t.Run("deletes profile without content", func(t *testing.T) {
 		profile := createProfile(t, db, "plain-delete", nil)
 
-		if err := repo.Delete(profile.ID, false); err != nil {
+		if err := repo.Delete(&profile, false); err != nil {
 			t.Fatalf("Delete() error = %v", err)
 		}
 
@@ -382,14 +463,25 @@ func TestProfileRepositoryDelete(t *testing.T) {
 			t.Fatalf("GetByID() after delete error = %v, want ErrProfileNotFound", err)
 		}
 	})
+
+	t.Run("already-deleted profile is a no-op", func(t *testing.T) {
+		profile := createProfile(t, db, "already-gone", nil)
+		if err := repo.Delete(&profile, false); err != nil {
+			t.Fatalf("Delete() error = %v", err)
+		}
+
+		if err := repo.Delete(&profile, false); err != nil {
+			t.Fatalf("Delete() second call error = %v, want nil", err)
+		}
+	})
 }
 
 func TestProfileRepositoryTouchLastUsed(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 	profile := createProfile(t, db, "touch-me", nil)
 
-	if err := repo.RecordUse(profile.ID); err != nil {
-		t.Fatalf("TouchLastUsed() error = %v", err)
+	if err := repo.RecordUse(&profile); err != nil {
+		t.Fatalf("RecordUse() error = %v", err)
 	}
 
 	updated, err := repo.GetByID(profile.ID)
@@ -397,14 +489,15 @@ func TestProfileRepositoryTouchLastUsed(t *testing.T) {
 		t.Fatalf("GetByID() error = %v", err)
 	}
 	if updated.LastUsed == nil {
-		t.Fatalf("TouchLastUsed() did not set LastUsed")
+		t.Fatalf("RecordUse() did not set LastUsed")
 	}
 	if updated.LastUsed.Before(updated.CreatedAt) {
-		t.Fatalf("TouchLastUsed() LastUsed before CreatedAt")
+		t.Fatalf("RecordUse() LastUsed before CreatedAt")
 	}
 
-	if err := repo.RecordUse(profile.ID + 111111); !errors.Is(err, ErrProfileNotFound) {
-		t.Fatalf("TouchLastUsed() missing error = %v, want ErrProfileNotFound", err)
+	missing := models.Profile{ID: profile.ID + 111111}
+	if err := repo.RecordUse(&missing); !errors.Is(err, ErrProfileNotFound) {
+		t.Fatalf("RecordUse() missing error = %v, want ErrProfileNotFound", err)
 	}
 }
 
