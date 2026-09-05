@@ -29,6 +29,9 @@ type ProfileService interface {
 	GetProfile(name string) (*models.Profile, error)
 	ListProfiles(orderBy string, limit *int) ([]models.Profile, error)
 	SearchProfiles(query string, fields []string, limit *int) ([]models.Profile, error)
+	GetActiveCommandProfile() (*models.Profile, error)
+	GetActiveVariableProfile() (*models.Profile, error)
+	GetActiveSettingsProfile() (*models.Profile, error)
 
 	SwitchProfile(name string) (*models.ProfileState, error)
 	SwitchCommandProfile(name string) (*models.ProfileState, error)
@@ -104,6 +107,18 @@ func (s *profileService) SearchProfiles(query string, fields []string, limit *in
 	}
 
 	return s.profileRepo.Search(query, fields, resolvedLimit)
+}
+
+func (s *profileService) GetActiveCommandProfile() (*models.Profile, error) {
+	return s.profileRepo.GetActiveCommandProfile()
+}
+
+func (s *profileService) GetActiveVariableProfile() (*models.Profile, error) {
+	return s.profileRepo.GetActiveVariableProfile()
+}
+
+func (s *profileService) GetActiveSettingsProfile() (*models.Profile, error) {
+	return s.profileRepo.GetActiveSettingsProfile()
 }
 
 func (s *profileService) SwitchProfile(name string) (*models.ProfileState, error) {
