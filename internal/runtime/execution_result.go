@@ -4,6 +4,6 @@ package runtime
 type ExecutionResult struct {
 	Command  string
 	ExitCode int
-	StdOut   string
-	StdErr   string
+	Stdout   string
+	Stderr   string
 }
