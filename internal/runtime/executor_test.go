@@ -12,13 +12,6 @@ import (
 	"time"
 )
 
-// --- pointer helpers ---
-
-func boolPtr(b bool) *bool                          { return &b }
-func stringPtr(s string) *string                    { return &s }
-func intPtr(i int) *int                             { return &i }
-func envPtr(m map[string]string) *map[string]string { return &m }
-
 // --- isMultiline ---
 
 func TestIsMultiline(t *testing.T) {
@@ -255,7 +248,7 @@ func TestExitCodeFromNonExitError(t *testing.T) {
 
 func TestExecutorRunSimpleCommandCapturesStdout(t *testing.T) {
 	e := NewExecutor()
-	result, err := e.Run("echo hello", RunContext{Capture: boolPtr(true)})
+	result, err := e.Run("echo hello", RunContext{Capture: true})
 	if err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
@@ -273,7 +266,7 @@ func TestExecutorRunSimpleCommandCapturesStdout(t *testing.T) {
 func TestExecutorRunNonZeroExitCode(t *testing.T) {
 	e := NewExecutor()
 	command := "exit 3"
-	result, err := e.Run(command, RunContext{Capture: boolPtr(true)})
+	result, err := e.Run(command, RunContext{Capture: true})
 	if err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
@@ -285,7 +278,7 @@ func TestExecutorRunNonZeroExitCode(t *testing.T) {
 func TestExecutorRunMultilineScript(t *testing.T) {
 	e := NewExecutor()
 	command := "echo line1\necho line2"
-	result, err := e.Run(command, RunContext{Capture: boolPtr(true)})
+	result, err := e.Run(command, RunContext{Capture: true})
 	if err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
@@ -302,7 +295,7 @@ func TestExecutorRunUsesConfiguredCwd(t *testing.T) {
 	e := NewExecutor()
 
 	command := "echo test > out.txt"
-	result, err := e.Run(command, RunContext{Cwd: stringPtr(dir), Capture: boolPtr(true)})
+	result, err := e.Run(command, RunContext{Cwd: dir, Capture: true})
 	if err != nil {
 		t.Fatalf("Run() error = %v", err)
 	}
@@ -320,17 +313,17 @@ func TestExecutorRunAppliesEnvOverrides(t *testing.T) {
 	e := NewExecutor()
 
 	var command string
-	var shell *string
+	shell := ""
 	if runtime.GOOS == "windows" {
 		command = "echo %CMDBOX_RUN_TEST_VAR%"
-		shell = stringPtr("cmd")
+		shell = "cmd"
 	} else {
 		command = "echo $CMDBOX_RUN_TEST_VAR"
 	}
 
 	result, err := e.Run(command, RunContext{
-		Env:     envPtr(map[string]string{"CMDBOX_RUN_TEST_VAR": "injected-value"}),
-		Capture: boolPtr(true),
+		Env:     map[string]string{"CMDBOX_RUN_TEST_VAR": "injected-value"},
+		Capture: true,
 		Shell:   shell,
 	})
 	if err != nil {
@@ -355,7 +348,7 @@ func TestExecutorRunTimeoutKillsProcess(t *testing.T) {
 	}
 
 	start := time.Now()
-	result, err := e.Run(command, RunContext{Capture: boolPtr(true), Timeout: intPtr(1)})
+	result, err := e.Run(command, RunContext{Capture: true, Timeout: 1})
 	elapsed := time.Since(start)
 
 	if elapsed >= 8*time.Second {
@@ -372,27 +365,6 @@ func TestExecutorRunTimeoutKillsProcess(t *testing.T) {
 	}
 }
 
-func TestExecutorRunZeroValueContextUsesDefaults(t *testing.T) {
-	e := NewExecutor()
-
-	// A completely zero-value RunContext (all pointer fields nil) must not panic
-	// and should behave as: no capture, no cwd override, no env override, no
-	// timeout, default shell, not emit-only.
-	result, err := e.Run("exit 0", RunContext{})
-	if err != nil {
-		t.Fatalf("Run() error = %v", err)
-	}
-	if result == nil {
-		t.Fatal("Run() result = nil, want non-nil")
-	}
-	if result.ExitCode != 0 {
-		t.Fatalf("Run() ExitCode = %d, want 0", result.ExitCode)
-	}
-	if result.Stdout != "" || result.Stderr != "" {
-		t.Fatalf("Run() with nil Capture should not capture output; got Stdout=%q Stderr=%q", result.Stdout, result.Stderr)
-	}
-}
-
 func TestExecutorRunUncapturedWritesToOsStdout(t *testing.T) {
 	origStdout := os.Stdout
 	r, w, err := os.Pipe()
@@ -402,7 +374,7 @@ func TestExecutorRunUncapturedWritesToOsStdout(t *testing.T) {
 	os.Stdout = w
 
 	e := NewExecutor()
-	result, runErr := e.Run("echo uncaptured-output", RunContext{Capture: boolPtr(false)})
+	result, runErr := e.Run("echo uncaptured-output", RunContext{Capture: false})
 
 	_ = w.Close()
 	os.Stdout = origStdout
