@@ -46,7 +46,7 @@ type ProfileRepository interface {
 	Search(query string, fields []string, limit int) ([]models.Profile, error)
 	Update(profile *models.Profile, input ProfileUpdateConfig) (*models.Profile, error)
 	Delete(profile *models.Profile, force bool) error
-	RecordUse(profile *models.Profile) error
+	RecordUse(profile models.Profile) error
 
 	GetState() (*models.ProfileState, error)
 	GetStateWithProfiles() (*models.ProfileState, error)
@@ -245,7 +245,11 @@ func (r *profileRepository) Delete(profile *models.Profile, force bool) error {
 	return nil
 }
 
-func (r *profileRepository) RecordUse(profile *models.Profile) error {
+// RecordUse updates the "last_used" timestamp for a given profile in the database. Returns an error if the update fails.
+//
+// Profile must be supplied here and nil is not accepted because it is impossible for this method to know what kind of
+// profile (command, variable, or settings) use is being recorded. The caller must decide.
+func (r *profileRepository) RecordUse(profile models.Profile) error {
 	result := r.db.Model(&models.Profile{}).Where("id = ?", profile.ID).Update("last_used", time.Now())
 	if result.Error != nil {
 		return fmt.Errorf("touching last_used for profile %s: %w", profile.Name, result.Error)

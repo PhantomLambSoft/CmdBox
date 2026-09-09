@@ -231,7 +231,7 @@ func TestProfileRepositoryList(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetByName() error = %v", err)
 		}
-		if err := repo.RecordUse(target); err != nil {
+		if err := repo.RecordUse(*target); err != nil {
 			t.Fatalf("RecordUse() error = %v", err)
 		}
 
@@ -553,7 +553,7 @@ func TestProfileRepositoryTouchLastUsed(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 	profile := createProfile(t, db, "touch-me", nil)
 
-	if err := repo.RecordUse(&profile); err != nil {
+	if err := repo.RecordUse(profile); err != nil {
 		t.Fatalf("RecordUse() error = %v", err)
 	}
 
@@ -569,7 +569,7 @@ func TestProfileRepositoryTouchLastUsed(t *testing.T) {
 	}
 
 	missing := models.Profile{ID: profile.ID + 111111}
-	if err := repo.RecordUse(&missing); !errors.Is(err, ErrProfileNotFound) {
+	if err := repo.RecordUse(missing); !errors.Is(err, ErrProfileNotFound) {
 		t.Fatalf("RecordUse() missing error = %v, want ErrProfileNotFound", err)
 	}
 }
