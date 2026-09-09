@@ -9,62 +9,22 @@ import (
 	"testing"
 
 	"github.com/PhantomLambSoft/CmdBox/internal/models"
-	"github.com/PhantomLambSoft/CmdBox/internal/services"
 )
 
-// fakeProfileService is a minimal stand-in for services.ProfileService that only
-// needs to support GetActiveSettingsProfile for the purposes of these tests.
+// fakeProfileService is a minimal stand-in for a ProfileLookup implementation
+// for the purposes of these tests.
 type fakeProfileService struct {
 	activeSettingsProfile *models.Profile
 	activeSettingsErr     error
 }
 
-var errNotImplemented = errors.New("not implemented")
-
-func (f *fakeProfileService) CreateProfile(string, *string) (*models.Profile, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) UpdateProfile(string, services.UpdateProfileConfig) (*models.Profile, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) DeleteProfile(string, bool) error { return errNotImplemented }
-func (f *fakeProfileService) GetProfile(string) (*models.Profile, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) ListProfiles(string, *int) ([]models.Profile, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) SearchProfiles(string, []string, *int) ([]models.Profile, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) GetActiveCommandProfile() (*models.Profile, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) GetActiveVariableProfile() (*models.Profile, error) {
-	return nil, errNotImplemented
-}
 func (f *fakeProfileService) GetActiveSettingsProfile() (*models.Profile, error) {
 	return f.activeSettingsProfile, f.activeSettingsErr
 }
-func (f *fakeProfileService) SwitchProfile(string) (*models.ProfileState, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) SwitchCommandProfile(string) (*models.ProfileState, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) SwitchVariableProfile(string) (*models.ProfileState, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) SwitchSettingsProfile(string) (*models.ProfileState, error) {
-	return nil, errNotImplemented
-}
-func (f *fakeProfileService) GetStatus() (services.ProfileStatus, error) {
-	return services.ProfileStatus{}, errNotImplemented
-}
 
-var _ services.ProfileService = (*fakeProfileService)(nil)
+var _ ProfileLookup = (*fakeProfileService)(nil)
 
-func newTestService(t *testing.T, path string, defaults *Settings, profileSvc services.ProfileService) *Service {
+func newTestService(t *testing.T, path string, defaults *Settings, profileSvc ProfileLookup) *Service {
 	t.Helper()
 	repo := NewSettingsRepository(path)
 	svc, err := NewService(repo, defaults, profileSvc)

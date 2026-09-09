@@ -6,18 +6,24 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/PhantomLambSoft/CmdBox/internal/services"
+	"github.com/PhantomLambSoft/CmdBox/internal/models"
 	"github.com/pelletier/go-toml/v2"
 )
+
+// ProfileLookup defines an interface for retrieving the currently active settings profile. Only one method is needed
+// from services.ProfileService, so the ProfileLookup interface is defined and used here to avoid a cyclic dependency.
+type ProfileLookup interface {
+	GetActiveSettingsProfile() (*models.Profile, error)
+}
 
 type Service struct {
 	repo           *Repository
 	defaults       Settings
 	current        Settings
-	profileService services.ProfileService
+	profileService ProfileLookup
 }
 
-func NewService(repo *Repository, defaults *Settings, profileService services.ProfileService) (*Service, error) {
+func NewService(repo *Repository, defaults *Settings, profileService ProfileLookup) (*Service, error) {
 	d := DefaultSettings()
 	if defaults != nil {
 		d = *defaults
