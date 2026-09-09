@@ -19,27 +19,50 @@ func NewExecutor() *Executor {
 }
 
 func (e *Executor) Run(command string, ctx RunContext) (*ExecutionResult, error) {
-	if ctx.Emit {
+	if ctx.Emit != nil && *ctx.Emit {
 		emitCommand(command)
 		return nil, nil
 	}
 
-	env := mergeEnv(ctx.Env)
+	var env []string
+	if ctx.Env != nil {
+		env = mergeEnv(*ctx.Env)
+	}
 
 	if isMultiline(command) {
 		return e.runMultilineAsScript(command, ctx, env)
 	}
 
-	args, err := BuildShellCommand(command, ctx.Shell)
+	var shell string
+	if ctx.Shell != nil {
+		shell = *ctx.Shell
+	}
+	args, err := BuildShellCommand(command, shell)
 	if err != nil {
 		return nil, fmt.Errorf("building shell command: %w", err)
 	}
 
-	return e.executeCommand(command, args, ctx.Cwd, env, ctx.Capture, ctx.Timeout)
+	var cwd = ""
+	var capture = false
+	var timeout = 0
+	if ctx.Cwd != nil {
+		cwd = *ctx.Cwd
+	}
+	if ctx.Capture != nil {
+		capture = *ctx.Capture
+	}
+	if ctx.Timeout != nil {
+		timeout = *ctx.Timeout
+	}
+
+	return e.executeCommand(command, args, cwd, env, capture, timeout)
 }
 
 func (e *Executor) runMultilineAsScript(command string, ctx RunContext, env []string) (*ExecutionResult, error) {
-	shell := strings.ToLower(ctx.Shell)
+	var shell = ""
+	if ctx.Shell != nil {
+		shell = strings.ToLower(*ctx.Shell)
+	}
 	if shell == "" {
 		shell = "default"
 	}
@@ -67,7 +90,20 @@ func (e *Executor) runMultilineAsScript(command string, ctx RunContext, env []st
 
 	args := buildScriptExecArgs(scriptPath, shell)
 
-	return e.executeCommand(command, args, ctx.Cwd, env, ctx.Capture, ctx.Timeout)
+	var cwd = ""
+	var capture = false
+	var timeout = 0
+	if ctx.Cwd != nil {
+		cwd = *ctx.Cwd
+	}
+	if ctx.Capture != nil {
+		capture = *ctx.Capture
+	}
+	if ctx.Timeout != nil {
+		timeout = *ctx.Timeout
+	}
+
+	return e.executeCommand(command, args, cwd, env, capture, timeout)
 }
 
 func (e *Executor) executeCommand(
