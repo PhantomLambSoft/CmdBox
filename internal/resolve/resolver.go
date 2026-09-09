@@ -36,6 +36,10 @@ func (r *Resolver) CollectMissingVars(template string, runtimeVars map[string]st
 
 // Resolve processes a template by recursively resolving variable and command references into a final resolved result.
 func (r *Resolver) Resolve(template string, rootLabel *string, runtimeVars map[string]string) (Result, error) {
+	if rootLabel == nil {
+		rl := "<input>"
+		rootLabel = &rl
+	}
 	var trace []TraceStep
 	stack := []string{*rootLabel}
 	text, err := r.resolveInner(template, stack, 0, &trace, runtimeVars)

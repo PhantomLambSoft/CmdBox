@@ -3,6 +3,7 @@ package resolve
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -68,6 +69,26 @@ func TestResolvePlainTextNoRefs(t *testing.T) {
 	}
 	if len(res.Trace) != 0 {
 		t.Fatalf("Trace = %v, want empty", res.Trace)
+	}
+}
+
+func TestResolveNilRootLabelDefaultsToInput(t *testing.T) {
+	lookup := newFakeLookup()
+	lookup.variables["name"] = VariableRecord{Name: "name", Value: "world"}
+	r := NewResolver(lookup, false, 10)
+
+	got, err := r.Resolve("hello <name>", nil, nil)
+	if err != nil {
+		t.Fatalf("Resolve() error = %v", err)
+	}
+
+	want, err := r.Resolve("hello <name>", rootLabel("<input>"), nil)
+	if err != nil {
+		t.Fatalf("Resolve() error = %v", err)
+	}
+
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("Resolve() with nil rootLabel = %+v, want same result as explicit %q label: %+v", got, "<input>", want)
 	}
 }
 
