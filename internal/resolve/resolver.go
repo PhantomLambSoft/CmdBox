@@ -159,13 +159,17 @@ func (r *Resolver) collectMissingInner(
 				} else {
 					rec, err := r.Lookup.GetCommand(key)
 					if err != nil {
-						return fmt.Errorf("getting command %s: %w", key, err)
-					}
-					if _, ok := seen[rec.Alias]; !ok {
-						seen[rec.Alias] = struct{}{}
-						err = r.collectMissingInner(rec.Template, runtimeVars, missing, seen, depth+1)
-						if err != nil {
-							return err
+						// If alias is unknown, skip it - not raise error
+						if !errors.Is(err, repository.ErrUnknownAlias) {
+							return fmt.Errorf("getting command %s: %w", key, err)
+						}
+					} else {
+						if _, ok := seen[rec.Alias]; !ok {
+							seen[rec.Alias] = struct{}{}
+							err = r.collectMissingInner(rec.Template, runtimeVars, missing, seen, depth+1)
+							if err != nil {
+								return err
+							}
 						}
 					}
 				}
