@@ -470,16 +470,16 @@ func TestCollectMissingVarsFoundVariableRecursesIntoItsValue(t *testing.T) {
 	}
 }
 
-func TestCollectMissingVarsUnknownCommandIsHardError(t *testing.T) {
+func TestCollectMissingVarsUnknownCommandIsSkipped(t *testing.T) {
 	lookup := newFakeLookup()
 	r := NewResolver(lookup, false, 10)
 
-	_, err := r.CollectMissingVars("<cmd:missing>", nil)
-	if err == nil {
-		t.Fatal("expected error for unknown command")
+	missing, err := r.CollectMissingVars("<cmd:missing>", nil)
+	if err != nil {
+		t.Fatalf("CollectMissingVars() error = %v, want nil", err)
 	}
-	if !errors.Is(err, repository.ErrUnknownAlias) {
-		t.Fatalf("error = %v, want wrapped ErrUnknownAlias", err)
+	if len(missing) != 0 {
+		t.Fatalf("missing = %v, want empty", missing)
 	}
 }
 
