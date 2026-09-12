@@ -423,6 +423,47 @@ func TestCommandServiceGetCommand(t *testing.T) {
 	})
 }
 
+func TestCommandServiceGetCommandWithTags(t *testing.T) {
+	t.Run("populates tags for tagged command", func(t *testing.T) {
+		svc, _, tagRepo, _, _ := setupCommandServiceTest(t)
+		mustCreateServiceCommand(t, svc, CreateCommandConfig{Alias: "build", Template: "echo hi"})
+		mustCreateServiceTag(t, tagRepo, "a")
+		mustCreateServiceTag(t, tagRepo, "b")
+		if _, err := svc.AddTags("build", []string{"a", "b"}, nil); err != nil {
+			t.Fatalf("AddTags() error = %v", err)
+		}
+
+		got, err := svc.GetCommandWithTags("build", nil)
+		if err != nil {
+			t.Fatalf("GetCommandWithTags() error = %v", err)
+		}
+		if len(got.Tags) != 2 {
+			t.Fatalf("GetCommandWithTags() tags = %+v, want 2 tags", got.Tags)
+		}
+	})
+
+	t.Run("untagged command has empty tags", func(t *testing.T) {
+		svc, _, _, _, _ := setupCommandServiceTest(t)
+		mustCreateServiceCommand(t, svc, CreateCommandConfig{Alias: "build", Template: "echo hi"})
+
+		got, err := svc.GetCommandWithTags("build", nil)
+		if err != nil {
+			t.Fatalf("GetCommandWithTags() error = %v", err)
+		}
+		if len(got.Tags) != 0 {
+			t.Fatalf("GetCommandWithTags() tags = %+v, want empty", got.Tags)
+		}
+	})
+
+	t.Run("unknown alias returns error", func(t *testing.T) {
+		svc, _, _, _, _ := setupCommandServiceTest(t)
+		_, err := svc.GetCommandWithTags("missing", nil)
+		if !errors.Is(err, repository.ErrUnknownAlias) {
+			t.Fatalf("GetCommandWithTags() error = %v, want ErrUnknownAlias", err)
+		}
+	})
+}
+
 func TestCommandServiceGetCommandOrNone(t *testing.T) {
 	t.Run("returns nil, nil when alias missing", func(t *testing.T) {
 		svc, _, _, _, _ := setupCommandServiceTest(t)

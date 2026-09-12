@@ -77,6 +77,7 @@ type CommandRepository interface {
 
 	AddTags(command *models.Command, tags []models.Tag) (TagAttachResult, error)
 	RemoveTags(command *models.Command, tags []models.Tag) (TagDetachResult, error)
+	GetTagsForCommand(commandID uint) ([]models.Tag, error)
 }
 
 type commandRepository struct {
@@ -358,6 +359,19 @@ func (r *commandRepository) RemoveTags(command *models.Command, tags []models.Ta
 		return TagDetachResult{}, fmt.Errorf("%w: %v", ErrTagDetachFailed, err)
 	}
 	return TagDetachResult{Removed: removed, NotAttached: notAttached}, nil
+}
+
+// GetTagsForCommand retrieves a list of tags associated with a specific command using its ID from the database.
+func (r *commandRepository) GetTagsForCommand(commandID uint) ([]models.Tag, error) {
+	var tags []models.Tag
+	err := r.db.
+		Joins("JOIN command_tags ON command_tags.tag_id = tags.id").
+		Where("command_tags.command_id = ?", commandID).
+		Find(&tags).Error
+	if err != nil {
+		return nil, fmt.Errorf("loading tags for command id %d: %w", commandID, err)
+	}
+	return tags, nil
 }
 
 func (r *commandRepository) ListAll(orderBy string, limit int, profileID *uint) ([]models.Command, error) {

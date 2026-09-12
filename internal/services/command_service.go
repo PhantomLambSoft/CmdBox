@@ -46,6 +46,7 @@ type CommandService interface {
 	AddTags(alias string, tagNames []string, profileName *string) (repository.TagAttachResult, error)
 	RemoveTags(alias string, tagNames []string, profileName *string) (repository.TagDetachResult, error)
 	GetCommand(alias string, profileName *string) (*models.Command, error)
+	GetCommandWithTags(alias string, profileName *string) (*models.Command, error)
 	GetCommandOrNil(alias string, profileName *string) (*models.Command, error)
 	GetCommandByID(id uint, profileName *string) (*models.Command, error)
 	ListCommands(orderBy string, tagNames []string, limit *int, profileName *string) ([]models.Command, error)
@@ -208,6 +209,19 @@ func (s *commandService) GetCommand(alias string, profileName *string) (*models.
 	return s.commandRepo.GetByAlias(alias, &profile.ID)
 }
 
+func (s *commandService) GetCommandWithTags(alias string, profileName *string) (*models.Command, error) {
+	cmd, err := s.GetCommand(alias, profileName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = s.populateCommandWithTags(cmd); err != nil {
+		return nil, fmt.Errorf("populating command with tags: %w", err)
+	}
+
+	return cmd, nil
+}
+
 func (s *commandService) GetCommandOrNil(alias string, profileName *string) (*models.Command, error) {
 	cmd, err := s.GetCommand(alias, profileName)
 	if err != nil {
@@ -361,4 +375,14 @@ func (s *commandService) CopyCommand(
 // getTags retrieves a list of tags by their names using the tag repository and returns them or an error if any occurs.
 func (s *commandService) getTags(tagNames []string) ([]models.Tag, error) {
 	return getTags(tagNames, s.tagRepo)
+}
+
+func (s *commandService) populateCommandWithTags(cmd *models.Command) error {
+	tags, err := s.commandRepo.GetTagsForCommand(cmd.ID)
+	if err != nil {
+		return err
+	}
+
+	cmd.Tags = tags
+	return nil
 }

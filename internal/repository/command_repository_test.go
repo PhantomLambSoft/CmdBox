@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -797,6 +798,54 @@ func TestCommandRepositoryAddTags(t *testing.T) {
 		}
 		if len(result.Existing) != 1 || result.Existing[0] != "tag-a" {
 			t.Fatalf("Existing = %v, want [tag-a]", result.Existing)
+		}
+	})
+}
+
+func TestCommandRepositoryGetTagsForCommand(t *testing.T) {
+	repo, _, db := setupCommandRepositoryTest(t)
+	cmd := mustCreateCommand(t, repo, CommandCreateConfig{Alias: "tagged", Template: "echo hi"})
+	other := mustCreateCommand(t, repo, CommandCreateConfig{Alias: "untagged", Template: "echo hi"})
+	tagA := createTestTag(t, db, "get-a")
+	tagB := createTestTag(t, db, "get-b")
+
+	t.Run("no tags returns empty slice", func(t *testing.T) {
+		tags, err := repo.GetTagsForCommand(other.ID)
+		if err != nil {
+			t.Fatalf("GetTagsForCommand() error = %v", err)
+		}
+		if len(tags) != 0 {
+			t.Fatalf("GetTagsForCommand() = %+v, want empty", tags)
+		}
+	})
+
+	t.Run("returns attached tags", func(t *testing.T) {
+		if _, err := repo.AddTags(cmd, []models.Tag{tagA, tagB}); err != nil {
+			t.Fatalf("AddTags() error = %v", err)
+		}
+
+		tags, err := repo.GetTagsForCommand(cmd.ID)
+		if err != nil {
+			t.Fatalf("GetTagsForCommand() error = %v", err)
+		}
+		if len(tags) != 2 {
+			t.Fatalf("GetTagsForCommand() = %+v, want 2 tags", tags)
+		}
+
+		var names []string
+		for _, tag := range tags {
+			names = append(names, tag.Name)
+		}
+		if !slices.Contains(names, "get-a") || !slices.Contains(names, "get-b") {
+			t.Fatalf("GetTagsForCommand() names = %v, want get-a and get-b", names)
+		}
+
+		untaggedTags, err := repo.GetTagsForCommand(other.ID)
+		if err != nil {
+			t.Fatalf("GetTagsForCommand(other) error = %v", err)
+		}
+		if len(untaggedTags) != 0 {
+			t.Fatalf("GetTagsForCommand(other) = %+v, want empty", untaggedTags)
 		}
 	})
 }

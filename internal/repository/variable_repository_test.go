@@ -3,6 +3,7 @@ package repository
 import (
 	"errors"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -666,6 +667,54 @@ func TestVariableRepositoryAddTagsPropagatesTransactionError(t *testing.T) {
 	if !errors.Is(err, ErrTagAttachFailed) {
 		t.Fatalf("AddTags() error = %v, want ErrTagAttachFailed", err)
 	}
+}
+
+func TestVariableRepositoryGetTagsForVariable(t *testing.T) {
+	repo, _, db := setupVariableRepositoryTest(t)
+	v := mustCreateVariable(t, repo, VariableCreateConfig{Name: "tagged", Value: "x"})
+	other := mustCreateVariable(t, repo, VariableCreateConfig{Name: "untagged", Value: "x"})
+	tagA := createTestTag(t, db, "var-get-a")
+	tagB := createTestTag(t, db, "var-get-b")
+
+	t.Run("no tags returns empty slice", func(t *testing.T) {
+		tags, err := repo.GetTagsForVariable(other.ID)
+		if err != nil {
+			t.Fatalf("GetTagsForVariable() error = %v", err)
+		}
+		if len(tags) != 0 {
+			t.Fatalf("GetTagsForVariable() = %+v, want empty", tags)
+		}
+	})
+
+	t.Run("returns attached tags", func(t *testing.T) {
+		if _, err := repo.AddTags(v, []models.Tag{tagA, tagB}); err != nil {
+			t.Fatalf("AddTags() error = %v", err)
+		}
+
+		tags, err := repo.GetTagsForVariable(v.ID)
+		if err != nil {
+			t.Fatalf("GetTagsForVariable() error = %v", err)
+		}
+		if len(tags) != 2 {
+			t.Fatalf("GetTagsForVariable() = %+v, want 2 tags", tags)
+		}
+
+		var names []string
+		for _, tag := range tags {
+			names = append(names, tag.Name)
+		}
+		if !slices.Contains(names, "var-get-a") || !slices.Contains(names, "var-get-b") {
+			t.Fatalf("GetTagsForVariable() names = %v, want var-get-a and var-get-b", names)
+		}
+
+		untaggedTags, err := repo.GetTagsForVariable(other.ID)
+		if err != nil {
+			t.Fatalf("GetTagsForVariable(other) error = %v", err)
+		}
+		if len(untaggedTags) != 0 {
+			t.Fatalf("GetTagsForVariable(other) = %+v, want empty", untaggedTags)
+		}
+	})
 }
 
 func TestVariableRepositoryRemoveTags(t *testing.T) {

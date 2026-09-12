@@ -48,6 +48,7 @@ type VariableRepository interface {
 
 	AddTags(variable *models.Variable, tags []models.Tag) (TagAttachResult, error)
 	RemoveTags(variable *models.Variable, tags []models.Tag) (TagDetachResult, error)
+	GetTagsForVariable(variableID uint) ([]models.Tag, error)
 }
 
 type variableRepository struct {
@@ -233,6 +234,18 @@ func (r *variableRepository) RemoveTags(variable *models.Variable, tags []models
 		return TagDetachResult{}, fmt.Errorf("%w: %v", ErrTagDetachFailed, err)
 	}
 	return TagDetachResult{Removed: removed, NotAttached: notAttached}, nil
+}
+
+func (r *variableRepository) GetTagsForVariable(variableID uint) ([]models.Tag, error) {
+	var tags []models.Tag
+	err := r.db.
+		Joins("JOIN variable_tags ON variable_tags.tag_id = tags.id").
+		Where("variable_tags.variable_id = ?", variableID).
+		Find(&tags).Error
+	if err != nil {
+		return nil, fmt.Errorf("loading tags for variable: %w", err)
+	}
+	return tags, nil
 }
 
 func (r *variableRepository) ListAll(orderBy string, limit int, profileID *uint) ([]models.Variable, error) {

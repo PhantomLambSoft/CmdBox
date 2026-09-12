@@ -28,6 +28,7 @@ type VariableService interface {
 	AddTags(name string, tagNames []string, profileName *string) (repository.TagAttachResult, error)
 	RemoveTags(name string, tagNames []string, profileName *string) (repository.TagDetachResult, error)
 	GetVariable(name string, profileName *string) (*models.Variable, error)
+	GetVariableWithTags(name string, profileName *string) (*models.Variable, error)
 	GetVariableOrNil(name string, profileName *string) (*models.Variable, error)
 	GetVariableByID(id uint, profileName *string) (*models.Variable, error)
 	ListVariables(orderBy string, tagNames []string, limit *int, profileName *string) ([]models.Variable, error)
@@ -182,6 +183,19 @@ func (s *variableService) GetVariable(name string, profileName *string) (*models
 	return s.variableRepo.GetByName(name, &profile.ID)
 }
 
+func (s *variableService) GetVariableWithTags(name string, profileName *string) (*models.Variable, error) {
+	variable, err := s.GetVariable(name, profileName)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.populateVariableWithTags(variable); err != nil {
+		return nil, fmt.Errorf("populating variable with tags: %w", err)
+	}
+
+	return variable, nil
+}
+
 func (s *variableService) GetVariableOrNil(name string, profileName *string) (*models.Variable, error) {
 	variable, err := s.GetVariable(name, profileName)
 	if err != nil {
@@ -301,4 +315,14 @@ func (s *variableService) CopyVariable(name string, targetProfileName, newName, 
 	}
 
 	return newVar, nil
+}
+
+func (s *variableService) populateVariableWithTags(variable *models.Variable) error {
+	tags, err := s.variableRepo.GetTagsForVariable(variable.ID)
+	if err != nil {
+		return err
+	}
+
+	variable.Tags = tags
+	return nil
 }

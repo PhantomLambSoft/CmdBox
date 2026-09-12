@@ -370,6 +370,47 @@ func TestVariableServiceGetVariable(t *testing.T) {
 	})
 }
 
+func TestVariableServiceGetVariableWithTags(t *testing.T) {
+	t.Run("populates tags for tagged variable", func(t *testing.T) {
+		svc, _, tagRepo, _, _ := setupVariableServiceTest(t)
+		mustCreateServiceVariable(t, svc, CreateVariableConfig{Name: "greeting", Value: "hello"})
+		mustCreateServiceTag(t, tagRepo, "a")
+		mustCreateServiceTag(t, tagRepo, "b")
+		if _, err := svc.AddTags("greeting", []string{"a", "b"}, nil); err != nil {
+			t.Fatalf("AddTags() error = %v", err)
+		}
+
+		got, err := svc.GetVariableWithTags("greeting", nil)
+		if err != nil {
+			t.Fatalf("GetVariableWithTags() error = %v", err)
+		}
+		if len(got.Tags) != 2 {
+			t.Fatalf("GetVariableWithTags() tags = %+v, want 2 tags", got.Tags)
+		}
+	})
+
+	t.Run("untagged variable has empty tags", func(t *testing.T) {
+		svc, _, _, _, _ := setupVariableServiceTest(t)
+		mustCreateServiceVariable(t, svc, CreateVariableConfig{Name: "greeting", Value: "hello"})
+
+		got, err := svc.GetVariableWithTags("greeting", nil)
+		if err != nil {
+			t.Fatalf("GetVariableWithTags() error = %v", err)
+		}
+		if len(got.Tags) != 0 {
+			t.Fatalf("GetVariableWithTags() tags = %+v, want empty", got.Tags)
+		}
+	})
+
+	t.Run("unknown name returns error", func(t *testing.T) {
+		svc, _, _, _, _ := setupVariableServiceTest(t)
+		_, err := svc.GetVariableWithTags("missing", nil)
+		if !errors.Is(err, repository.ErrUnKnownName) {
+			t.Fatalf("GetVariableWithTags() error = %v, want ErrUnKnownName", err)
+		}
+	})
+}
+
 func TestVariableServiceGetVariableOrNil(t *testing.T) {
 	t.Run("returns nil, nil when name missing", func(t *testing.T) {
 		svc, _, _, _, _ := setupVariableServiceTest(t)
