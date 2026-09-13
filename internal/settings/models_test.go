@@ -1,12 +1,8 @@
 package settings
 
 import (
-	"bytes"
 	"reflect"
-	"strings"
 	"testing"
-
-	"github.com/pelletier/go-toml/v2"
 )
 
 func TestDefaultUIColors(t *testing.T) {
@@ -153,7 +149,7 @@ func TestDefaultExecutionSettings(t *testing.T) {
 
 func TestDefaultLoggingFileSettings(t *testing.T) {
 	got := DefaultLoggingFileSettings()
-	want := LoggingFileSettings{Enabled: false, Level: "INFO", MaxBytes: 1_000_000, Backups: 3}
+	want := LoggingFileSettings{Enabled: false, Level: "INFO", MaxSizeMB: 10, Backups: 3}
 	if got != want {
 		t.Fatalf("DefaultLoggingFileSettings() = %+v, want %+v", got, want)
 	}
@@ -190,110 +186,4 @@ func TestDefaultSettings(t *testing.T) {
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("DefaultSettings() = %+v, want %+v", got, want)
 	}
-}
-
-// --- ByteSize ---
-
-type byteSizeHolder struct {
-	MaxBytes ByteSize `toml:"max_bytes"`
-}
-
-// unmarshalByteSizeHolder decodes into h the way Repository.Load and Service.Edit do: with
-// EnableUnmarshalerInterface so ByteSize's UnmarshalTOML hook is actually invoked.
-func unmarshalByteSizeHolder(t *testing.T, data string, h *byteSizeHolder) error {
-	t.Helper()
-	return toml.NewDecoder(strings.NewReader(data)).EnableUnmarshalerInterface().Decode(h)
-}
-
-// marshalByteSizeHolder encodes h the way Repository.Save and Service.Edit do: with
-// EnableMarshalerInterface so ByteSize's MarshalTOML hook is actually invoked.
-func marshalByteSizeHolder(t *testing.T, h byteSizeHolder) []byte {
-	t.Helper()
-	var buf bytes.Buffer
-	if err := toml.NewEncoder(&buf).EnableMarshalerInterface().Encode(h); err != nil {
-		t.Fatalf("Encode() error = %v", err)
-	}
-	return buf.Bytes()
-}
-
-func TestByteSizeUnmarshalTOML(t *testing.T) {
-	t.Run("unmarshals a plain integer", func(t *testing.T) {
-		var h byteSizeHolder
-		if err := unmarshalByteSizeHolder(t, "max_bytes = 2048", &h); err != nil {
-			t.Fatalf("Decode() error = %v", err)
-		}
-		if h.MaxBytes != 2048 {
-			t.Fatalf("MaxBytes = %d, want 2048", h.MaxBytes)
-		}
-	})
-
-	t.Run("unmarshals a human-readable string via ParseByteSize", func(t *testing.T) {
-		var h byteSizeHolder
-		if err := unmarshalByteSizeHolder(t, `max_bytes = "5mb"`, &h); err != nil {
-			t.Fatalf("Decode() error = %v", err)
-		}
-		if h.MaxBytes != ByteSize(5*1024*1024) {
-			t.Fatalf("MaxBytes = %d, want %d", h.MaxBytes, 5*1024*1024)
-		}
-	})
-
-	t.Run("unmarshals a single-quoted literal string", func(t *testing.T) {
-		var h byteSizeHolder
-		if err := unmarshalByteSizeHolder(t, "max_bytes = '2kb'", &h); err != nil {
-			t.Fatalf("Decode() error = %v", err)
-		}
-		if h.MaxBytes != ByteSize(2*1024) {
-			t.Fatalf("MaxBytes = %d, want %d", h.MaxBytes, 2*1024)
-		}
-	})
-
-	t.Run("invalid string returns an error", func(t *testing.T) {
-		var h byteSizeHolder
-		if err := unmarshalByteSizeHolder(t, `max_bytes = "not-a-size"`, &h); err == nil {
-			t.Fatalf("Decode() error = nil, want error")
-		}
-	})
-
-	t.Run("UnmarshalTOML called directly parses a human-readable string", func(t *testing.T) {
-		var b ByteSize
-		if err := b.UnmarshalTOML([]byte(`"5mb"`)); err != nil {
-			t.Fatalf("UnmarshalTOML() error = %v", err)
-		}
-		if b != ByteSize(5*1024*1024) {
-			t.Fatalf("UnmarshalTOML() = %d, want %d", b, 5*1024*1024)
-		}
-	})
-
-	t.Run("UnmarshalTOML called directly propagates invalid string errors", func(t *testing.T) {
-		var b ByteSize
-		if err := b.UnmarshalTOML([]byte(`"not-a-size"`)); err == nil {
-			t.Fatalf("UnmarshalTOML() error = nil, want error")
-		}
-	})
-}
-
-func TestByteSizeMarshalTOML(t *testing.T) {
-	t.Run("round-trips through the encoder and decoder", func(t *testing.T) {
-		h := byteSizeHolder{MaxBytes: 500}
-		data := marshalByteSizeHolder(t, h)
-
-		var roundTripped byteSizeHolder
-		if err := unmarshalByteSizeHolder(t, string(data), &roundTripped); err != nil {
-			t.Fatalf("Decode() error = %v", err)
-		}
-		if roundTripped.MaxBytes != 500 {
-			t.Fatalf("round-tripped MaxBytes = %d, want 500", roundTripped.MaxBytes)
-		}
-	})
-
-	t.Run("MarshalTOML called directly returns the plain integer", func(t *testing.T) {
-		b := ByteSize(500)
-		data, err := b.MarshalTOML()
-		if err != nil {
-			t.Fatalf("MarshalTOML() error = %v", err)
-		}
-		if string(data) != "500" {
-			t.Fatalf("MarshalTOML() = %q, want %q", data, "500")
-		}
-	})
 }

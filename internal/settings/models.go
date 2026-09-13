@@ -1,7 +1,6 @@
 package settings
 
 import (
-	"strconv"
 	"strings"
 )
 
@@ -162,41 +161,15 @@ func DefaultExecutionSettings() ExecutionSettings {
 	return ExecutionSettings{DefaultShell: "auto", CaptureOutput: false, DefaultVerbose: false}
 }
 
-type ByteSize int64
-
-// UnmarshalTOML implements unstable.Unmarshaler. data is the raw TOML literal for the value (e.g. `2048` or
-// `"5mb"`, quotes included), as delivered by a Decoder with EnableUnmarshalerInterface set.
-func (b *ByteSize) UnmarshalTOML(data []byte) error {
-	raw := strings.TrimSpace(string(data))
-	if n := len(raw); n >= 2 && (raw[0] == '"' || raw[0] == '\'') && raw[n-1] == raw[0] {
-		if unquoted, err := strconv.Unquote(raw); err == nil {
-			raw = unquoted
-		} else {
-			raw = raw[1 : n-1]
-		}
-	}
-
-	parsed, err := ParseByteSize(raw)
-	if err != nil {
-		return err
-	}
-	*b = ByteSize(parsed)
-	return nil
-}
-
-func (b ByteSize) MarshalTOML() ([]byte, error) {
-	return []byte(strconv.FormatInt(int64(b), 10)), nil
-}
-
 type LoggingFileSettings struct {
-	Enabled  bool     `toml:"enabled"`
-	Level    string   `toml:"level"`
-	MaxBytes ByteSize `toml:"max_bytes"`
-	Backups  int      `toml:"backups"`
+	Enabled   bool   `toml:"enabled"`
+	Level     string `toml:"level"`
+	MaxSizeMB int    `toml:"max_size_mb"`
+	Backups   int    `toml:"backups"`
 }
 
 func DefaultLoggingFileSettings() LoggingFileSettings {
-	return LoggingFileSettings{Enabled: false, Level: "INFO", MaxBytes: 1_000_000, Backups: 3}
+	return LoggingFileSettings{Enabled: false, Level: "INFO", MaxSizeMB: 10, Backups: 3}
 }
 
 type LoggingSettings struct {
