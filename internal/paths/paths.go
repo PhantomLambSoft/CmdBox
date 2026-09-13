@@ -1,6 +1,7 @@
 package paths
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -32,7 +33,7 @@ func GetAppDataDir() (string, error) {
 
 	dir := filepath.Join(base, vendor, appName)
 	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", err
+		return "", fmt.Errorf("creating app data directory at %s: %v", dir, err)
 	}
 	return dir, nil
 }
