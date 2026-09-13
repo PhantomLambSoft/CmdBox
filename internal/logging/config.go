@@ -14,7 +14,7 @@ type LogConfig struct {
 	FileEnabled  bool
 	FileLevel    slog.Level
 	FilePath     string
-	MaxBytes     int64
+	MaxBytes     int
 	Backups      int
 }
 
