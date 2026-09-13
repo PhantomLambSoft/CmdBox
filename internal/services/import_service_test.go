@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/PhantomLambSoft/CmdBox/internal/models"
@@ -25,6 +26,7 @@ func cmdKey(alias string, profileName *string) string {
 
 type fakeCommandService struct {
 	commands map[string]*models.Command
+	order    []string
 
 	getOrNilErr    error
 	getWithTagsErr error
@@ -32,6 +34,7 @@ type fakeCommandService struct {
 	updateErr      error
 	addTagsErr     error
 	removeTagsErr  error
+	listErr        error
 
 	createCalls     []CreateCommandConfig
 	updateCalls     []UpdateCommandConfig
@@ -48,7 +51,11 @@ func newFakeCommandService() *fakeCommandService {
 }
 
 func (f *fakeCommandService) seed(alias string, profileName *string, tags []models.Tag) {
-	f.commands[cmdKey(alias, profileName)] = &models.Command{Alias: alias, Tags: tags}
+	key := cmdKey(alias, profileName)
+	if _, exists := f.commands[key]; !exists {
+		f.order = append(f.order, key)
+	}
+	f.commands[key] = &models.Command{Alias: alias, Tags: tags}
 }
 
 func (f *fakeCommandService) GetCommandOrNil(alias string, profileName *string) (*models.Command, error) {
@@ -116,7 +123,41 @@ func (f *fakeCommandService) GetCommandByID(id uint, profileName *string) (*mode
 }
 
 func (f *fakeCommandService) ListCommands(orderBy string, tagNames []string, limit *int, profileName *string) ([]models.Command, error) {
-	panic("not implemented in fake")
+	if f.listErr != nil {
+		return nil, f.listErr
+	}
+	prefix := ""
+	if profileName != nil {
+		prefix = *profileName
+	}
+	prefix += "|"
+
+	var out []models.Command
+	for _, key := range f.order {
+		if !strings.HasPrefix(key, prefix) {
+			continue
+		}
+		cmd := f.commands[key]
+		if len(tagNames) > 0 && !hasAnyTag(cmd.Tags, tagNames) {
+			continue
+		}
+		out = append(out, *cmd)
+	}
+	if limit != nil && *limit < len(out) {
+		out = out[:*limit]
+	}
+	return out, nil
+}
+
+func hasAnyTag(tags []models.Tag, names []string) bool {
+	for _, t := range tags {
+		for _, n := range names {
+			if t.Name == n {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (f *fakeCommandService) SearchCommands(query string, fields []string, limit *int, profileName *string) ([]models.Command, error) {
@@ -133,6 +174,7 @@ func (f *fakeCommandService) CopyCommand(alias string, targetProfileName, newAli
 
 type fakeVariableService struct {
 	variables map[string]*models.Variable
+	order     []string
 
 	getOrNilErr    error
 	getWithTagsErr error
@@ -140,6 +182,7 @@ type fakeVariableService struct {
 	updateErr      error
 	addTagsErr     error
 	removeTagsErr  error
+	listErr        error
 
 	createCalls     []CreateVariableConfig
 	updateCalls     []UpdateVariableConfig
@@ -156,7 +199,11 @@ func newFakeVariableService() *fakeVariableService {
 }
 
 func (f *fakeVariableService) seed(name string, profileName *string, tags []models.Tag) {
-	f.variables[cmdKey(name, profileName)] = &models.Variable{Name: name, Tags: tags}
+	key := cmdKey(name, profileName)
+	if _, exists := f.variables[key]; !exists {
+		f.order = append(f.order, key)
+	}
+	f.variables[key] = &models.Variable{Name: name, Value: name, Tags: tags}
 }
 
 func (f *fakeVariableService) GetVariableOrNil(name string, profileName *string) (*models.Variable, error) {
@@ -224,7 +271,30 @@ func (f *fakeVariableService) GetVariableByID(id uint, profileName *string) (*mo
 }
 
 func (f *fakeVariableService) ListVariables(orderBy string, tagNames []string, limit *int, profileName *string) ([]models.Variable, error) {
-	panic("not implemented in fake")
+	if f.listErr != nil {
+		return nil, f.listErr
+	}
+	prefix := ""
+	if profileName != nil {
+		prefix = *profileName
+	}
+	prefix += "|"
+
+	var out []models.Variable
+	for _, key := range f.order {
+		if !strings.HasPrefix(key, prefix) {
+			continue
+		}
+		v := f.variables[key]
+		if len(tagNames) > 0 && !hasAnyTag(v.Tags, tagNames) {
+			continue
+		}
+		out = append(out, *v)
+	}
+	if limit != nil && *limit < len(out) {
+		out = out[:*limit]
+	}
+	return out, nil
 }
 
 func (f *fakeVariableService) SearchVariables(query string, fields []string, limit *int, profileName *string) ([]models.Variable, error) {
@@ -297,11 +367,24 @@ type fakeProfileRepo struct {
 	repository.ProfileRepository
 	activeProfile *models.Profile
 	activeErr     error
+
+	activeVariableProfile *models.Profile
+	activeVariableErr     error
 }
 
 func (f *fakeProfileRepo) GetActiveCommandProfile() (*models.Profile, error) {
 	if f.activeErr != nil {
 		return nil, f.activeErr
+	}
+	return f.activeProfile, nil
+}
+
+func (f *fakeProfileRepo) GetActiveVariableProfile() (*models.Profile, error) {
+	if f.activeVariableErr != nil {
+		return nil, f.activeVariableErr
+	}
+	if f.activeVariableProfile != nil {
+		return f.activeVariableProfile, nil
 	}
 	return f.activeProfile, nil
 }
@@ -333,7 +416,7 @@ func newImportServiceHarness() *importServiceHarness {
 	}
 }
 
-func writeImportFile(t *testing.T, doc ImportDocument) string {
+func writeImportFile(t *testing.T, doc TransferDocument) string {
 	t.Helper()
 	data, err := json.Marshal(doc)
 	if err != nil {
@@ -346,8 +429,8 @@ func writeImportFile(t *testing.T, doc ImportDocument) string {
 	return path
 }
 
-func minimalDoc() ImportDocument {
-	return ImportDocument{Version: "1", Type: "cmdbox-export"}
+func minimalDoc() TransferDocument {
+	return TransferDocument{Version: "1", Type: "cmdbox-export"}
 }
 
 func sortedCopy(s []string) []string {
@@ -360,11 +443,11 @@ func sortedCopy(s []string) []string {
 // --- buildDependencyGraph / cycle detection ---
 
 func TestBuildDependencyGraph(t *testing.T) {
-	doc := ImportDocument{
-		Commands: []ImportCommand{
+	doc := TransferDocument{
+		Commands: []TransferCommand{
 			{Alias: "build", Template: "go build <var:target> && <cmd:test>"},
 		},
-		Variables: []ImportVariable{
+		Variables: []TransferVariable{
 			{Name: "target", Value: "./..."},
 		},
 	}
@@ -383,8 +466,8 @@ func TestBuildDependencyGraph(t *testing.T) {
 }
 
 func TestBuildDependencyGraphVariableReferences(t *testing.T) {
-	doc := ImportDocument{
-		Variables: []ImportVariable{
+	doc := TransferDocument{
+		Variables: []TransferVariable{
 			{Name: "full", Value: "<var:base>/<cmd:setup>"},
 		},
 	}
@@ -478,7 +561,7 @@ func TestParseImportFileInvalidJSON(t *testing.T) {
 }
 
 func TestParseImportFileUnsupportedVersion(t *testing.T) {
-	path := writeImportFile(t, ImportDocument{Version: "999"})
+	path := writeImportFile(t, TransferDocument{Version: "999"})
 	_, err := parseImportFile(path)
 	if !errors.Is(err, ErrUnsupportedVersion) {
 		t.Fatalf("parseImportFile() error = %v, want ErrUnsupportedVersion", err)
@@ -564,9 +647,9 @@ func TestImportFileParseError(t *testing.T) {
 
 func TestImportFileCycleDetected(t *testing.T) {
 	h := newImportServiceHarness()
-	doc := ImportDocument{
+	doc := TransferDocument{
 		Version: "1",
-		Commands: []ImportCommand{
+		Commands: []TransferCommand{
 			{Alias: "a", Template: "<cmd:b>"},
 			{Alias: "b", Template: "<cmd:a>"},
 		},
@@ -583,7 +666,7 @@ func TestImportFileGetCommandOrNilError(t *testing.T) {
 	h := newImportServiceHarness()
 	sentinel := errors.New("boom")
 	h.cmdSvc.getOrNilErr = sentinel
-	doc := ImportDocument{Version: "1", Commands: []ImportCommand{{Alias: "a", Template: "echo hi"}}}
+	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
@@ -596,7 +679,7 @@ func TestImportFileGetVariableOrNilError(t *testing.T) {
 	h := newImportServiceHarness()
 	sentinel := errors.New("boom")
 	h.varSvc.getOrNilErr = sentinel
-	doc := ImportDocument{Version: "1", Variables: []ImportVariable{{Name: "v", Value: "1"}}}
+	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
@@ -609,10 +692,10 @@ func TestImportFileGetVariableOrNilError(t *testing.T) {
 
 func TestImportFileClassifiesNewCommandsAndVariablesAsCreated(t *testing.T) {
 	h := newImportServiceHarness()
-	doc := ImportDocument{
+	doc := TransferDocument{
 		Version:   "1",
-		Commands:  []ImportCommand{{Alias: "a", Template: "echo hi"}},
-		Variables: []ImportVariable{{Name: "v", Value: "1"}},
+		Commands:  []TransferCommand{{Alias: "a", Template: "echo hi"}},
+		Variables: []TransferVariable{{Name: "v", Value: "1"}},
 	}
 	path := writeImportFile(t, doc)
 
@@ -638,10 +721,10 @@ func TestImportFileClassifiesExistingWithoutOverwriteAsSkipped(t *testing.T) {
 	h := newImportServiceHarness()
 	h.cmdSvc.seed("a", strPtr("default"), nil)
 	h.varSvc.seed("v", strPtr("default"), nil)
-	doc := ImportDocument{
+	doc := TransferDocument{
 		Version:   "1",
-		Commands:  []ImportCommand{{Alias: "a", Template: "echo hi"}},
-		Variables: []ImportVariable{{Name: "v", Value: "1"}},
+		Commands:  []TransferCommand{{Alias: "a", Template: "echo hi"}},
+		Variables: []TransferVariable{{Name: "v", Value: "1"}},
 	}
 	path := writeImportFile(t, doc)
 
@@ -667,10 +750,10 @@ func TestImportFileClassifiesExistingWithOverwriteAsOverwritten(t *testing.T) {
 	h := newImportServiceHarness()
 	h.cmdSvc.seed("a", strPtr("default"), nil)
 	h.varSvc.seed("v", strPtr("default"), nil)
-	doc := ImportDocument{
+	doc := TransferDocument{
 		Version:   "1",
-		Commands:  []ImportCommand{{Alias: "a", Template: "echo hi"}},
-		Variables: []ImportVariable{{Name: "v", Value: "1"}},
+		Commands:  []TransferCommand{{Alias: "a", Template: "echo hi"}},
+		Variables: []TransferVariable{{Name: "v", Value: "1"}},
 	}
 	path := writeImportFile(t, doc)
 
@@ -696,9 +779,9 @@ func TestImportFileClassifiesExistingWithOverwriteAsOverwritten(t *testing.T) {
 
 func TestImportFilePreviewDoesNotMutate(t *testing.T) {
 	h := newImportServiceHarness()
-	doc := ImportDocument{
+	doc := TransferDocument{
 		Version:  "1",
-		Commands: []ImportCommand{{Alias: "a", Template: "echo hi", Tags: []string{"t1"}}},
+		Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"t1"}}},
 	}
 	path := writeImportFile(t, doc)
 
@@ -741,9 +824,9 @@ func TestImportFileSetsResultProfileAndPreview(t *testing.T) {
 func TestImportFileCreatesMissingTagsButNotExistingOnes(t *testing.T) {
 	h := newImportServiceHarness()
 	h.tagSvc.existing["already-there"] = &models.Tag{Name: "already-there"}
-	doc := ImportDocument{
+	doc := TransferDocument{
 		Version:  "1",
-		Commands: []ImportCommand{{Alias: "a", Template: "echo hi", Tags: []string{"already-there", "new-tag"}}},
+		Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"already-there", "new-tag"}}},
 	}
 	path := writeImportFile(t, doc)
 
@@ -758,9 +841,9 @@ func TestImportFileCreatesMissingTagsButNotExistingOnes(t *testing.T) {
 func TestImportFileSkipsTagsFromSkippedItems(t *testing.T) {
 	h := newImportServiceHarness()
 	h.cmdSvc.seed("a", strPtr("default"), nil)
-	doc := ImportDocument{
+	doc := TransferDocument{
 		Version:  "1",
-		Commands: []ImportCommand{{Alias: "a", Template: "echo hi", Tags: []string{"only-on-skipped"}}},
+		Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"only-on-skipped"}}},
 	}
 	path := writeImportFile(t, doc)
 
@@ -776,7 +859,7 @@ func TestImportFileGetTagError(t *testing.T) {
 	h := newImportServiceHarness()
 	sentinel := errors.New("boom")
 	h.tagSvc.getOrNilErr = sentinel
-	doc := ImportDocument{Version: "1", Commands: []ImportCommand{{Alias: "a", Template: "echo hi", Tags: []string{"t"}}}}
+	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"t"}}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
@@ -789,7 +872,7 @@ func TestImportFileCreateTagError(t *testing.T) {
 	h := newImportServiceHarness()
 	sentinel := errors.New("boom")
 	h.tagSvc.createErr = sentinel
-	doc := ImportDocument{Version: "1", Commands: []ImportCommand{{Alias: "a", Template: "echo hi", Tags: []string{"t"}}}}
+	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"t"}}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
@@ -804,7 +887,7 @@ func TestImportFileCreateCommandError(t *testing.T) {
 	h := newImportServiceHarness()
 	sentinel := errors.New("boom")
 	h.cmdSvc.createErr = sentinel
-	doc := ImportDocument{Version: "1", Commands: []ImportCommand{{Alias: "a", Template: "echo hi"}}}
+	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
@@ -817,7 +900,7 @@ func TestImportFileCreateVariableError(t *testing.T) {
 	h := newImportServiceHarness()
 	sentinel := errors.New("boom")
 	h.varSvc.createErr = sentinel
-	doc := ImportDocument{Version: "1", Variables: []ImportVariable{{Name: "v", Value: "1"}}}
+	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
@@ -831,7 +914,7 @@ func TestImportFileOverwriteCommandGetWithTagsError(t *testing.T) {
 	h.cmdSvc.seed("a", strPtr("default"), nil)
 	sentinel := errors.New("boom")
 	h.cmdSvc.getWithTagsErr = sentinel
-	doc := ImportDocument{Version: "1", Commands: []ImportCommand{{Alias: "a", Template: "echo hi"}}}
+	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
@@ -845,7 +928,7 @@ func TestImportFileOverwriteCommandUpdateError(t *testing.T) {
 	h.cmdSvc.seed("a", strPtr("default"), nil)
 	sentinel := errors.New("boom")
 	h.cmdSvc.updateErr = sentinel
-	doc := ImportDocument{Version: "1", Commands: []ImportCommand{{Alias: "a", Template: "echo hi"}}}
+	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
@@ -859,7 +942,7 @@ func TestImportFileOverwriteCommandRemoveTagsError(t *testing.T) {
 	h.cmdSvc.seed("a", strPtr("default"), []models.Tag{{Name: "old"}})
 	sentinel := errors.New("boom")
 	h.cmdSvc.removeTagsErr = sentinel
-	doc := ImportDocument{Version: "1", Commands: []ImportCommand{{Alias: "a", Template: "echo hi"}}}
+	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
@@ -873,7 +956,7 @@ func TestImportFileOverwriteCommandAddTagsError(t *testing.T) {
 	h.cmdSvc.seed("a", strPtr("default"), nil)
 	sentinel := errors.New("boom")
 	h.cmdSvc.addTagsErr = sentinel
-	doc := ImportDocument{Version: "1", Commands: []ImportCommand{{Alias: "a", Template: "echo hi", Tags: []string{"new"}}}}
+	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"new"}}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
@@ -885,9 +968,9 @@ func TestImportFileOverwriteCommandAddTagsError(t *testing.T) {
 func TestImportFileOverwriteCommandTagDiff(t *testing.T) {
 	h := newImportServiceHarness()
 	h.cmdSvc.seed("a", strPtr("default"), []models.Tag{{Name: "keep"}, {Name: "drop"}})
-	doc := ImportDocument{
+	doc := TransferDocument{
 		Version:  "1",
-		Commands: []ImportCommand{{Alias: "a", Template: "echo hi", Tags: []string{"keep", "add"}}},
+		Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"keep", "add"}}},
 	}
 	path := writeImportFile(t, doc)
 
@@ -912,7 +995,7 @@ func TestImportFileOverwriteVariableGetWithTagsError(t *testing.T) {
 	h.varSvc.seed("v", strPtr("default"), nil)
 	sentinel := errors.New("boom")
 	h.varSvc.getWithTagsErr = sentinel
-	doc := ImportDocument{Version: "1", Variables: []ImportVariable{{Name: "v", Value: "1"}}}
+	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
@@ -926,7 +1009,7 @@ func TestImportFileOverwriteVariableUpdateError(t *testing.T) {
 	h.varSvc.seed("v", strPtr("default"), nil)
 	sentinel := errors.New("boom")
 	h.varSvc.updateErr = sentinel
-	doc := ImportDocument{Version: "1", Variables: []ImportVariable{{Name: "v", Value: "1"}}}
+	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
@@ -940,7 +1023,7 @@ func TestImportFileOverwriteVariableRemoveTagsError(t *testing.T) {
 	h.varSvc.seed("v", strPtr("default"), []models.Tag{{Name: "old"}})
 	sentinel := errors.New("boom")
 	h.varSvc.removeTagsErr = sentinel
-	doc := ImportDocument{Version: "1", Variables: []ImportVariable{{Name: "v", Value: "1"}}}
+	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
@@ -954,7 +1037,7 @@ func TestImportFileOverwriteVariableAddTagsError(t *testing.T) {
 	h.varSvc.seed("v", strPtr("default"), nil)
 	sentinel := errors.New("boom")
 	h.varSvc.addTagsErr = sentinel
-	doc := ImportDocument{Version: "1", Variables: []ImportVariable{{Name: "v", Value: "1", Tags: []string{"new"}}}}
+	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1", Tags: []string{"new"}}}}
 	path := writeImportFile(t, doc)
 
 	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
@@ -966,9 +1049,9 @@ func TestImportFileOverwriteVariableAddTagsError(t *testing.T) {
 func TestImportFileOverwriteVariableTagDiff(t *testing.T) {
 	h := newImportServiceHarness()
 	h.varSvc.seed("v", strPtr("default"), []models.Tag{{Name: "keep"}, {Name: "drop"}})
-	doc := ImportDocument{
+	doc := TransferDocument{
 		Version:   "1",
-		Variables: []ImportVariable{{Name: "v", Value: "1", Tags: []string{"keep", "add"}}},
+		Variables: []TransferVariable{{Name: "v", Value: "1", Tags: []string{"keep", "add"}}},
 	}
 	path := writeImportFile(t, doc)
 

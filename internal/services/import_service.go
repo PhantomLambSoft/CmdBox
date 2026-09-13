@@ -23,39 +23,12 @@ type ImportResult struct {
 	Preview              bool
 }
 
-type ImportCommand struct {
-	Alias       string            `json:"alias"`
-	Template    string            `json:"template"`
-	Description *string           `json:"description"`
-	Tags        []string          `json:"tags"`
-	Cwd         *string           `json:"cwd"`
-	Shell       *string           `json:"shell"`
-	Env         map[string]string `json:"env"`
-	Timeout     *int              `json:"timeout"`
-}
-
-type ImportVariable struct {
-	Name  string   `json:"name"`
-	Value string   `json:"value"`
-	Tags  []string `json:"tags"`
-}
-
-type ImportDocument struct {
-	Version         string           `json:"version"`
-	Type            string           `json:"type"`
-	ExportedAt      string           `json:"exported_at"`
-	CommandProfile  string           `json:"command_profile"`
-	VariableProfile string           `json:"variable_profile"`
-	Commands        []ImportCommand  `json:"commands"`
-	Variables       []ImportVariable `json:"variables"`
-}
-
 // makeLabel combines a reference kind and key into a single string, separated by a colon.
 func makeLabel(kind resolve.RefKind, key string) string {
 	return string(kind) + ":" + key
 }
 
-func buildDependencyGraph(importData ImportDocument) map[string][]string {
+func buildDependencyGraph(importData TransferDocument) map[string][]string {
 	deps := make(map[string][]string)
 
 	for _, command := range importData.Commands {
@@ -130,19 +103,19 @@ func validateNoCycles(deps map[string][]string) error {
 	return nil
 }
 
-func parseImportFile(path string) (ImportDocument, error) {
+func parseImportFile(path string) (TransferDocument, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return ImportDocument{}, &ImportFileError{Path: path, Err: err}
+		return TransferDocument{}, &ImportFileError{Path: path, Err: err}
 	}
 
-	var doc ImportDocument
+	var doc TransferDocument
 	if err := json.Unmarshal(data, &doc); err != nil {
-		return ImportDocument{}, &ImportFileError{Path: path, Err: err}
+		return TransferDocument{}, &ImportFileError{Path: path, Err: err}
 	}
 
 	if !slices.Contains(supportedVersions, doc.Version) {
-		return ImportDocument{}, &ImportFileError{Path: path, Err: ErrUnsupportedVersion}
+		return TransferDocument{}, &ImportFileError{Path: path, Err: ErrUnsupportedVersion}
 	}
 
 	return doc, nil
@@ -192,12 +165,12 @@ const (
 )
 
 type commandAction struct {
-	Data   ImportCommand
+	Data   TransferCommand
 	Action actionType
 }
 
 type variableAction struct {
-	Data   ImportVariable
+	Data   TransferVariable
 	Action actionType
 }
 
