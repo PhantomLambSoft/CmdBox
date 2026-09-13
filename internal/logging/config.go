@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"strings"
 
+	"github.com/PhantomLambSoft/CmdBox/internal/paths"
 	"github.com/PhantomLambSoft/CmdBox/internal/settings"
 )
 
@@ -14,12 +15,23 @@ type LogConfig struct {
 	FileEnabled  bool
 	FileLevel    slog.Level
 	FilePath     string
-	MaxBytes     int
+	MaxSizeMB    int
 	Backups      int
 }
 
-func BuildLogConfig(settings *settings.Settings, verbose, debug bool, fileLogs *bool) LogConfig {
-	return LogConfig{}
+func BuildLogConfig(settings *settings.Settings, verbose, debug bool, fileLogs *bool) (LogConfig, error) {
+	logFilePath, err := paths.GetLogFilePath()
+	if err != nil {
+		return LogConfig{}, err
+	}
+	return LogConfig{
+		ConsoleLevel: GetConsoleLevel(settings, verbose, debug),
+		FileEnabled:  GetFileEnabled(settings, fileLogs),
+		FileLevel:    GetFileLevel(settings, verbose, debug),
+		FilePath:     logFilePath,
+		MaxSizeMB:    settings.Logging.File.MaxSizeMB,
+		Backups:      settings.Logging.File.Backups,
+	}, nil
 }
 
 func GetConsoleLevel(settings *settings.Settings, verbose, debug bool) slog.Level {
