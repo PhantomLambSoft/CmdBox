@@ -571,7 +571,7 @@ func TestConfigureLoggingFileEnabled(t *testing.T) {
 		FileEnabled:  true,
 		FileLevel:    slog.LevelDebug,
 		FilePath:     logPath,
-		MaxBytes:     10,
+		MaxSizeMB:    10,
 		Backups:      1,
 	}
 
@@ -644,7 +644,7 @@ func TestConfigureLoggingRespectsIndependentConsoleAndFileLevels(t *testing.T) {
 		FileEnabled:  true,
 		FileLevel:    slog.LevelDebug, // file: everything
 		FilePath:     logPath,
-		MaxBytes:     10,
+		MaxSizeMB:    10,
 		Backups:      1,
 	}
 

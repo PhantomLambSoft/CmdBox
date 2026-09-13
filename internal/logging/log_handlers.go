@@ -132,7 +132,7 @@ func ConfigureLogging(cfg LogConfig, runID string) *slog.Logger {
 	if cfg.FileEnabled {
 		fileWriter := &lumberjack.Logger{
 			Filename:   cfg.FilePath,
-			MaxSize:    maxSizeMB(cfg.MaxBytes),
+			MaxSize:    maxSizeMB(cfg.MaxSizeMB),
 			MaxBackups: cfg.Backups,
 		}
 		fileHandler := slog.NewTextHandler(fileWriter, &slog.HandlerOptions{
