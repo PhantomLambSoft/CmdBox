@@ -78,28 +78,28 @@ func init() {
 	varUpdateCmd.Flags().String("name", "", "New name (rename)")
 	varUpdateCmd.Flags().String("set", "", "Comma-separated key=value pairs")
 	varUpdateCmd.Flags().BoolP("edit", "e", false, "Interactively edit current fields")
-	varUpdateCmd.Flags().StringP("edit-fields", "ef", "", "Restrict --edit to these fields")
-	varUpdateCmd.Flags().String("profile", "", "Profile to look in")
+	varUpdateCmd.Flags().String("edit-fields", "", "Restrict --edit to these fields")
+	varUpdateCmd.Flags().StringP("profile", "p", "", "Profile to look in")
 
 	varListCmd.Flags().StringSlice("tag", nil, "Filter by tag (repeatable)")
-	varListCmd.Flags().String("order", "", "Field to order by")
+	varListCmd.Flags().StringP("order", "o", "", "Field to order by")
 	varListCmd.Flags().StringSlice("field", nil, "Fields to display (repeatable)")
-	varListCmd.Flags().Int("limit", 0, "Max results")
+	varListCmd.Flags().IntP("limit", "l", 0, "Max results")
 	varListCmd.Flags().Bool("page", false, "Force paging on")
 	varListCmd.Flags().Bool("no-page", false, "Force paging off")
-	varListCmd.Flags().String("profile", "", "Profile to list from")
+	varListCmd.Flags().StringP("profile", "p", "", "Profile to list from")
 
 	varSearchCmd.Flags().StringSlice("in", nil, "Fields to search in (repeatable)")
 	varSearchCmd.Flags().StringSlice("field", nil, "Fields to display (repeatable)")
-	varSearchCmd.Flags().Int("limit", 0, "Max results")
+	varSearchCmd.Flags().IntP("limit", "l", 0, "Max results")
 	varSearchCmd.Flags().Bool("page", false, "Force paging on")
 	varSearchCmd.Flags().Bool("no-page", false, "Force paging off")
-	varSearchCmd.Flags().String("profile", "", "Profile to search in")
+	varSearchCmd.Flags().StringP("profile", "p", "", "Profile to search in")
 
-	varDeleteCmd.Flags().String("profile", "", "Profile to delete from")
+	varDeleteCmd.Flags().StringP("profile", "p", "", "Profile to delete from")
 
-	varAttachTagCmd.Flags().String("profile", "", "Profile to look in")
-	varDetachTagCmd.Flags().String("profile", "", "Profile to look in")
+	varAttachTagCmd.Flags().StringP("profile", "p", "", "Profile to look in")
+	varDetachTagCmd.Flags().StringP("profile", "p", "", "Profile to look in")
 
 	varCmd.AddCommand(
 		varAddCmd,
