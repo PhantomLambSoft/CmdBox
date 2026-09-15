@@ -19,26 +19,6 @@ type UpdateVarArgs struct {
 	Profile     string
 }
 
-type ListVarArgs struct {
-	Tags     []string
-	Order    string
-	Fields   []string
-	Limit    int
-	HasLimit bool
-	Page     *bool // nil = not specified - pull from settings, true/false = explicit
-	Profile  string
-}
-
-type SearchVarArgs struct {
-	Term     string
-	SearchIn []string // fields to search in
-	Fields   []string // fields to output
-	Limit    int
-	HasLimit bool
-	Page     *bool
-	Profile  string
-}
-
 type DeleteVarArgs struct {
 	Name    string
 	Profile string
@@ -62,11 +42,11 @@ func RunUpdateVar(args UpdateVarArgs) error {
 	return nil
 }
 
-func RunListVar(args ListVarArgs) error {
+func RunListVar(args ListParams) error {
 	return nil
 }
 
-func RunSearchVar(args SearchVarArgs) error {
+func RunSearchVar(args SearchParams) error {
 	return nil
 }
 
