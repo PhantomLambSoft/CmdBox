@@ -162,7 +162,7 @@ func runVarList(cmd *cobra.Command, args []string) error {
 	fields := getFields(cmd)
 	profile := getProfile(cmd)
 
-	raw := handlers.ListVarArgs{Tags: tags, Order: order, Fields: fields, Profile: profile}
+	raw := handlers.ListParams{Tags: tags, Order: order, Fields: fields, Profile: profile}
 	if cmd.Flags().Changed("limit") {
 		raw.Limit = getLimit(cmd)
 		raw.HasLimit = true
@@ -182,7 +182,7 @@ func runVarSearch(cmd *cobra.Command, args []string) error {
 	fields := getFields(cmd)
 	searchIn, _ := cmd.Flags().GetStringSlice("in")
 
-	raw := handlers.SearchVarArgs{Term: args[0], Fields: fields, SearchIn: searchIn, Profile: profile}
+	raw := handlers.SearchParams{Term: args[0], Fields: fields, SearchIn: searchIn, Profile: profile}
 	if cmd.Flags().Changed("limit") {
 		raw.Limit = getLimit(cmd)
 		raw.HasLimit = true
@@ -213,7 +213,7 @@ func runVarAttachTags(cmd *cobra.Command, args []string) error {
 
 func runVarDetachTags(cmd *cobra.Command, args []string) error {
 	profile := getProfile(cmd)
-	return handlers.RunTagVar(handlers.TagVarArgs{
+	return handlers.RunUntagVar(handlers.TagVarArgs{
 		Name:     args[0],
 		TagNames: args[1:],
 		Profile:  profile,
