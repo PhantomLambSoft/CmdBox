@@ -1,6 +1,6 @@
 module github.com/PhantomLambSoft/CmdBox
 
-go 1.26
+go 1.27
 
 require (
 	github.com/glebarez/sqlite v1.11.0
