@@ -16,6 +16,26 @@ func getProfile(cmd *cobra.Command) string {
 	return profile
 }
 
+func getDescriptionFlag(cmd *cobra.Command) string {
+	description, _ := cmd.Flags().GetString("description")
+	return description
+}
+
+func getInteractiveFlag(cmd *cobra.Command) bool {
+	interactive, _ := cmd.Flags().GetBool("interactive")
+	return interactive
+}
+
+func getEditMode(cmd *cobra.Command) bool {
+	editMode, _ := cmd.Flags().GetBool("edit")
+	return editMode
+}
+
+func getEditFields(cmd *cobra.Command) string {
+	editFields, _ := cmd.Flags().GetString("edit-fields")
+	return editFields
+}
+
 func getTags(cmd *cobra.Command) []string {
 	tags, _ := cmd.Flags().GetStringSlice("tags")
 	return tags

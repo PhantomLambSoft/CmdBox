@@ -19,15 +19,19 @@ type UpdateVarArgs struct {
 	Profile     string
 }
 
+type ListVarArgs struct {
+	ListParams
+	Tags []string
+}
+
 type DeleteVarArgs struct {
 	Name    string
 	Profile string
 }
 
 type TagVarArgs struct {
-	Name     string
-	TagNames []string
-	Profile  string
+	TagParams
+	Name string
 }
 
 func RunAddVar(args AddVarArgs) error {
@@ -42,7 +46,7 @@ func RunUpdateVar(args UpdateVarArgs) error {
 	return nil
 }
 
-func RunListVar(args ListParams) error {
+func RunListVar(args ListVarArgs) error {
 	return nil
 }
 

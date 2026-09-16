@@ -115,7 +115,7 @@ func init() {
 }
 
 func runVarAdd(cmd *cobra.Command, args []string) error {
-	interactive, _ := cmd.Flags().GetBool("interactive")
+	interactive := getInteractiveFlag(cmd)
 	profile := getProfile(cmd)
 
 	raw := handlers.AddVarArgs{Interactive: interactive, Profile: profile}
@@ -135,9 +135,9 @@ func runVarGet(cmd *cobra.Command, args []string) error {
 }
 
 func runVarUpdate(cmd *cobra.Command, args []string) error {
-	editMode, _ := cmd.Flags().GetBool("edit")
+	editMode := getEditMode(cmd)
 	setParis := getStringFlag(cmd, "set")
-	editFields := getStringFlag(cmd, "edit-fields")
+	editFields := getEditFields(cmd)
 	newName := getStringFlag(cmd, "name")
 	profile := getProfile(cmd)
 
@@ -162,7 +162,7 @@ func runVarList(cmd *cobra.Command, args []string) error {
 	fields := getFields(cmd)
 	profile := getProfile(cmd)
 
-	raw := handlers.ListParams{Tags: tags, Order: order, Fields: fields, Profile: profile}
+	raw := handlers.ListVarArgs{Tags: tags, Order: order, Fields: fields, Profile: profile}
 	if cmd.Flags().Changed("limit") {
 		raw.Limit = getLimit(cmd)
 		raw.HasLimit = true
