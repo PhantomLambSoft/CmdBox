@@ -8,7 +8,6 @@ type ListParams struct {
 	HasLimit bool
 	Page     *bool // nil = not specified - pull from settings, true/false = explicit
 	Profile  string
-	Tags     []string
 }
 
 type SearchParams struct {
@@ -18,5 +17,10 @@ type SearchParams struct {
 	Limit    int
 	HasLimit bool
 	Page     *bool
+	Profile  string
+}
+
+type TagParams struct {
+	TagNames []string
 	Profile  string
 }
