@@ -11,6 +11,11 @@ func getStringFlag(cmd *cobra.Command, flagName string) string {
 	return flag
 }
 
+func getBoolFlag(cmd *cobra.Command, flagName string) bool {
+	flag, _ := cmd.Flags().GetBool(flagName)
+	return flag
+}
+
 func getProfile(cmd *cobra.Command) string {
 	profile, _ := cmd.Flags().GetString("profile")
 	return profile

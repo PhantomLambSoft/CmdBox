@@ -200,22 +200,22 @@ func runCmdUpdate(cmd *cobra.Command, args []string) error {
 		raw.Cwd = getStringFlag(cmd, "cwd")
 		raw.HasCwd = true
 	}
-	raw.ClearCwd, _ = cmd.Flags().GetBool("clear-cwd")
+	raw.ClearCwd = getBoolFlag(cmd, "clear-cwd")
 	if cmd.Flags().Changed("shell") {
 		raw.Shell = getStringFlag(cmd, "shell")
 		raw.HasShell = true
 	}
-	raw.ClearShell, _ = cmd.Flags().GetBool("clear-shell")
+	raw.ClearShell = getBoolFlag(cmd, "clear-shell")
 	if cmd.Flags().Changed("env") {
 		raw.Env, _ = cmd.Flags().GetStringArray("env")
 		raw.HasEnv = true
 	}
-	raw.ClearEnv, _ = cmd.Flags().GetBool("clear-env")
+	raw.ClearEnv = getBoolFlag(cmd, "clear-env")
 	if cmd.Flags().Changed("timeout") {
 		raw.Timeout, _ = cmd.Flags().GetInt("timeout")
 		raw.HasTimeout = true
 	}
-	raw.ClearTimeout, _ = cmd.Flags().GetBool("clear-timeout")
+	raw.ClearTimeout = getBoolFlag(cmd, "clear-timeout")
 
 	return handlers.RunUpdateCmd(raw)
 }
