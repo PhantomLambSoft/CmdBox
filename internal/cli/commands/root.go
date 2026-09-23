@@ -13,6 +13,8 @@ var rootCmd = &cobra.Command{
 }
 
 func Execute() {
+	args := resolveArgs(os.Args[1:])
+	rootCmd.SetArgs(args)
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
