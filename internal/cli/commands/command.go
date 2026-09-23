@@ -8,8 +8,9 @@ import (
 )
 
 var cmdCmd = &cobra.Command{
-	Use:   "cmd",
-	Short: "Manage saved commands",
+	Use:     "cmd",
+	Aliases: []string{"cmds"},
+	Short:   "Manage saved commands",
 }
 
 var cmdAddCmd = &cobra.Command{

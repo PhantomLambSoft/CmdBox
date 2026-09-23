@@ -6,8 +6,9 @@ import (
 )
 
 var historyCmd = &cobra.Command{
-	Use:   "history",
-	Short: "View and re-run past command executions",
+	Use:     "history",
+	Aliases: []string{"hist"},
+	Short:   "View and re-run past command executions",
 }
 
 var historyListCmd = &cobra.Command{

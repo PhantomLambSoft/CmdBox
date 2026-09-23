@@ -8,8 +8,9 @@ import (
 )
 
 var tagCmd = &cobra.Command{
-	Use:   "tag",
-	Short: "Manage tags",
+	Use:     "tag",
+	Aliases: []string{"tags"},
+	Short:   "Manage tags",
 }
 
 var tagAddCmd = &cobra.Command{

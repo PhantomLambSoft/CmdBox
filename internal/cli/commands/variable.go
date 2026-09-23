@@ -6,8 +6,9 @@ import (
 )
 
 var varCmd = &cobra.Command{
-	Use:   "var",
-	Short: "Manage saved variables",
+	Use:     "var",
+	Aliases: []string{"vars"},
+	Short:   "Manage saved variables",
 }
 
 var varAddCmd = &cobra.Command{
