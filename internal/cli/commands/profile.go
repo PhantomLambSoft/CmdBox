@@ -11,6 +11,7 @@ var profileCmd = &cobra.Command{
 	Use:   "profile",
 	Short: "Manage profiles",
 	Args:  cobra.MaximumNArgs(1),
+	RunE:  runProfileBareShorthand,
 }
 
 var profileAddCmd = &cobra.Command{
@@ -23,7 +24,7 @@ var profileAddCmd = &cobra.Command{
 var profileGetCmd = &cobra.Command{
 	Use:   "get <name>",
 	Short: "Get a profile",
-	Args:  cobra.ExactArgs(2),
+	Args:  cobra.ExactArgs(1),
 	RunE:  runProfileGet,
 }
 
@@ -137,6 +138,7 @@ func runProfileBareShorthand(cmd *cobra.Command, args []string) error {
 
 func runProfileAdd(cmd *cobra.Command, args []string) error {
 	raw := handlers.AddProfileArgs{
+		Name:        args[0],
 		Interactive: getInteractiveFlag(cmd),
 	}
 	if len(args) > 1 {

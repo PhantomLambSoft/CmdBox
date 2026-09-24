@@ -32,7 +32,7 @@ var settingsDataDirCmd = &cobra.Command{
 }
 
 func init() {
-	settingsShowCmd.Flags().StringSlice("fields", nil, "Comma-separated list of setting fields to display")
+	settingsShowCmd.Flags().StringSlice("field", nil, "Comma-separated list of setting fields to display")
 
 	settingsEditCmd.Flags().BoolP("external", "e", false, "Open the settings file in your default text editor")
 

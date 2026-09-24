@@ -42,7 +42,7 @@ func getEditFields(cmd *cobra.Command) string {
 }
 
 func getTags(cmd *cobra.Command) []string {
-	tags, _ := cmd.Flags().GetStringSlice("tags")
+	tags, _ := cmd.Flags().GetStringSlice("tag")
 	return tags
 }
 

@@ -270,15 +270,15 @@ func runCmdDelete(cmd *cobra.Command, args []string) error {
 func runCmdAttachTags(cmd *cobra.Command, args []string) error {
 	return handlers.RunTagCmd(handlers.TagCmdArgs{
 		Alias:    args[0],
-		TagNames: getTags(cmd),
+		TagNames: args[1:],
 		Profile:  getProfile(cmd),
 	})
 }
 
 func runCmdDetachTags(cmd *cobra.Command, args []string) error {
-	return handlers.RunTagCmd(handlers.TagCmdArgs{
+	return handlers.RunUntagCmd(handlers.TagCmdArgs{
 		Alias:    args[0],
-		TagNames: getTags(cmd),
+		TagNames: args[1:],
 		Profile:  getProfile(cmd),
 	})
 }
