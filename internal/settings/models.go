@@ -5,69 +5,35 @@ import (
 )
 
 type UIColors struct {
-	Title        string `toml:"title"`
-	Subtitle     string `toml:"subtitle"`
-	Muted        string `toml:"muted"`
-	Border       string `toml:"border"`
-	PanelTitle   string `toml:"panel_title"`
-	TableHeader  string `toml:"table_header"`
-	Caption      string `toml:"caption"`
-	KVKey        string `toml:"kv_key"`
-	KVValue      string `toml:"kv_value"`
-	Success      string `toml:"success"`
-	Info         string `toml:"info"`
-	Warning      string `toml:"warning"`
-	Error        string `toml:"error"`
-	Debug        string `toml:"debug"`
-	Code         string `toml:"code"`
-	CodeInline   string `toml:"code_inline"`
-	CodeBlock    string `toml:"code_block"`
-	EntityName   string `toml:"entity_name"`
-	EntityID     string `toml:"entity_id"`
-	EntityCount  string `toml:"entity_count"`
-	EntityTime   string `toml:"entity_time"`
-	TagPill      string `toml:"tag_pill"`
-	TagPillMuted string `toml:"tag_pill_muted"`
-	RunCommand   string `toml:"run_command"`
-	RunStdout    string `toml:"run_stdout"`
-	RunStderr    string `toml:"run_stderr"`
-	TraceKind    string `toml:"trace_kind"`
-	TraceKey     string `toml:"trace_key"`
-	TraceValue   string `toml:"trace_value"`
-}
-
-func DefaultUIColors() UIColors {
-	return UIColors{
-		Title:        "bold",
-		Subtitle:     "dim",
-		Muted:        "dim",
-		Border:       "dim",
-		PanelTitle:   "bold",
-		TableHeader:  "bold",
-		Caption:      "dim",
-		KVKey:        "dim",
-		KVValue:      "",
-		Success:      "green",
-		Info:         "cyan",
-		Warning:      "yellow",
-		Error:        "red",
-		Debug:        "dim blue",
-		Code:         "cyan",
-		CodeInline:   "cyan",
-		CodeBlock:    "dim cyan",
-		EntityName:   "bold",
-		EntityID:     "magenta",
-		EntityCount:  "bold",
-		EntityTime:   "dim",
-		TagPill:      "bold white on dark_green",
-		TagPillMuted: "white on grey23",
-		RunCommand:   "cyan",
-		RunStdout:    "",
-		RunStderr:    "bold red",
-		TraceKind:    "dim",
-		TraceKey:     "magenta",
-		TraceValue:   "purple3",
-	}
+	Title        ColorStyle `toml:"title"`
+	Subtitle     ColorStyle `toml:"subtitle"`
+	Muted        ColorStyle `toml:"muted"`
+	Border       ColorStyle `toml:"border"`
+	PanelTitle   ColorStyle `toml:"panel_title"`
+	TableHeader  ColorStyle `toml:"table_header"`
+	Caption      ColorStyle `toml:"caption"`
+	KVKey        ColorStyle `toml:"kv_key"`
+	KVValue      ColorStyle `toml:"kv_value"`
+	Success      ColorStyle `toml:"success"`
+	Info         ColorStyle `toml:"info"`
+	Warning      ColorStyle `toml:"warning"`
+	Error        ColorStyle `toml:"error"`
+	Debug        ColorStyle `toml:"debug"`
+	Code         ColorStyle `toml:"code"`
+	CodeInline   ColorStyle `toml:"code_inline"`
+	CodeBlock    ColorStyle `toml:"code_block"`
+	EntityName   ColorStyle `toml:"entity_name"`
+	EntityID     ColorStyle `toml:"entity_id"`
+	EntityCount  ColorStyle `toml:"entity_count"`
+	EntityTime   ColorStyle `toml:"entity_time"`
+	TagPill      ColorStyle `toml:"tag_pill"`
+	TagPillMuted ColorStyle `toml:"tag_pill_muted"`
+	RunCommand   ColorStyle `toml:"run_command"`
+	RunStdout    ColorStyle `toml:"run_stdout"`
+	RunStderr    ColorStyle `toml:"run_stderr"`
+	TraceKind    ColorStyle `toml:"trace_kind"`
+	TraceKey     ColorStyle `toml:"trace_key"`
+	TraceValue   ColorStyle `toml:"trace_value"`
 }
 
 type DefaultFields struct {
@@ -136,18 +102,23 @@ func (f FieldAliases) AliasMap() map[string]string {
 }
 
 type UISettings struct {
-	UseColor      bool     `toml:"use_color"`
-	Colors        UIColors `toml:"colors"`
-	PagerMode     string   `toml:"pager_mode"`
-	PagerMinRows  int      `toml:"pager_min_rows"`
-	PagerPageStep int      `toml:"pager_page_step"`
-	PagerLineStep int      `toml:"pager_line_step"`
+	UseColor       bool                  `toml:"use_color"`
+	Theme          string                `toml:"theme"`
+	ColorOverrides map[string]ColorStyle `toml:"color_overrides,omitempty"`
+	PagerMode      string                `toml:"pager_mode"`
+	PagerMinRows   int                   `toml:"pager_min_rows"`
+	PagerPageStep  int                   `toml:"pager_page_step"`
+	PagerLineStep  int                   `toml:"pager_line_step"`
 }
 
 func DefaultUISettings() UISettings {
 	return UISettings{
-		UseColor: true, Colors: DefaultUIColors(),
-		PagerMode: "auto", PagerMinRows: 25, PagerPageStep: 15, PagerLineStep: 1,
+		UseColor:      true,
+		Theme:         "default",
+		PagerMode:     "auto",
+		PagerMinRows:  25,
+		PagerPageStep: 15,
+		PagerLineStep: 1,
 	}
 }
 
