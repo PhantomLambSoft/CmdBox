@@ -5,44 +5,6 @@ import (
 	"testing"
 )
 
-func TestDefaultUIColors(t *testing.T) {
-	got := DefaultUIColors()
-	want := UIColors{
-		Title:        "bold",
-		Subtitle:     "dim",
-		Muted:        "dim",
-		Border:       "dim",
-		PanelTitle:   "bold",
-		TableHeader:  "bold",
-		Caption:      "dim",
-		KVKey:        "dim",
-		KVValue:      "",
-		Success:      "green",
-		Info:         "cyan",
-		Warning:      "yellow",
-		Error:        "red",
-		Debug:        "dim blue",
-		Code:         "cyan",
-		CodeInline:   "cyan",
-		CodeBlock:    "dim cyan",
-		EntityName:   "bold",
-		EntityID:     "magenta",
-		EntityCount:  "bold",
-		EntityTime:   "dim",
-		TagPill:      "bold white on dark_green",
-		TagPillMuted: "white on grey23",
-		RunCommand:   "cyan",
-		RunStdout:    "",
-		RunStderr:    "bold red",
-		TraceKind:    "dim",
-		TraceKey:     "magenta",
-		TraceValue:   "purple3",
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("DefaultUIColors() = %+v, want %+v", got, want)
-	}
-}
-
 func TestDefaultDefaultFields(t *testing.T) {
 	got := DefaultDefaultFields()
 	want := DefaultFields{
@@ -131,8 +93,11 @@ func TestDefaultUISettings(t *testing.T) {
 	if !got.UseColor {
 		t.Fatalf("DefaultUISettings().UseColor = false, want true")
 	}
-	if !reflect.DeepEqual(got.Colors, DefaultUIColors()) {
-		t.Fatalf("DefaultUISettings().Colors = %+v, want DefaultUIColors()", got.Colors)
+	if got.Theme != "default" {
+		t.Fatalf("DefaultUISettings().Theme = %q, want %q", got.Theme, "default")
+	}
+	if got.ColorOverrides != nil {
+		t.Fatalf("DefaultUISettings().ColorOverrides = %+v, want nil", got.ColorOverrides)
 	}
 	if got.PagerMode != "auto" || got.PagerMinRows != 25 || got.PagerPageStep != 15 || got.PagerLineStep != 1 {
 		t.Fatalf("DefaultUISettings() = %+v, unexpected pager defaults", got)
