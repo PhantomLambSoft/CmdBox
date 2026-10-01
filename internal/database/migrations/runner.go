@@ -8,6 +8,7 @@ import (
 	"github.com/pressly/goose/v3"
 )
 
+//go:embed *.sql
 var embedMigrations embed.FS
 
 // Run applies database migrations using goose with the embedded migration files and specified SQLite dialect.
