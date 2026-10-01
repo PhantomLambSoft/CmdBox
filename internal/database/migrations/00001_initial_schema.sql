@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE profiles
 (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,6 +94,7 @@ VALUES ('default', 'Automatically created default profile.', CURRENT_TIMESTAMP, 
 INSERT INTO profile_states (active_command_profile_id, active_variable_profile_id, active_settings_profile_id)
 VALUES (1, 1, 1);
 
+-- +goose Down
 DROP TABLE command_histories;
 DROP TABLE variable_tags;
 DROP TABLE command_tags;
