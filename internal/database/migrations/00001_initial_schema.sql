@@ -3,7 +3,7 @@ CREATE TABLE profiles
 (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT     NOT NULL UNIQUE,
-    description TEXT     NOT NULL DEFAULT '',
+    description TEXT,
     created_at  DATETIME NOT NULL,
     updated_at  DATETIME NOT NULL,
     last_used   DATETIME
@@ -21,7 +21,7 @@ CREATE TABLE tags
 (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     name        TEXT     NOT NULL UNIQUE,
-    description TEXT     NOT NULL DEFAULT '',
+    description TEXT,
     created_at  DATETIME NOT NULL,
     updated_at  DATETIME NOT NULL
 );
@@ -31,7 +31,7 @@ CREATE TABLE commands
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     alias       TEXT     NOT NULL,
     template    TEXT     NOT NULL,
-    description TEXT     NOT NULL DEFAULT '',
+    description TEXT,
     cwd         TEXT,
     shell       TEXT,
     env         TEXT,
