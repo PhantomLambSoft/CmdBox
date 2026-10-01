@@ -31,7 +31,7 @@ type RuntimeOverrides struct {
 
 type RunService struct {
 	cmdRepo          repository.CommandRepository
-	resolver         resolve.Resolver
+	resolver         *resolve.Resolver
 	executor         runtime.Executor
 	profileRepo      repository.ProfileRepository
 	historyRepo      repository.HistoryRepository
@@ -40,7 +40,7 @@ type RunService struct {
 
 type RunServiceConfig struct {
 	CmdRepo          repository.CommandRepository
-	Resolver         resolve.Resolver
+	Resolver         *resolve.Resolver
 	Executor         runtime.Executor
 	ProfileRepo      repository.ProfileRepository
 	HistoryRepo      repository.HistoryRepository

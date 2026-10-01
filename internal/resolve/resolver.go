@@ -15,8 +15,8 @@ type Resolver struct {
 	MaxDepth int
 }
 
-func NewResolver(lookup Lookup, strict bool, maxDepth int) Resolver {
-	return Resolver{
+func NewResolver(lookup Lookup, strict bool, maxDepth int) *Resolver {
+	return &Resolver{
 		Lookup:   lookup,
 		Strict:   strict,
 		MaxDepth: maxDepth,
