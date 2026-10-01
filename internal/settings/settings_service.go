@@ -94,11 +94,16 @@ func (s *Service) Edit(editFn func(current string) (string, error)) (Settings, e
 	return s.Reload()
 }
 
-// ResolveSettingsPath determines the file path to the settings configuration based on the active or
-// provided profile name.
 func (s *Service) ResolveSettingsPath(appDataDir string, name *string) (string, error) {
+	return ResolveSettingsPath(appDataDir, name, s.profileService)
+}
+
+// ResolveSettingsPath determines the file path to the settings configuration based on the active or
+// provided profile name. This is extracted as a free function here so the container can call it to get the settings
+// file path before the settings service is established.
+func ResolveSettingsPath(appDataDir string, name *string, profileService ProfileLookup) (string, error) {
 	if name == nil {
-		profile, err := s.profileService.GetActiveSettingsProfile()
+		profile, err := profileService.GetActiveSettingsProfile()
 		if err != nil {
 			return "", fmt.Errorf("getting active settings profile: %w", err)
 		}
