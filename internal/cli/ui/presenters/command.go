@@ -114,7 +114,9 @@ func RenderCommandList(cmds []models.Command, title string, fields []string, pal
 	} else {
 		cols = selectColumns(CommandColumns, fields)
 	}
-	return RenderList(title, cmds, cols, palette)
+	headers, rows := RenderTable(cmds, cols, palette)
+	caption := ui.Pluralize(len(rows), "command found", "commands found")
+	return ui.TablePanel(title, headers, rows, caption, palette)
 }
 
 func RenderCommandUpdated(cmd models.Command, palette ui.Palette) string {

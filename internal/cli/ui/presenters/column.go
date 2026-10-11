@@ -26,7 +26,7 @@ func selectColumns[T any](all []Column[T], fields []string) []Column[T] {
 	return out
 }
 
-func RenderList[T any](title string, items []T, columns []Column[T], palette ui.Palette) string {
+func RenderTable[T any](items []T, columns []Column[T], palette ui.Palette) ([]string, [][]string) {
 	headers := make([]string, len(columns))
 	for i, c := range columns {
 		headers[i] = c.Header
@@ -39,8 +39,7 @@ func RenderList[T any](title string, items []T, columns []Column[T], palette ui.
 		}
 		rows[i] = row
 	}
-	caption := ui.Pluralize(len(items), "item", "")
-	return ui.TablePanel(title, headers, rows, caption, palette)
+	return headers, rows
 }
 
 func renderDetail[T any](item T, columns []Column[T], palette ui.Palette) string {
