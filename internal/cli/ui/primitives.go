@@ -3,34 +3,111 @@ package ui
 import (
 	"fmt"
 	"image/color"
+	"os"
 	"strings"
 
 	"charm.land/lipgloss/v2"
 	"charm.land/lipgloss/v2/table"
+	"github.com/charmbracelet/x/term"
 )
 
+func GetTerminalWidth() int {
+	w, _, err := term.GetSize(os.Stdout.Fd())
+	if err != nil || w <= 0 {
+		return 80
+	}
+	return w
+}
+
 func TablePanel(title string, headers []string, rows [][]string, caption string, palette Palette) string {
+	tWidth := GetTerminalWidth()
+	widths := columnWidths(headers, rows, tWidth-4)
+	borderStyle := lipgloss.NewStyle().Foreground(palette.Border)
 	t := table.New().
 		Headers(headers...).
 		Rows(rows...).
+		Border(lipgloss.RoundedBorder()).
+		BorderTop(false).
+		BorderBottom(false).
+		BorderLeft(false).
+		BorderRight(false).
+		BorderColumn(false).
+		BorderHeader(true).
+		BorderColumn(true).
+		BorderStyle(borderStyle).
 		StyleFunc(func(row, col int) lipgloss.Style {
+			base := lipgloss.NewStyle()
 			if row == 0 {
-				return palette.TableHeader
+				base = palette.TableHeader
 			}
-			return lipgloss.NewStyle()
+			return base.Width(widths[col])
 		})
-
 	body := t.Render()
-	if caption != "" {
-		body += "\n" + palette.Caption.Render(caption)
-	}
+
+	capStyle := palette.Caption.PaddingTop(1).Align(lipgloss.Center)
+	renderedCaption := capStyle.Render(caption)
 
 	panel := lipgloss.NewStyle().
-		BorderStyle(lipgloss.NormalBorder()).
+		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(palette.Border).
-		Padding(0, 1)
+		Padding(0, 1, 0, 1)
 
-	return panel.Render(palette.PanelTitle.Render(title) + "\n" + body)
+	titleStyle := palette.PanelTitle.PaddingBottom(1).Align(lipgloss.Center)
+
+	return panel.Render(lipgloss.JoinVertical(lipgloss.Center, titleStyle.Render(title), body, renderedCaption))
+}
+
+// columnWidths calculates the appropriate widths for table columns based on headers, rows, and a maximum total width constraint.
+func columnWidths(headers []string, rows [][]string, maxTotal int) []int {
+	n := len(headers)
+	natural := make([]int, n)
+	for i, h := range headers {
+		natural[i] = lipgloss.Width(h)
+	}
+	for _, row := range rows {
+		for i, cell := range row {
+			if i < n {
+				if w := lipgloss.Width(cell); w > natural[i] {
+					natural[i] = w
+				}
+			}
+		}
+	}
+
+	tableParts := n + 1
+	available := maxTotal - tableParts
+	if available < n {
+		available = n
+	}
+
+	total := 0
+	for _, w := range natural {
+		total += w
+	}
+	if total <= available {
+		return natural
+	}
+
+	const minColWidth = 4
+	widths := make([]int, n)
+	remaining := available
+	widest := 0
+	for i, w := range natural {
+		share := int(float64(w) / float64(total) * float64(available))
+		if share < minColWidth {
+			share = minColWidth
+		}
+		widths[i] = share
+		remaining -= share
+		if widths[i] > widths[widest] {
+			widest = i
+		}
+	}
+	widths[widest] += remaining
+	if widths[widest] < minColWidth {
+		widths[widest] = minColWidth
+	}
+	return widths
 }
 
 func KVTable(rows [][2]string, palette Palette) string {
@@ -38,7 +115,16 @@ func KVTable(rows [][2]string, palette Palette) string {
 	for i, r := range rows {
 		data[i] = []string{palette.KVKey.Render(r[0]), r[1]}
 	}
-	return table.New().Rows(data...).Border(lipgloss.HiddenBorder()).Render()
+	return table.New().
+		Rows(data...).
+		Border(lipgloss.HiddenBorder()).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if col == 0 {
+				return lipgloss.NewStyle().Align(lipgloss.Right)
+			}
+			return lipgloss.NewStyle().Align(lipgloss.Left)
+		}).
+		Render()
 }
 
 func KVPanel(title string, rows [][2]string, palette Palette) string {
@@ -66,8 +152,9 @@ func Banner(title, subtitle string, statusStyle lipgloss.Style, palette Palette)
 		content += "\n" + palette.Subtitle.Render(subtitle)
 	}
 	return lipgloss.NewStyle().
-		BorderStyle(lipgloss.NormalBorder()).
+		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(statusStyle.GetForeground()).
+		Width(GetTerminalWidth()-2).
 		Padding(0, 1).
 		Render(content)
 }
@@ -91,8 +178,9 @@ func CodeBlock(text, title string, palette Palette) string {
 	body := lipgloss.NewStyle().Padding(1, 1).Render(palette.CodeBlock.Render(text))
 	if title == "" {
 		return lipgloss.NewStyle().
-			BorderStyle(lipgloss.NormalBorder()).
+			BorderStyle(lipgloss.RoundedBorder()).
 			BorderForeground(palette.Border).
+			Width(GetTerminalWidth() - 2).
 			Render(body)
 	}
 	return Section(title, body, "", palette.Border, palette.PanelTitle)
@@ -100,19 +188,20 @@ func CodeBlock(text, title string, palette Palette) string {
 
 func Section(title, body, caption string, borderColor color.Color, titleStyle lipgloss.Style) string {
 	panel := lipgloss.NewStyle().
-		BorderStyle(lipgloss.NormalBorder()).
+		BorderStyle(lipgloss.RoundedBorder()).
 		BorderForeground(borderColor).
-		Padding(0, 1)
+		Align(lipgloss.Center)
 
 	content := titleStyle.Render(title) + "\n" + body
 	if caption != "" {
 		content += "\n" + caption
 	}
+
 	return panel.Render(content)
 }
 
 func SectionSuccess(title, body string, palette Palette) string {
-	return Section(title, body, "", palette.Success.GetForeground(), palette.PanelTitle)
+	return Section(title, body, "", palette.Success.GetForeground(), palette.Success)
 }
 
 func Divider(title string, width int, palette Palette) string {
