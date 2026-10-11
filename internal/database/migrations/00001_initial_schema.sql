@@ -14,7 +14,8 @@ CREATE TABLE profile_states
     id                         INTEGER PRIMARY KEY AUTOINCREMENT,
     active_command_profile_id  INTEGER NOT NULL REFERENCES profiles (id) ON DELETE RESTRICT,
     active_variable_profile_id INTEGER NOT NULL REFERENCES profiles (id) ON DELETE RESTRICT,
-    active_settings_profile_id INTEGER NOT NULL REFERENCES profiles (id) ON DELETE RESTRICT
+    active_settings_profile_id INTEGER NOT NULL REFERENCES profiles (id) ON DELETE RESTRICT,
+    updated_at DATETIME NOT NULL,
 );
 
 CREATE TABLE tags
