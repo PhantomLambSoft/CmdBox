@@ -15,7 +15,7 @@ type UpdateTagConfig struct {
 
 type TagService interface {
 	CreateTag(name string, description *string) (*models.Tag, error)
-	UpdateTag(name string, config *UpdateTagConfig) (*models.Tag, error)
+	UpdateTag(name string, config UpdateTagConfig) (*models.Tag, error)
 	DeleteTag(name string) error
 	GetTag(name string) (*models.Tag, error)
 	GetTagOrNil(name string) (*models.Tag, error)
@@ -47,7 +47,7 @@ func (s *tagService) CreateTag(name string, description *string) (*models.Tag, e
 	return tag, nil
 }
 
-func (s *tagService) UpdateTag(name string, config *UpdateTagConfig) (*models.Tag, error) {
+func (s *tagService) UpdateTag(name string, config UpdateTagConfig) (*models.Tag, error) {
 	tag, err := s.GetTag(name)
 	if err != nil {
 		return nil, fmt.Errorf("getting tag: %w", err)
