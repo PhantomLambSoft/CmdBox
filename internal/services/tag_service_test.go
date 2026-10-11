@@ -112,7 +112,7 @@ func TestTagServiceUpdateTag(t *testing.T) {
 		mustCreateTag(t, svc, "rename-me", nil)
 
 		newName := "renamed"
-		updated, err := svc.UpdateTag("rename-me", &UpdateTagConfig{NewName: &newName})
+		updated, err := svc.UpdateTag("rename-me", UpdateTagConfig{NewName: &newName})
 		if err != nil {
 			t.Fatalf("UpdateTag() error = %v", err)
 		}
@@ -126,7 +126,7 @@ func TestTagServiceUpdateTag(t *testing.T) {
 		mustCreateTag(t, svc, "described", nil)
 
 		newDescription := "a new description"
-		updated, err := svc.UpdateTag("described", &UpdateTagConfig{Description: &newDescription})
+		updated, err := svc.UpdateTag("described", UpdateTagConfig{Description: &newDescription})
 		if err != nil {
 			t.Fatalf("UpdateTag() error = %v", err)
 		}
@@ -137,7 +137,7 @@ func TestTagServiceUpdateTag(t *testing.T) {
 
 	t.Run("unknown name returns error", func(t *testing.T) {
 		svc, _, _ := setupTagServiceTest(t)
-		_, err := svc.UpdateTag("missing", &UpdateTagConfig{})
+		_, err := svc.UpdateTag("missing", UpdateTagConfig{})
 		if !errors.Is(err, repository.ErrUnknownTagName) {
 			t.Fatalf("UpdateTag() error = %v, want ErrUnknownTagName", err)
 		}
@@ -149,7 +149,7 @@ func TestTagServiceUpdateTag(t *testing.T) {
 		mustCreateTag(t, svc, "renaming", nil)
 
 		newName := "taken"
-		_, err := svc.UpdateTag("renaming", &UpdateTagConfig{NewName: &newName})
+		_, err := svc.UpdateTag("renaming", UpdateTagConfig{NewName: &newName})
 		if !errors.Is(err, repository.ErrTagNameConflict) {
 			t.Fatalf("UpdateTag() error = %v, want ErrTagNameConflict", err)
 		}

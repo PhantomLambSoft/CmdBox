@@ -339,7 +339,7 @@ func (f *fakeTagService) CreateTag(name string, description *string) (*models.Ta
 	return tag, nil
 }
 
-func (f *fakeTagService) UpdateTag(name string, config *UpdateTagConfig) (*models.Tag, error) {
+func (f *fakeTagService) UpdateTag(name string, config UpdateTagConfig) (*models.Tag, error) {
 	panic("not implemented in fake")
 }
 
