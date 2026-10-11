@@ -24,3 +24,11 @@ type TagParams struct {
 	TagNames []string
 	Profile  string
 }
+
+// stringOrNil returns a pointer to the given string if it is not empty - otherwise, it returns nil.
+func stringOrNil(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
+}

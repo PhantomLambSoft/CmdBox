@@ -83,13 +83,6 @@ func parseEnvPairs(pairs []string) (map[string]string, error) {
 	return out, nil
 }
 
-func stringOrNil(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
 func RunAddCmd(args AddCmdArgs) error {
 	commandService, err := container.GetCommandService()
 	if err != nil {
@@ -156,8 +149,10 @@ func RunUpdateCmd(args UpdateCmdArgs) error {
 	}
 
 	input := services.UpdateCommandConfig{
-		ClearCwd: args.ClearCwd, ClearShell: args.ClearShell,
-		ClearEnv: args.ClearEnv, ClearTimeout: args.ClearTimeout,
+		ClearCwd:     args.ClearCwd,
+		ClearShell:   args.ClearShell,
+		ClearEnv:     args.ClearEnv,
+		ClearTimeout: args.ClearTimeout,
 	}
 	if args.NewAlias != "" {
 		input.NewAlias = &args.NewAlias
