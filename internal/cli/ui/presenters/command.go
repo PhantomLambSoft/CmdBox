@@ -108,9 +108,11 @@ func RenderCommandCreated(cmd models.Command, palette ui.Palette) string {
 }
 
 func RenderCommandList(cmds []models.Command, title string, fields []string, palette ui.Palette) string {
-	cols := selectColumns(CommandColumns, fields)
-	if len(cols) == 0 {
+	var cols []Column[models.Command]
+	if len(fields) == 0 {
 		cols = selectColumns(CommandColumns, DefaultCommandFields)
+	} else {
+		cols = selectColumns(CommandColumns, fields)
 	}
 	return RenderList(title, cmds, cols, palette)
 }
