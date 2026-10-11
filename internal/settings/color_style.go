@@ -43,26 +43,30 @@ func (c *ColorStyle) UnmarshalText(text []byte) error {
 	if s == "" {
 		return nil
 	}
-	fields := strings.Fields(s)
-	if fb, bg, ok := strings.Cut(fields[0], "/"); ok {
-		c.Fg = fb
-		c.Bg = bg
-	} else {
-		c.Fg = fields[0]
+
+	attrs := map[string]func(){
+		"bold":      func() { c.Bold = true },
+		"italic":    func() { c.Italic = true },
+		"faint":     func() { c.Faint = true },
+		"underline": func() { c.Underline = true },
 	}
-	for _, tok := range fields[1:] {
-		switch tok {
-		case "bold":
-			c.Bold = true
-		case "italic":
-			c.Italic = true
-		case "faint":
-			c.Faint = true
-		case "underline":
-			c.Underline = true
-		default:
-			return fmt.Errorf("unknown style attribute: %s", tok)
+
+	colorSet := false
+	for _, tok := range strings.Fields(s) {
+		if setAttr, ok := attrs[tok]; ok {
+			setAttr()
+			continue
 		}
+		if colorSet {
+			return fmt.Errorf("unexpected token %q", tok)
+		}
+		if fg, bg, ok := strings.Cut(tok, "/"); ok {
+			c.Fg = fg
+			c.Bg = bg
+		} else {
+			c.Fg = tok
+		}
+		colorSet = true
 	}
 	return nil
 }
