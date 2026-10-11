@@ -431,8 +431,12 @@ func TestProfileRepositoryDelete(t *testing.T) {
 	repo, db := setupProfileRepositoryTest(t)
 
 	t.Run("nil profile is a no-op", func(t *testing.T) {
-		if err := repo.Delete(nil, false); err != nil {
+		result, err := repo.Delete(nil, false)
+		if err != nil {
 			t.Fatalf("Delete(nil) error = %v, want nil", err)
+		}
+		if result != (ProfileDeleteResult{}) {
+			t.Fatalf("Delete(nil) result = %+v, want zero value", result)
 		}
 	})
 
@@ -441,9 +445,12 @@ func TestProfileRepositoryDelete(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetByID() error = %v", err)
 		}
-		err = repo.Delete(defaultProfile, false)
+		result, err := repo.Delete(defaultProfile, false)
 		if !errors.Is(err, ErrDefaultProfileDelete) {
 			t.Fatalf("Delete() error = %v, want ErrDefaultProfileDelete", err)
+		}
+		if result != (ProfileDeleteResult{}) {
+			t.Fatalf("Delete() result = %+v, want zero value on error", result)
 		}
 	})
 
@@ -481,9 +488,12 @@ func TestProfileRepositoryDelete(t *testing.T) {
 				profile := createProfile(t, db, "active-"+tc.target, nil)
 				tc.apply(profile.ID)
 
-				err := repo.Delete(&profile, false)
+				result, err := repo.Delete(&profile, false)
 				if !errors.Is(err, ErrProfileInUse) {
 					t.Fatalf("Delete() error = %v, want ErrProfileInUse", err)
+				}
+				if result != (ProfileDeleteResult{}) {
+					t.Fatalf("Delete() result = %+v, want zero value on error", result)
 				}
 
 				_ = db.Model(&models.ProfileState{}).Where("id = ?", 1).Updates(map[string]any{
@@ -500,38 +510,53 @@ func TestProfileRepositoryDelete(t *testing.T) {
 		createCommand(t, db, profile.ID, "test-command")
 		createVariable(t, db, profile.ID, "test-variable")
 
-		err := repo.Delete(&profile, false)
+		result, err := repo.Delete(&profile, false)
 		if err == nil {
 			t.Fatalf("Delete() error = nil, want ErrProfileHasContent")
 		}
 		if !errors.Is(err, ErrProfileHasContent) {
 			t.Fatalf("Delete() error = %v, want ErrProfileHasContent", err)
 		}
+		if result != (ProfileDeleteResult{}) {
+			t.Fatalf("Delete() result = %+v, want zero value on error", result)
+		}
 	})
 
-	t.Run("force delete ignores content", func(t *testing.T) {
+	t.Run("force delete ignores content and reports counts", func(t *testing.T) {
 		profile := createProfile(t, db, "force-delete", nil)
 		createCommand(t, db, profile.ID, "force-command")
+		createCommand(t, db, profile.ID, "force-command-2")
 		createVariable(t, db, profile.ID, "force-variable")
 
-		if err := repo.Delete(&profile, true); err != nil {
+		result, err := repo.Delete(&profile, true)
+		if err != nil {
 			t.Fatalf("Delete(force=true) error = %v", err)
 		}
+		if result.CommandsDeleted != 2 {
+			t.Fatalf("Delete(force=true) CommandsDeleted = %d, want 2", result.CommandsDeleted)
+		}
+		if result.VariablesDeleted != 1 {
+			t.Fatalf("Delete(force=true) VariablesDeleted = %d, want 1", result.VariablesDeleted)
+		}
 
-		_, err := repo.GetByID(profile.ID)
+		_, err = repo.GetByID(profile.ID)
 		if !errors.Is(err, ErrProfileNotFound) {
 			t.Fatalf("GetByID() after delete error = %v, want ErrProfileNotFound", err)
 		}
 	})
 
-	t.Run("deletes profile without content", func(t *testing.T) {
+	t.Run("deletes profile without content and reports zero counts", func(t *testing.T) {
 		profile := createProfile(t, db, "plain-delete", nil)
 
-		if err := repo.Delete(&profile, false); err != nil {
+		result, err := repo.Delete(&profile, false)
+		if err != nil {
 			t.Fatalf("Delete() error = %v", err)
 		}
+		if result.CommandsDeleted != 0 || result.VariablesDeleted != 0 {
+			t.Fatalf("Delete() result = %+v, want zero counts", result)
+		}
 
-		_, err := repo.GetByID(profile.ID)
+		_, err = repo.GetByID(profile.ID)
 		if !errors.Is(err, ErrProfileNotFound) {
 			t.Fatalf("GetByID() after delete error = %v, want ErrProfileNotFound", err)
 		}
@@ -539,12 +564,16 @@ func TestProfileRepositoryDelete(t *testing.T) {
 
 	t.Run("already-deleted profile is a no-op", func(t *testing.T) {
 		profile := createProfile(t, db, "already-gone", nil)
-		if err := repo.Delete(&profile, false); err != nil {
+		if _, err := repo.Delete(&profile, false); err != nil {
 			t.Fatalf("Delete() error = %v", err)
 		}
 
-		if err := repo.Delete(&profile, false); err != nil {
+		result, err := repo.Delete(&profile, false)
+		if err != nil {
 			t.Fatalf("Delete() second call error = %v, want nil", err)
+		}
+		if result.CommandsDeleted != 0 || result.VariablesDeleted != 0 {
+			t.Fatalf("Delete() second call result = %+v, want zero counts", result)
 		}
 	})
 }

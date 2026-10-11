@@ -25,7 +25,7 @@ type UpdateProfileConfig struct {
 type ProfileService interface {
 	CreateProfile(name string, description *string) (*models.Profile, error)
 	UpdateProfile(name string, input UpdateProfileConfig) (*models.Profile, error)
-	DeleteProfile(name string, force bool) error
+	DeleteProfile(name string, force bool) (repository.ProfileDeleteResult, error)
 	GetProfile(name string) (*models.Profile, error)
 	ListProfiles(orderBy string, limit *int) ([]models.Profile, error)
 	SearchProfiles(query string, fields []string, limit *int) ([]models.Profile, error)
@@ -75,10 +75,10 @@ func (s *profileService) UpdateProfile(name string, input UpdateProfileConfig) (
 	return updatedProfile, nil
 }
 
-func (s *profileService) DeleteProfile(name string, force bool) error {
+func (s *profileService) DeleteProfile(name string, force bool) (repository.ProfileDeleteResult, error) {
 	profile, err := s.GetProfile(name)
 	if err != nil {
-		return fmt.Errorf("getting profile: %w", err)
+		return repository.ProfileDeleteResult{}, fmt.Errorf("getting profile: %w", err)
 	}
 
 	return s.profileRepo.Delete(profile, force)

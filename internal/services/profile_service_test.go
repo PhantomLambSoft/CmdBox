@@ -192,7 +192,7 @@ func TestProfileServiceDeleteProfile(t *testing.T) {
 		svc, profileRepo, _ := setupProfileServiceTest(t)
 		mustCreateServiceProfileViaSvc(t, svc, "delete-me", nil)
 
-		if err := svc.DeleteProfile("delete-me", false); err != nil {
+		if _, err := svc.DeleteProfile("delete-me", false); err != nil {
 			t.Fatalf("DeleteProfile() error = %v", err)
 		}
 		if _, err := profileRepo.GetByName("delete-me"); !errors.Is(err, repository.ErrProfileNotFound) {
@@ -202,7 +202,7 @@ func TestProfileServiceDeleteProfile(t *testing.T) {
 
 	t.Run("unknown name returns error", func(t *testing.T) {
 		svc, _, _ := setupProfileServiceTest(t)
-		err := svc.DeleteProfile("missing", false)
+		_, err := svc.DeleteProfile("missing", false)
 		if !errors.Is(err, repository.ErrProfileNotFound) {
 			t.Fatalf("DeleteProfile() error = %v, want ErrProfileNotFound", err)
 		}
@@ -210,7 +210,7 @@ func TestProfileServiceDeleteProfile(t *testing.T) {
 
 	t.Run("prevents deleting default profile", func(t *testing.T) {
 		svc, _, _ := setupProfileServiceTest(t)
-		err := svc.DeleteProfile(repository.DefaultProfileName, false)
+		_, err := svc.DeleteProfile(repository.DefaultProfileName, false)
 		if !errors.Is(err, repository.ErrDefaultProfileDelete) {
 			t.Fatalf("DeleteProfile() error = %v, want ErrDefaultProfileDelete", err)
 		}
@@ -223,7 +223,7 @@ func TestProfileServiceDeleteProfile(t *testing.T) {
 			t.Fatalf("SwitchProfile() error = %v", err)
 		}
 
-		err := svc.DeleteProfile("active-one", false)
+		_, err := svc.DeleteProfile("active-one", false)
 		if !errors.Is(err, repository.ErrProfileInUse) {
 			t.Fatalf("DeleteProfile() error = %v, want ErrProfileInUse", err)
 		}
@@ -236,7 +236,7 @@ func TestProfileServiceDeleteProfile(t *testing.T) {
 			t.Fatalf("create command: %v", err)
 		}
 
-		err := svc.DeleteProfile("with-content", false)
+		_, err := svc.DeleteProfile("with-content", false)
 		if !errors.Is(err, repository.ErrProfileHasContent) {
 			t.Fatalf("DeleteProfile() error = %v, want ErrProfileHasContent", err)
 		}
@@ -248,12 +248,35 @@ func TestProfileServiceDeleteProfile(t *testing.T) {
 		if err := db.Create(&models.Command{Alias: "cmd", Template: "echo hi", ProfileID: profile.ID}).Error; err != nil {
 			t.Fatalf("create command: %v", err)
 		}
+		if err := db.Create(&models.Variable{Name: "var", Value: "x", ProfileID: profile.ID}).Error; err != nil {
+			t.Fatalf("create variable: %v", err)
+		}
 
-		if err := svc.DeleteProfile("force-delete", true); err != nil {
+		result, err := svc.DeleteProfile("force-delete", true)
+		if err != nil {
 			t.Fatalf("DeleteProfile(force=true) error = %v", err)
+		}
+		if result.CommandsDeleted != 1 {
+			t.Fatalf("DeleteProfile(force=true) CommandsDeleted = %d, want 1", result.CommandsDeleted)
+		}
+		if result.VariablesDeleted != 1 {
+			t.Fatalf("DeleteProfile(force=true) VariablesDeleted = %d, want 1", result.VariablesDeleted)
 		}
 		if _, err := profileRepo.GetByName("force-delete"); !errors.Is(err, repository.ErrProfileNotFound) {
 			t.Fatalf("profile still exists after force delete: err = %v", err)
+		}
+	})
+
+	t.Run("reports zero counts for empty profile", func(t *testing.T) {
+		svc, _, _ := setupProfileServiceTest(t)
+		mustCreateServiceProfileViaSvc(t, svc, "empty-delete", nil)
+
+		result, err := svc.DeleteProfile("empty-delete", false)
+		if err != nil {
+			t.Fatalf("DeleteProfile() error = %v", err)
+		}
+		if result.CommandsDeleted != 0 || result.VariablesDeleted != 0 {
+			t.Fatalf("DeleteProfile() result = %+v, want zero counts", result)
 		}
 	})
 }

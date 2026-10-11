@@ -36,6 +36,11 @@ type SetProfileConfig struct {
 	SettingsProfile *models.Profile
 }
 
+type ProfileDeleteResult struct {
+	CommandsDeleted  int64
+	VariablesDeleted int64
+}
+
 type ProfileRepository interface {
 	WithTx(tx *gorm.DB) ProfileRepository
 
@@ -45,7 +50,7 @@ type ProfileRepository interface {
 	ListAll(orderBy string, limit int) ([]models.Profile, error)
 	Search(query string, fields []string, limit int) ([]models.Profile, error)
 	Update(profile *models.Profile, input ProfileUpdateConfig) (*models.Profile, error)
-	Delete(profile *models.Profile, force bool) error
+	Delete(profile *models.Profile, force bool) (ProfileDeleteResult, error)
 	RecordUse(profile models.Profile) error
 
 	GetState() (*models.ProfileState, error)
@@ -207,42 +212,41 @@ func (r *profileRepository) Update(profile *models.Profile, input ProfileUpdateC
 	return profile, nil
 }
 
-func (r *profileRepository) Delete(profile *models.Profile, force bool) error {
+func (r *profileRepository) Delete(profile *models.Profile, force bool) (ProfileDeleteResult, error) {
 	if profile == nil {
-		return nil
+		return ProfileDeleteResult{}, nil
 	}
 	if profile.Name == DefaultProfileName {
-		return ErrDefaultProfileDelete
+		return ProfileDeleteResult{}, ErrDefaultProfileDelete
 	}
 
 	state, err := r.GetState()
 	if err != nil {
-		return err
+		return ProfileDeleteResult{}, err
 	}
 
 	id := profile.ID
 
 	if id == state.ActiveCommandProfileID || id == state.ActiveVariableProfileID || id == state.ActiveSettingsProfileID {
-		return ErrProfileInUse
+		return ProfileDeleteResult{}, ErrProfileInUse
 	}
 
-	if !force {
-		var commandCount, variableCount int64
-		if err := r.db.Model(&models.Command{}).Where("profile_id = ?", id).Count(&commandCount).Error; err != nil {
-			return fmt.Errorf("counting commands for profile id %d: %w", id, err)
-		}
-		if err := r.db.Model(&models.Variable{}).Where("profile_id = ?", id).Count(&variableCount).Error; err != nil {
-			return fmt.Errorf("counting variables for profile id %d: %w", id, err)
-		}
-		if commandCount > 0 || variableCount > 0 {
-			return fmt.Errorf("%w: %d command(s), %d variable(s)", ErrProfileHasContent, commandCount, variableCount)
-		}
+	var commandCount, variableCount int64
+	if err := r.db.Model(&models.Command{}).Where("profile_id = ?", id).Count(&commandCount).Error; err != nil {
+		return ProfileDeleteResult{}, fmt.Errorf("counting commands for profile id %d: %w", id, err)
+	}
+	if err := r.db.Model(&models.Variable{}).Where("profile_id = ?", id).Count(&variableCount).Error; err != nil {
+		return ProfileDeleteResult{}, fmt.Errorf("counting variables for profile id %d: %w", id, err)
+	}
+
+	if !force && (commandCount > 0 || variableCount > 0) {
+		return ProfileDeleteResult{}, fmt.Errorf("%w: %d command(s), %d variable(s)", ErrProfileHasContent, commandCount, variableCount)
 	}
 
 	if err := r.db.Delete(&models.Profile{}, id).Error; err != nil {
-		return fmt.Errorf("deleting profile id %d: %w", id, err)
+		return ProfileDeleteResult{}, fmt.Errorf("deleting profile id %d: %w", id, err)
 	}
-	return nil
+	return ProfileDeleteResult{CommandsDeleted: commandCount, VariablesDeleted: variableCount}, nil
 }
 
 // RecordUse updates the "last_used" timestamp for a given profile in the database. Returns an error if the update fails.
