@@ -44,6 +44,10 @@ func NewConsole(
 	}
 }
 
+func (c *Console) Palette() Palette {
+	return c.palette
+}
+
 func (c *Console) Print(s string) {
 	fmt.Fprintln(c.out, s)
 }
