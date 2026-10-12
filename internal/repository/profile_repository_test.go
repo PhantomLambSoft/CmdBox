@@ -708,6 +708,11 @@ func TestProfileRepositorySetActiveProfile(t *testing.T) {
 			stateAfter.ActiveSettingsProfileID != stateBefore.ActiveSettingsProfileID {
 			t.Fatalf("SetActiveProfile(empty) changed active ids: before=%+v after=%+v", *stateBefore, *stateAfter)
 		}
+		if stateAfter.ActiveCommandProfile.ID != stateAfter.ActiveCommandProfileID || stateAfter.ActiveCommandProfile.Name != DefaultProfileName ||
+			stateAfter.ActiveVariableProfile.ID != stateAfter.ActiveVariableProfileID || stateAfter.ActiveVariableProfile.Name != DefaultProfileName ||
+			stateAfter.ActiveSettingsProfile.ID != stateAfter.ActiveSettingsProfileID || stateAfter.ActiveSettingsProfile.Name != DefaultProfileName {
+			t.Fatalf("SetActiveProfile(empty) did not preload active profiles: %+v", *stateAfter)
+		}
 	})
 
 	t.Run("updates each field independently", func(t *testing.T) {
@@ -718,6 +723,9 @@ func TestProfileRepositorySetActiveProfile(t *testing.T) {
 		if state.ActiveCommandProfileID != commandProfile.ID {
 			t.Fatalf("active command id = %d, want %d", state.ActiveCommandProfileID, commandProfile.ID)
 		}
+		if state.ActiveCommandProfile.ID != commandProfile.ID || state.ActiveCommandProfile.Name != "active-command" {
+			t.Fatalf("ActiveCommandProfile = %+v, want id=%d name=active-command", state.ActiveCommandProfile, commandProfile.ID)
+		}
 
 		state, err = repo.SetActiveProfile(SetProfileConfig{VariableProfile: &variableProfile})
 		if err != nil {
@@ -726,6 +734,9 @@ func TestProfileRepositorySetActiveProfile(t *testing.T) {
 		if state.ActiveVariableProfileID != variableProfile.ID {
 			t.Fatalf("active variable id = %d, want %d", state.ActiveVariableProfileID, variableProfile.ID)
 		}
+		if state.ActiveVariableProfile.ID != variableProfile.ID || state.ActiveVariableProfile.Name != "active-variable" {
+			t.Fatalf("ActiveVariableProfile = %+v, want id=%d name=active-variable", state.ActiveVariableProfile, variableProfile.ID)
+		}
 
 		state, err = repo.SetActiveProfile(SetProfileConfig{SettingsProfile: &settingsProfile})
 		if err != nil {
@@ -733,6 +744,9 @@ func TestProfileRepositorySetActiveProfile(t *testing.T) {
 		}
 		if state.ActiveSettingsProfileID != settingsProfile.ID {
 			t.Fatalf("active settings id = %d, want %d", state.ActiveSettingsProfileID, settingsProfile.ID)
+		}
+		if state.ActiveSettingsProfile.ID != settingsProfile.ID || state.ActiveSettingsProfile.Name != "active-settings" {
+			t.Fatalf("ActiveSettingsProfile = %+v, want id=%d name=active-settings", state.ActiveSettingsProfile, settingsProfile.ID)
 		}
 	})
 
@@ -747,6 +761,10 @@ func TestProfileRepositorySetActiveProfile(t *testing.T) {
 		}
 		if state.ActiveCommandProfileID != commandProfile.ID || state.ActiveVariableProfileID != variableProfile.ID || state.ActiveSettingsProfileID != settingsProfile.ID {
 			t.Fatalf("SetActiveProfile(all) unexpected state = %+v", *state)
+		}
+		if state.ActiveCommandProfile.Name != "active-command" || state.ActiveVariableProfile.Name != "active-variable" || state.ActiveSettingsProfile.Name != "active-settings" {
+			t.Fatalf("SetActiveProfile(all) did not preload active profile names: command=%+v variable=%+v settings=%+v",
+				state.ActiveCommandProfile, state.ActiveVariableProfile, state.ActiveSettingsProfile)
 		}
 
 		persisted, err := repo.GetState()

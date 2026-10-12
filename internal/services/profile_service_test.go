@@ -420,6 +420,10 @@ func TestProfileServiceSwitchProfile(t *testing.T) {
 		if state.ActiveCommandProfileID != target.ID || state.ActiveVariableProfileID != target.ID || state.ActiveSettingsProfileID != target.ID {
 			t.Fatalf("SwitchProfile() state = %+v, want all slots = %d", *state, target.ID)
 		}
+		if state.ActiveCommandProfile.Name != "target" || state.ActiveVariableProfile.Name != "target" || state.ActiveSettingsProfile.Name != "target" {
+			t.Fatalf("SwitchProfile() did not populate active profiles: command=%+v variable=%+v settings=%+v",
+				state.ActiveCommandProfile, state.ActiveVariableProfile, state.ActiveSettingsProfile)
+		}
 	})
 
 	t.Run("unknown name returns error", func(t *testing.T) {
@@ -445,6 +449,9 @@ func TestProfileServiceSwitchCommandProfile(t *testing.T) {
 		}
 		if state.ActiveVariableProfileID == target.ID || state.ActiveSettingsProfileID == target.ID {
 			t.Fatalf("SwitchCommandProfile() unexpectedly changed other slots: %+v", *state)
+		}
+		if state.ActiveCommandProfile.ID != target.ID || state.ActiveCommandProfile.Name != "cmd-target" {
+			t.Fatalf("ActiveCommandProfile = %+v, want id=%d name=cmd-target", state.ActiveCommandProfile, target.ID)
 		}
 	})
 
@@ -472,6 +479,9 @@ func TestProfileServiceSwitchVariableProfile(t *testing.T) {
 		if state.ActiveCommandProfileID == target.ID || state.ActiveSettingsProfileID == target.ID {
 			t.Fatalf("SwitchVariableProfile() unexpectedly changed other slots: %+v", *state)
 		}
+		if state.ActiveVariableProfile.ID != target.ID || state.ActiveVariableProfile.Name != "var-target" {
+			t.Fatalf("ActiveVariableProfile = %+v, want id=%d name=var-target", state.ActiveVariableProfile, target.ID)
+		}
 	})
 
 	t.Run("unknown name returns error", func(t *testing.T) {
@@ -497,6 +507,9 @@ func TestProfileServiceSwitchSettingsProfile(t *testing.T) {
 		}
 		if state.ActiveCommandProfileID == target.ID || state.ActiveVariableProfileID == target.ID {
 			t.Fatalf("SwitchSettingsProfile() unexpectedly changed other slots: %+v", *state)
+		}
+		if state.ActiveSettingsProfile.ID != target.ID || state.ActiveSettingsProfile.Name != "settings-target" {
+			t.Fatalf("ActiveSettingsProfile = %+v, want id=%d name=settings-target", state.ActiveSettingsProfile, target.ID)
 		}
 	})
 

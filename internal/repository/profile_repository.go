@@ -286,7 +286,7 @@ func (r *profileRepository) GetStateWithProfiles() (*models.ProfileState, error)
 }
 
 func (r *profileRepository) SetActiveProfile(config SetProfileConfig) (*models.ProfileState, error) {
-	state, err := r.GetState()
+	state, err := r.GetStateWithProfiles()
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +309,7 @@ func (r *profileRepository) SetActiveProfile(config SetProfileConfig) (*models.P
 		return nil, fmt.Errorf("updating active profiles: %w", err)
 	}
 
-	return r.GetState()
+	return r.GetStateWithProfiles()
 }
 
 func (r *profileRepository) GetActiveCommandProfile() (*models.Profile, error) {
