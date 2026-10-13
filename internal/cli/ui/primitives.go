@@ -249,3 +249,8 @@ func Pluralize(count int, singular, plural string) string {
 	}
 	return fmt.Sprintf("%d %s", count, plural)
 }
+
+// JoinWithAnd renders a comma-separated list with "and" between the last two items
+func JoinWithAnd(items []string) string {
+	return strings.Join(items[:len(items)-1], ", ") + ", and " + items[len(items)-1]
+}
