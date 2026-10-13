@@ -154,7 +154,7 @@ func RunSearchVar(args SearchParams) error {
 		return fmt.Errorf("searching variables: %w", err)
 	}
 
-	rendered := presenters.RenderVariableList(variables, "Search Results", args.Fields, console.Palette())
+	rendered := presenters.RenderVariableList(variables, "Variable search Results", args.Fields, console.Palette())
 	rowCount := len(variables)
 	return console.PrintPaged(rendered, &rowCount, args.Page)
 }

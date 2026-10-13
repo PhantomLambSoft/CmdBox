@@ -231,7 +231,7 @@ func RunSearchCmd(args SearchCmdArgs) error {
 		return fmt.Errorf("searching commands: %w", err)
 	}
 
-	rendered := presenters.RenderCommandList(cmds, "Search Results", args.Fields, console.Palette())
+	rendered := presenters.RenderCommandList(cmds, "Command search Results", args.Fields, console.Palette())
 	rowCount := len(cmds)
 	return console.PrintPaged(rendered, &rowCount, args.Page)
 }
