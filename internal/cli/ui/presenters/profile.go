@@ -79,7 +79,6 @@ func RenderProfileStatus(status services.ProfileStatus, palette ui.Palette) stri
 }
 
 func RenderProfileSwitched(currentState *models.ProfileState, switchedKinds []string, targetName string, palette ui.Palette) string {
-	//title := fmt.Sprintf("Switched command, variable, and settings profile to '%s'", currentState.ActiveCommandProfile.Name)
 	title := fmt.Sprintf("Switched %s profile to '%s'", ui.JoinWithAnd(switchedKinds), targetName)
 
 	linked := "No"
