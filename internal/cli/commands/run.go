@@ -38,9 +38,9 @@ func runRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if previewFlag {
-		return handlers.RunPreviewCommand(alias, runtimeVars, ctx, profile)
+		return handlers.RunPreviewCommand(alias, runtimeVars, ctx, &profile)
 	}
-	return handlers.RunRunCommand(alias, runtimeVars, ctx, profile)
+	return handlers.RunRunCommand(alias, runtimeVars, ctx, &profile)
 }
 
 func runPreview(cmd *cobra.Command, args []string) error {
@@ -51,7 +51,7 @@ func runPreview(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	return handlers.RunPreviewCommand(alias, runtimeVars, ctx, profile)
+	return handlers.RunPreviewCommand(alias, runtimeVars, ctx, &profile)
 }
 
 func wantsHelp(args []string) bool {
