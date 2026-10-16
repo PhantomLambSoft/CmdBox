@@ -19,6 +19,12 @@ type SettingsProvider interface {
 	Get() settings.Settings
 }
 
+type RunService interface {
+	CollectMissingVars(cmdAlias string, runtimeVars map[string]string, profileName *string) ([]string, error)
+	Run(cmdAlias string, runtimeOverrides RuntimeOverrides, runtimeVars map[string]string, profileName *string) (runtime.ExecutionResult, error)
+	Preview(cmdAlias string, runtimeOverrides RuntimeOverrides, runtimeVars map[string]string, profileName *string) (resolve.Result, runtime.RunContext, error)
+}
+
 type RuntimeOverrides struct {
 	Cwd     string
 	Env     map[string]string
@@ -29,7 +35,7 @@ type RuntimeOverrides struct {
 	Verbose *bool
 }
 
-type RunService struct {
+type runService struct {
 	cmdRepo          repository.CommandRepository
 	resolver         *resolve.Resolver
 	executor         runtime.Executor
@@ -47,8 +53,8 @@ type RunServiceConfig struct {
 	SettingsProvider SettingsProvider
 }
 
-func NewRunService(config RunServiceConfig) *RunService {
-	return &RunService{
+func NewRunService(config RunServiceConfig) RunService {
+	return &runService{
 		cmdRepo:          config.CmdRepo,
 		resolver:         config.Resolver,
 		executor:         config.Executor,
@@ -58,7 +64,7 @@ func NewRunService(config RunServiceConfig) *RunService {
 	}
 }
 
-func (s *RunService) resolveProfile(profileName *string) (*models.Profile, error) {
+func (s *runService) resolveProfile(profileName *string) (*models.Profile, error) {
 	if profileName != nil {
 		if *profileName != "" {
 			profile, err := s.profileRepo.GetByName(*profileName)
@@ -71,7 +77,7 @@ func (s *RunService) resolveProfile(profileName *string) (*models.Profile, error
 	return nil, nil
 }
 
-func (s *RunService) Run(
+func (s *runService) Run(
 	cmdAlias string, runtimeOverrides RuntimeOverrides, runtimeVars map[string]string, profileName *string,
 ) (runtime.ExecutionResult, error) {
 	profile, err := s.resolveProfile(profileName)
@@ -132,7 +138,7 @@ func (s *RunService) Run(
 	return *executionResult, nil
 }
 
-func (s *RunService) Preview(
+func (s *runService) Preview(
 	cmdAlias string, runtimeOverrides RuntimeOverrides, runtimeVars map[string]string, profileName *string,
 ) (resolve.Result, runtime.RunContext, error) {
 	profile, err := s.resolveProfile(profileName)
@@ -171,7 +177,7 @@ type RecordHistoryInput struct {
 	ExitCode    int
 }
 
-func (s *RunService) recordHistory(input RecordHistoryInput) (*models.CommandHistory, error) {
+func (s *runService) recordHistory(input RecordHistoryInput) (*models.CommandHistory, error) {
 	currentSettings := s.settingsProvider.Get()
 	if !currentSettings.History.Enabled {
 		return nil, nil
@@ -208,7 +214,7 @@ func (s *RunService) recordHistory(input RecordHistoryInput) (*models.CommandHis
 	return history, nil
 }
 
-func (s *RunService) recordVariableProfileUse(resolvedCommand resolve.Result) error {
+func (s *runService) recordVariableProfileUse(resolvedCommand resolve.Result) error {
 	usedStoredVar := false
 	for _, step := range resolvedCommand.Trace {
 		if step.Kind == resolve.RefKindVariable && step.Source == "stored" {
@@ -228,7 +234,7 @@ func (s *RunService) recordVariableProfileUse(resolvedCommand resolve.Result) er
 }
 
 // CollectMissingVars identifies variables inside a command template that are not provided in the supplied runtimeVars map.
-func (s *RunService) CollectMissingVars(cmdAlias string, runtimeVars map[string]string, profileName *string) ([]string, error) {
+func (s *runService) CollectMissingVars(cmdAlias string, runtimeVars map[string]string, profileName *string) ([]string, error) {
 	profile, err := s.resolveProfile(profileName)
 	if err != nil {
 		return []string{}, fmt.Errorf("resolving profile: %w", err)
@@ -250,7 +256,7 @@ func (s *RunService) CollectMissingVars(cmdAlias string, runtimeVars map[string]
 
 // BuildContext constructs a runtime.RunContext by combining runtime override configurations with stored command
 // configurations and default values taken from settings.
-func (s *RunService) buildContext(cmd models.Command, runtimeOverrides RuntimeOverrides) (runtime.RunContext, error) {
+func (s *runService) buildContext(cmd models.Command, runtimeOverrides RuntimeOverrides) (runtime.RunContext, error) {
 	var err error
 	envs := make(map[string]string)
 	if cmd.Env != nil {

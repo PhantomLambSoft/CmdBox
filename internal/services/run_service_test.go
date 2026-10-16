@@ -90,7 +90,7 @@ func (s *spyProfileRepo) RecordUse(profile models.Profile) error {
 }
 
 type runServiceHarness struct {
-	svc              *RunService
+	svc              *runService
 	cmdRepo          repository.CommandRepository
 	varRepo          repository.VariableRepository
 	profileRepo      repository.ProfileRepository
@@ -185,7 +185,7 @@ func setupRunServiceTest(t *testing.T, strict bool, withHistory bool) *runServic
 		ProfileRepo:      spyProfile,
 		HistoryRepo:      historyRepo,
 		SettingsProvider: settingsProvider,
-	})
+	}).(*runService)
 
 	return &runServiceHarness{
 		svc:              svc,
