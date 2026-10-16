@@ -126,6 +126,8 @@ func toRuntimeOverrides(raw RawRunContext) (services.RuntimeOverrides, error) {
 		}
 		overrides.Env = env
 	}
+	overrides.Emit = raw.Emit
+	overrides.Verbose = raw.Verbose
 
 	return overrides, nil
 }
