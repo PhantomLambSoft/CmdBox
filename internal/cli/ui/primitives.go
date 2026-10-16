@@ -19,6 +19,10 @@ func GetTerminalWidth() int {
 	return w
 }
 
+func GetElementWidth(element string) int {
+	return lipgloss.Width(element)
+}
+
 func TablePanel(title string, headers []string, rows [][]string, caption string, palette Palette) string {
 	tWidth := GetTerminalWidth()
 	widths := columnWidths(headers, rows, tWidth-4)
@@ -74,11 +78,8 @@ func columnWidths(headers []string, rows [][]string, maxTotal int) []int {
 		}
 	}
 
-	tableParts := n + 1
-	available := maxTotal - tableParts
-	if available < n {
-		available = n
-	}
+	overhead := (n * 2) + (n - 1) // padding + column separators
+	available := maxTotal - overhead
 
 	total := 0
 	for _, w := range natural {
@@ -88,25 +89,55 @@ func columnWidths(headers []string, rows [][]string, maxTotal int) []int {
 		return natural
 	}
 
-	const minColWidth = 4
+	const minColWidth = 8
+
+	// If the floor doesn't fit (very narrow terminal, many columns). Divide available space evenly - never exceeds budget.
+	if n*minColWidth >= available || available <= 0 {
+		widths := make([]int, n)
+		base := available / n
+		remainder := available % n
+		for i := range widths {
+			widths[i] = base
+			if i < remainder {
+				widths[i]++
+			}
+		}
+		return widths
+	}
+
+	// Every column gets the floor first. Only the genuine leftover gets distributed, proportionally to how much
+	// each column wants beyond the floor - this can never be more than available.
 	widths := make([]int, n)
-	remaining := available
-	widest := 0
+	for i := range widths {
+		widths[i] = minColWidth
+	}
+	leftover := available - n*minColWidth
+
+	extraWanted := make([]int, n)
+	totalExtraWanted := 0
 	for i, w := range natural {
-		share := int(float64(w) / float64(total) * float64(available))
-		if share < minColWidth {
-			share = minColWidth
-		}
-		widths[i] = share
-		remaining -= share
-		if widths[i] > widths[widest] {
-			widest = i
+		if w > minColWidth {
+			extraWanted[i] = w - minColWidth
+			totalExtraWanted += extraWanted[i]
 		}
 	}
-	widths[widest] += remaining
-	if widths[widest] < minColWidth {
-		widths[widest] = minColWidth
+
+	if totalExtraWanted > 0 {
+		distributed := 0
+		widest := 0
+		for i := range widths {
+			share := leftover * extraWanted[i] / totalExtraWanted
+			widths[i] += share
+			distributed += share
+			if widths[i] > widths[widest] {
+				widest = i
+			}
+		}
+		widths[widest] += leftover - distributed
+	} else {
+		widths[0] += leftover
 	}
+
 	return widths
 }
 
@@ -204,6 +235,10 @@ func SectionSuccess(title, body string, palette Palette) string {
 	return Section(title, body, "", palette.Success.GetForeground(), palette.Success)
 }
 
+func SectionError(title, body string, palette Palette) string {
+	return Section(title, body, "", palette.Error.GetForeground(), palette.Error)
+}
+
 func Divider(title string, width int, palette Palette) string {
 	if title == "" {
 		return palette.Muted.Render(strings.Repeat("─", width))
@@ -230,6 +265,10 @@ func Centered(s string, width int) string {
 
 func Stack(parts ...string) string {
 	return lipgloss.JoinVertical(lipgloss.Left, parts...)
+}
+
+func StackHorz(parts ...string) string {
+	return lipgloss.JoinHorizontal(lipgloss.Top, parts...)
 }
 
 func SummaryCounts(labels []string, counts []int, palette Palette) string {
