@@ -9,6 +9,7 @@ type UIColors struct {
 	Subtitle     ColorStyle `toml:"subtitle"`
 	Muted        ColorStyle `toml:"muted"`
 	Border       ColorStyle `toml:"border"`
+	Accent       ColorStyle `toml:"accent"`
 	PanelTitle   ColorStyle `toml:"panel_title"`
 	TableHeader  ColorStyle `toml:"table_header"`
 	Caption      ColorStyle `toml:"caption"`

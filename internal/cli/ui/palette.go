@@ -11,6 +11,7 @@ type Palette struct {
 	Title        lipgloss.Style
 	Subtitle     lipgloss.Style
 	Muted        lipgloss.Style
+	Accent       color.Color
 	PanelTitle   lipgloss.Style
 	Border       color.Color
 	TableHeader  lipgloss.Style
@@ -63,6 +64,7 @@ func NewPalette(c settings.UIColors) Palette {
 		Subtitle:     styleOf(c.Subtitle),
 		Muted:        styleOf(c.Muted),
 		Border:       colorOf(c.Border),
+		Accent:       colorOf(c.Accent),
 		PanelTitle:   styleOf(c.PanelTitle),
 		TableHeader:  styleOf(c.TableHeader),
 		Caption:      styleOf(c.Caption),
