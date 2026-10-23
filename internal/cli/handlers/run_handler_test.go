@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/PhantomLambSoft/CmdBox/internal/cli/ui"
+	"github.com/PhantomLambSoft/CmdBox/internal/cli/ui/prompts"
 	"github.com/PhantomLambSoft/CmdBox/internal/container"
 	"github.com/PhantomLambSoft/CmdBox/internal/resolve"
 	"github.com/PhantomLambSoft/CmdBox/internal/runtime"
@@ -66,16 +67,27 @@ func (f *fakeRunService) Preview(cmdAlias string, runtimeOverrides services.Runt
 	return f.previewResult, f.previewCtx, f.previewErr
 }
 
-// withFakeRunContainer swaps container.GetRunService and container.GetConsole for the duration
-// of the test, restoring the originals on cleanup.
+// freshTestPrompter builds a real *prompts.Prompter bound to whatever os.Stdin is current at
+// call time. container.GetPrompter is memoized process-wide via sync.OnceValues, so if tests let
+// the real one get built it freezes onto the first test's redirected stdin and every later test's
+// withStdin swap is silently ignored. Overriding the var with this (non-memoized) constructor
+// keeps each test's prompt reads bound to its own stdin pipe.
+func freshTestPrompter() (*prompts.Prompter, error) {
+	return prompts.NewPrompter(ui.NewPalette(settings.UIColors{}), false), nil
+}
+
+// withFakeRunContainer swaps container.GetRunService, container.GetConsole, and
+// container.GetPrompter for the duration of the test, restoring the originals on cleanup.
 func withFakeRunContainer(t *testing.T, svc services.RunService, svcErr error) {
 	t.Helper()
 
 	origSvc := container.GetRunService
 	origConsole := container.GetConsole
+	origPrompter := container.GetPrompter
 	t.Cleanup(func() {
 		container.GetRunService = origSvc
 		container.GetConsole = origConsole
+		container.GetPrompter = origPrompter
 	})
 
 	container.GetRunService = func() (services.RunService, error) {
@@ -84,6 +96,7 @@ func withFakeRunContainer(t *testing.T, svc services.RunService, svcErr error) {
 	container.GetConsole = func() (*ui.Console, error) {
 		return ui.NewConsole(ui.NewPalette(settings.UIColors{}), false, "never", 0, 0, 0), nil
 	}
+	container.GetPrompter = freshTestPrompter
 }
 
 // withFailingRunConsole makes container.GetConsole return an error, to exercise handler error
@@ -92,9 +105,11 @@ func withFailingRunConsole(t *testing.T, svc services.RunService) {
 	t.Helper()
 	origSvc := container.GetRunService
 	origConsole := container.GetConsole
+	origPrompter := container.GetPrompter
 	t.Cleanup(func() {
 		container.GetRunService = origSvc
 		container.GetConsole = origConsole
+		container.GetPrompter = origPrompter
 	})
 	container.GetRunService = func() (services.RunService, error) {
 		return svc, nil
@@ -102,6 +117,7 @@ func withFailingRunConsole(t *testing.T, svc services.RunService) {
 	container.GetConsole = func() (*ui.Console, error) {
 		return nil, errors.New("console boom")
 	}
+	container.GetPrompter = freshTestPrompter
 }
 
 // withStdin temporarily replaces os.Stdin with a reader over the given content, restoring the
@@ -286,6 +302,19 @@ func TestRunRunCommand_VerboseAndEmit_NoOutput(t *testing.T) {
 	assert.Empty(t, out, "emit mode should never print the execution result panel")
 }
 
+func TestRunRunCommand_PrompterUnavailable(t *testing.T) {
+	fake := &fakeRunService{missingResult: []string{"name"}}
+	withFakeRunContainer(t, fake, nil)
+	container.GetPrompter = func() (*prompts.Prompter, error) {
+		return nil, errors.New("terminal unavailable")
+	}
+
+	err := RunRunCommand("greet", map[string]string{}, RawRunContext{}, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "getting prompter")
+	assert.Contains(t, err.Error(), "terminal unavailable")
+}
+
 func TestRunRunCommand_RunServiceUnavailable(t *testing.T) {
 	withFakeRunContainer(t, nil, errors.New("db down"))
 
@@ -417,6 +446,19 @@ func TestRunPreviewCommand_AlwaysPrintsResult(t *testing.T) {
 	})
 
 	assert.Contains(t, out, "echo hi", "unlike RunRunCommand, preview output does not depend on the Verbose flag")
+}
+
+func TestRunPreviewCommand_PrompterUnavailable(t *testing.T) {
+	fake := &fakeRunService{missingResult: []string{"name"}}
+	withFakeRunContainer(t, fake, nil)
+	container.GetPrompter = func() (*prompts.Prompter, error) {
+		return nil, errors.New("terminal unavailable")
+	}
+
+	err := RunPreviewCommand("greet", map[string]string{}, RawRunContext{}, nil)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "getting prompter")
+	assert.Contains(t, err.Error(), "terminal unavailable")
 }
 
 func TestRunPreviewCommand_RunServiceUnavailable(t *testing.T) {

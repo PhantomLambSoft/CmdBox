@@ -10,9 +10,10 @@ import (
 )
 
 type Console struct {
-	out     io.Writer
-	isTTY   bool
-	palette Palette
+	out      io.Writer
+	isTTY    bool
+	palette  Palette
+	useColor bool
 
 	pagerMode     string
 	pagerMinRows  int
@@ -37,6 +38,7 @@ func NewConsole(
 		out:           w,
 		isTTY:         detected != colorprofile.NoTTY,
 		palette:       palette,
+		useColor:      useColor,
 		pagerMode:     pagerMode,
 		pagerMinRows:  pagerMinRows,
 		pagerPageStep: PagerPageStep,
@@ -46,6 +48,10 @@ func NewConsole(
 
 func (c *Console) Palette() Palette {
 	return c.palette
+}
+
+func (c *Console) UseColor() bool {
+	return c.useColor
 }
 
 func (c *Console) Print(s string) {

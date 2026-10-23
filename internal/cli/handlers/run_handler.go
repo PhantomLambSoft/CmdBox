@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/PhantomLambSoft/CmdBox/internal/cli/ui/presenters"
-	"github.com/PhantomLambSoft/CmdBox/internal/cli/ui/prompts"
 	"github.com/PhantomLambSoft/CmdBox/internal/container"
 	"github.com/PhantomLambSoft/CmdBox/internal/services"
 )
@@ -35,7 +34,11 @@ func RunRunCommand(alias string, runtimeVars map[string]string, ctx RawRunContex
 
 	if len(missingVars) > 0 {
 		for _, varName := range missingVars {
-			value, err := prompts.PromptForMissingVars(varName)
+			prompter, err := container.GetPrompter()
+			if err != nil {
+				return fmt.Errorf("getting prompter: %w", err)
+			}
+			value, err := prompter.PromptForMissingVars(varName)
 			if err != nil {
 				return fmt.Errorf("prompting for %s: %w", varName, err)
 			}
@@ -78,7 +81,11 @@ func RunPreviewCommand(alias string, runtimeVars map[string]string, ctx RawRunCo
 
 	if len(missingVars) > 0 {
 		for _, varName := range missingVars {
-			value, err := prompts.PromptForMissingVars(varName)
+			prompter, err := container.GetPrompter()
+			if err != nil {
+				return fmt.Errorf("getting prompter: %w", err)
+			}
+			value, err := prompter.PromptForMissingVars(varName)
 			if err != nil {
 				return fmt.Errorf("prompting for %s: %w", varName, err)
 			}
