@@ -3,10 +3,67 @@ package commands
 import (
 	"testing"
 
+	"github.com/PhantomLambSoft/CmdBox/internal/cli/handlers"
+	"github.com/PhantomLambSoft/CmdBox/internal/cli/ui"
+	"github.com/PhantomLambSoft/CmdBox/internal/settings"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// fakeHandlerSettingsProvider and fakeHandlerConsole implement
+// handlers.SettingsProvider / handlers.ConsoleWriter without touching the
+// real app data directory or settings file, and without invoking the
+// editFn they're given (which, in production, launches a real fullscreen
+// TUI editor or a real external editor process).
+type fakeHandlerSettingsProvider struct {
+	value   settings.Settings
+	editErr error
+}
+
+func (f *fakeHandlerSettingsProvider) Get() settings.Settings { return f.value }
+
+func (f *fakeHandlerSettingsProvider) Edit(func(current string) (string, error)) (settings.Settings, error) {
+	if f.editErr != nil {
+		return settings.Settings{}, f.editErr
+	}
+	return f.value, nil
+}
+
+type fakeHandlerConsole struct{}
+
+func (fakeHandlerConsole) Palette() ui.Palette { return ui.Palette{} }
+func (fakeHandlerConsole) Print(string)        {}
+func (fakeHandlerConsole) Error(string)        {}
+func (fakeHandlerConsole) Muted(string)        {}
+func (fakeHandlerConsole) Success(string)      {}
+
+// withFakeSettingsHandlerDeps substitutes the handlers package's settings
+// service, console, app-data-dir, and "open the data directory" side
+// effect for the duration of the test, restoring them on cleanup. Without
+// this, RunShowSettings/RunEditSettings/RunSettingsDataDir would read the
+// real settings file, resolve the real app data directory, and (for
+// RunSettingsDataDir with print=false) open a real OS file explorer
+// window.
+func withFakeSettingsHandlerDeps(t *testing.T) {
+	t.Helper()
+	restoreSvc := handlers.SetSettingsServiceForTest(func() (handlers.SettingsProvider, error) {
+		return &fakeHandlerSettingsProvider{}, nil
+	})
+	restoreConsole := handlers.SetConsoleForTest(func() (handlers.ConsoleWriter, error) {
+		return fakeHandlerConsole{}, nil
+	})
+	restoreDataDir := handlers.SetAppDataDirForTest(func() (string, error) {
+		return "/fake/data/dir", nil
+	})
+	restoreOpen := handlers.SetOpenDataDirForTest(func(dir string) error { return nil })
+	t.Cleanup(func() {
+		restoreSvc()
+		restoreConsole()
+		restoreDataDir()
+		restoreOpen()
+	})
+}
 
 func TestSettingsCmd_Metadata(t *testing.T) {
 	assert.Equal(t, "settings", settingsCmd.Name())
@@ -54,11 +111,13 @@ func TestSettingsDataDirCmd_Flags(t *testing.T) {
 }
 
 func TestRunSettingsShow(t *testing.T) {
+	withFakeSettingsHandlerDeps(t)
 	cmd := freshCmdWithFlagsOf(settingsShowCmd)
 	assert.NoError(t, runSettingsShow(cmd, []string{}))
 }
 
 func TestRunSettingsEdit(t *testing.T) {
+	withFakeSettingsHandlerDeps(t)
 	cmd := freshCmdWithFlagsOf(settingsEditCmd)
 	assert.NoError(t, runSettingsEdit(cmd, []string{}))
 
@@ -67,6 +126,7 @@ func TestRunSettingsEdit(t *testing.T) {
 }
 
 func TestRunSettingsDataDir(t *testing.T) {
+	withFakeSettingsHandlerDeps(t)
 	cmd := freshCmdWithFlagsOf(settingsDataDirCmd)
 	assert.NoError(t, runSettingsDataDir(cmd, []string{}))
 
