@@ -56,11 +56,24 @@ var bangBangCmd = &cobra.Command{
 }
 
 func init() {
-	historyListCmd.Flags().Int("limit", 0, "Number of entries to show")
 	historyListCmd.Flags().String("alias", "", "Filter to a specific command alias")
+	historyListCmd.Flags().String("order", "", "Field to order by")
+	historyListCmd.Flags().StringSlice("field", nil, "Fields to display (repeatable)")
+	historyListCmd.Flags().Int("limit", 0, "Number of entries to show")
+	historyListCmd.Flags().Bool("page", false, "Force paging on")
+	historyListCmd.Flags().Bool("no-page", false, "Force paging off")
+	historyListCmd.Flags().StringP("profile", "p", "", "Profile to list from")
+	historyListCmd.MarkFlagsMutuallyExclusive("page", "no-page")
+
+	historyShowCmd.Flags().StringP("alias", "", "", "Filter to a specific command alias")
+	historyShowCmd.Flags().StringP("profile", "p", "", "Profile to list from")
+
+	historyRerunCmd.Flags().StringP("alias", "", "", "Filter to a specific command alias")
+	historyRerunCmd.Flags().StringP("profile", "p", "", "Profile to list from")
 
 	historyClearCmd.Flags().BoolP("yes", "y", false, "Skip the confirmation prompt")
 	historyClearCmd.Flags().String("alias", "", "Clear history for a specific alias only")
+	historyClearCmd.Flags().StringP("profile", "p", "", "Profile to list from")
 
 	historyCmd.AddCommand(historyListCmd, historyShowCmd, historyRerunCmd, historyLastCmd, historyClearCmd)
 
@@ -68,7 +81,16 @@ func init() {
 }
 
 func runHistoryList(cmd *cobra.Command, args []string) error {
-	raw := handlers.ListHistoryArgs{}
+	page, err := getPage(cmd)
+	if err != nil {
+		return err
+	}
+	raw := handlers.ListHistoryArgs{
+		Order:   getOrder(cmd),
+		Fields:  getFields(cmd),
+		Page:    page,
+		Profile: getProfile(cmd),
+	}
 	if cmd.Flags().Changed("limit") {
 		raw.Limit = getLimit(cmd)
 		raw.HasLimit = true
@@ -81,11 +103,31 @@ func runHistoryList(cmd *cobra.Command, args []string) error {
 }
 
 func runHistoryShow(cmd *cobra.Command, args []string) error {
-	return handlers.RunShowHistory(args[0])
+	var alias *string
+	var profileName *string
+	if cmd.Flags().Changed("alias") {
+		rawAlias := getStringFlag(cmd, "alias")
+		alias = &rawAlias
+	}
+	if cmd.Flags().Changed("profile") {
+		rawProfile := getStringFlag(cmd, "profile")
+		profileName = &rawProfile
+	}
+	return handlers.RunShowHistory(args[0], alias, profileName)
 }
 
 func runHistoryRerun(cmd *cobra.Command, args []string) error {
-	return handlers.RunRerunHistory(args[0])
+	var alias *string
+	var profileName *string
+	if cmd.Flags().Changed("alias") {
+		rawAlias := getStringFlag(cmd, "alias")
+		alias = &rawAlias
+	}
+	if cmd.Flags().Changed("profile") {
+		rawProfile := getStringFlag(cmd, "profile")
+		profileName = &rawProfile
+	}
+	return handlers.RunRerunHistory(args[0], alias, profileName)
 }
 
 func runHistoryLast(cmd *cobra.Command, args []string) error {
@@ -97,6 +139,10 @@ func runHistoryClear(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("alias") {
 		raw.Alias = getStringFlag(cmd, "alias")
 		raw.HasAlias = true
+	}
+	if cmd.Flags().Changed("profile") {
+		raw.Profile = getStringFlag(cmd, "profile")
+		raw.HasProfile = true
 	}
 	return handlers.RunClearHistory(raw)
 }

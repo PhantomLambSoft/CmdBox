@@ -48,6 +48,15 @@ func (p *Prompter) PromptForMissingVars(varName string) (string, error) {
 	return value, nil
 }
 
+func (p *Prompter) PromptConfirmation(message string) (bool, error) {
+	var confirmed bool
+	err := huh.NewConfirm().Title(message).Value(&confirmed).Run()
+	if err != nil {
+		return false, err
+	}
+	return confirmed, nil
+}
+
 func (p *Prompter) promptPlain(message string) (string, error) {
 	fmt.Fprint(os.Stderr, message+": ")
 	line, err := p.reader.ReadString('\n')
