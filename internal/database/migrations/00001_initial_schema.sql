@@ -15,7 +15,7 @@ CREATE TABLE profile_states
     active_command_profile_id  INTEGER NOT NULL REFERENCES profiles (id) ON DELETE RESTRICT,
     active_variable_profile_id INTEGER NOT NULL REFERENCES profiles (id) ON DELETE RESTRICT,
     active_settings_profile_id INTEGER NOT NULL REFERENCES profiles (id) ON DELETE RESTRICT,
-    updated_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL
 );
 
 CREATE TABLE tags
@@ -92,8 +92,8 @@ CREATE INDEX idx_command_histories_profile_id ON command_histories (profile_id);
 INSERT INTO profiles (name, description, created_at, updated_at, last_used)
 VALUES ('default', 'Automatically created default profile.', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL);
 
-INSERT INTO profile_states (active_command_profile_id, active_variable_profile_id, active_settings_profile_id)
-VALUES (1, 1, 1);
+INSERT INTO profile_states (active_command_profile_id, active_variable_profile_id, active_settings_profile_id, updated_at)
+VALUES (1, 1, 1, CURRENT_TIMESTAMP);
 
 -- +goose Down
 DROP TABLE command_histories;
