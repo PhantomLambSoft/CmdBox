@@ -52,6 +52,9 @@ func RunExportCmds(args RunExportCmdArgs) error {
 	}
 
 	result, err := exportService.ExportCmds(config)
+	if err != nil {
+		return fmt.Errorf("exporting commands: %w", err)
+	}
 
 	console.Print(presenters.RenderExportResult(result, console.Palette()))
 	return nil
@@ -76,6 +79,9 @@ func RunExportVars(args RunExportVarArgs) error {
 	}
 
 	result, err := exportService.ExportVars(config)
+	if err != nil {
+		return fmt.Errorf("exporting variables: %w", err)
+	}
 
 	console.Print(presenters.RenderExportResult(result, console.Palette()))
 	return nil
@@ -99,6 +105,9 @@ func RunExportAll(args RunExportAllArgs) error {
 	}
 
 	result, err := exportService.ExportAll(config)
+	if err != nil {
+		return fmt.Errorf("exporting all: %w", err)
+	}
 
 	console.Print(presenters.RenderExportResult(result, console.Palette()))
 	return nil
