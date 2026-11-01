@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/PhantomLambSoft/CmdBox/internal/cli/handlers"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -90,18 +92,50 @@ func TestTagSearchCmd_Flags(t *testing.T) {
 	assertMutuallyExclusive(t, tagSearchCmd, "page", "no-page")
 }
 
-func TestRunTagAdd_HappyPath(t *testing.T) {
+func TestRunTagAdd_BuildsArgsFromPositionalsAndFlags(t *testing.T) {
+	var got handlers.AddTagArgs
+	stubHandlerCall(t, &callRunAddTag, func(args handlers.AddTagArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagAddCmd)
 	assert.NoError(t, runTagAdd(cmd, []string{"name"}))
+	assert.Equal(t, "name", got.Name)
+	assert.False(t, got.HasDescription)
+
 	assert.NoError(t, runTagAdd(cmd, []string{"name", "desc"}))
+	assert.Equal(t, "desc", got.Description)
+	assert.True(t, got.HasDescription)
 }
 
-func TestRunTagGet(t *testing.T) {
+func TestRunTagAdd_PropagatesHandlerError(t *testing.T) {
+	stubHandlerCall(t, &callRunAddTag, func(args handlers.AddTagArgs) error {
+		return errors.New("boom")
+	})
+
+	cmd := freshCmdWithFlagsOf(tagAddCmd)
+	assert.EqualError(t, runTagAdd(cmd, []string{"name"}), "boom")
+}
+
+func TestRunTagGet_ForwardsName(t *testing.T) {
+	var gotName string
+	stubHandlerCall(t, &callRunGetTag, func(name string) error {
+		gotName = name
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagGetCmd)
 	assert.NoError(t, runTagGet(cmd, []string{"name"}))
+	assert.Equal(t, "name", gotName)
 }
 
 func TestRunTagUpdate_EditFieldsRequiresEditFlag(t *testing.T) {
+	stubHandlerCall(t, &callRunUpdateTag, func(args handlers.UpdateTagArgs) error {
+		t.Fatal("handler should not be called when validation fails")
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagUpdateCmd)
 	require.NoError(t, cmd.Flags().Set("edit-fields", "description"))
 	err := runTagUpdate(cmd, []string{"name"})
@@ -109,24 +143,53 @@ func TestRunTagUpdate_EditFieldsRequiresEditFlag(t *testing.T) {
 }
 
 func TestRunTagUpdate_EditFieldsWithEditFlagIsAllowed(t *testing.T) {
+	var got handlers.UpdateTagArgs
+	stubHandlerCall(t, &callRunUpdateTag, func(args handlers.UpdateTagArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagUpdateCmd)
 	require.NoError(t, cmd.Flags().Set("edit", "true"))
 	require.NoError(t, cmd.Flags().Set("edit-fields", "description"))
 	assert.NoError(t, runTagUpdate(cmd, []string{"name"}))
+	assert.True(t, got.EditMode)
+	assert.Equal(t, "description", got.EditFields)
 }
 
 func TestRunTagUpdate_HappyPath(t *testing.T) {
+	var got handlers.UpdateTagArgs
+	stubHandlerCall(t, &callRunUpdateTag, func(args handlers.UpdateTagArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagUpdateCmd)
 	require.NoError(t, cmd.Flags().Set("description", "new desc"))
 	assert.NoError(t, runTagUpdate(cmd, []string{"name"}))
+	assert.Equal(t, "name", got.CurrentName)
+	assert.Equal(t, "new desc", got.Description)
+	assert.True(t, got.HasDescription)
 }
 
 func TestRunTagList_HappyPath(t *testing.T) {
+	called := false
+	stubHandlerCall(t, &callRunListTag, func(args handlers.ListTagArgs) error {
+		called = true
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagListCmd)
 	assert.NoError(t, runTagList(cmd, []string{}))
+	assert.True(t, called)
 }
 
 func TestRunTagList_PageAndNoPageConflict(t *testing.T) {
+	stubHandlerCall(t, &callRunListTag, func(args handlers.ListTagArgs) error {
+		t.Fatal("handler should not be called when --page and --no-page conflict")
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagListCmd)
 	require.NoError(t, cmd.Flags().Set("page", "true"))
 	require.NoError(t, cmd.Flags().Set("no-page", "true"))
@@ -134,18 +197,37 @@ func TestRunTagList_PageAndNoPageConflict(t *testing.T) {
 }
 
 func TestRunTagSearch_HappyPath(t *testing.T) {
+	var got handlers.SearchTagArgs
+	stubHandlerCall(t, &callRunSearchTag, func(args handlers.SearchTagArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagSearchCmd)
 	assert.NoError(t, runTagSearch(cmd, []string{"term"}))
+	assert.Equal(t, "term", got.Term)
 }
 
 func TestRunTagSearch_PageAndNoPageConflict(t *testing.T) {
+	stubHandlerCall(t, &callRunSearchTag, func(args handlers.SearchTagArgs) error {
+		t.Fatal("handler should not be called when --page and --no-page conflict")
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagSearchCmd)
 	require.NoError(t, cmd.Flags().Set("page", "true"))
 	require.NoError(t, cmd.Flags().Set("no-page", "true"))
 	assert.Error(t, runTagSearch(cmd, []string{"term"}))
 }
 
-func TestRunTagDelete(t *testing.T) {
+func TestRunTagDelete_ForwardsName(t *testing.T) {
+	var got handlers.DeleteTagArgs
+	stubHandlerCall(t, &callRunDeleteTag, func(args handlers.DeleteTagArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(tagDeleteCmd)
 	assert.NoError(t, runTagDelete(cmd, []string{"name"}))
+	assert.Equal(t, handlers.DeleteTagArgs{Name: "name"}, got)
 }

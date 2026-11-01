@@ -25,6 +25,14 @@ var previewCmd = &cobra.Command{
 	RunE:               runPreview,
 }
 
+// Package-level indirections over the handlers package calls used by this file's RunE
+// functions, so tests can substitute mocks instead of exercising real handlers (and the
+// real container/database they reach into).
+var (
+	callRunRunCommand     = handlers.RunRunCommand
+	callRunPreviewCommand = handlers.RunPreviewCommand
+)
+
 func init() {
 	rootCmd.AddCommand(runCmd, previewCmd)
 }
@@ -38,9 +46,9 @@ func runRun(cmd *cobra.Command, args []string) error {
 		return err
 	}
 	if previewFlag {
-		return handlers.RunPreviewCommand(alias, runtimeVars, ctx, &profile)
+		return callRunPreviewCommand(alias, runtimeVars, ctx, &profile)
 	}
-	return handlers.RunRunCommand(alias, runtimeVars, ctx, &profile)
+	return callRunRunCommand(alias, runtimeVars, ctx, &profile)
 }
 
 func runPreview(cmd *cobra.Command, args []string) error {
@@ -51,7 +59,7 @@ func runPreview(cmd *cobra.Command, args []string) error {
 	if err != nil {
 		return err
 	}
-	return handlers.RunPreviewCommand(alias, runtimeVars, ctx, &profile)
+	return callRunPreviewCommand(alias, runtimeVars, ctx, &profile)
 }
 
 func wantsHelp(args []string) bool {

@@ -58,6 +58,18 @@ var tagDeleteCmd = &cobra.Command{
 	RunE:    runTagDelete,
 }
 
+// Package-level indirections over the handlers package calls used by this file's RunE
+// functions, so tests can substitute mocks instead of exercising real handlers (and the
+// real container/database they reach into).
+var (
+	callRunAddTag    = handlers.RunAddTag
+	callRunGetTag    = handlers.RunGetTag
+	callRunUpdateTag = handlers.RunUpdateTag
+	callRunListTag   = handlers.RunListTag
+	callRunSearchTag = handlers.RunSearchTag
+	callRunDeleteTag = handlers.RunDeleteTag
+)
+
 func init() {
 	tagAddCmd.Flags().BoolP("interactive", "i", false, "Prompt for every field")
 
@@ -101,11 +113,11 @@ func runTagAdd(cmd *cobra.Command, args []string) error {
 		raw.Description = args[1]
 		raw.HasDescription = true
 	}
-	return handlers.RunAddTag(raw)
+	return callRunAddTag(raw)
 }
 
 func runTagGet(cmd *cobra.Command, args []string) error {
-	return handlers.RunGetTag(args[0])
+	return callRunGetTag(args[0])
 }
 
 func runTagUpdate(cmd *cobra.Command, args []string) error {
@@ -129,7 +141,7 @@ func runTagUpdate(cmd *cobra.Command, args []string) error {
 		raw.HasDescription = true
 	}
 
-	return handlers.RunUpdateTag(raw)
+	return callRunUpdateTag(raw)
 }
 
 func runTagList(cmd *cobra.Command, args []string) error {
@@ -149,7 +161,7 @@ func runTagList(cmd *cobra.Command, args []string) error {
 		raw.HasLimit = true
 	}
 
-	return handlers.RunListTag(raw)
+	return callRunListTag(raw)
 }
 
 func runTagSearch(cmd *cobra.Command, args []string) error {
@@ -171,9 +183,9 @@ func runTagSearch(cmd *cobra.Command, args []string) error {
 		raw.HasLimit = true
 	}
 
-	return handlers.RunSearchTag(raw)
+	return callRunSearchTag(raw)
 }
 
 func runTagDelete(cmd *cobra.Command, args []string) error {
-	return handlers.RunDeleteTag(handlers.DeleteTagArgs{Name: args[0]})
+	return callRunDeleteTag(handlers.DeleteTagArgs{Name: args[0]})
 }

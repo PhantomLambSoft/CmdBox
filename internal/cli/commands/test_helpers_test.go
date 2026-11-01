@@ -82,3 +82,15 @@ func freshCmdWithFlagsOf(src *cobra.Command) *cobra.Command {
 func functionName(fn interface{}) string {
 	return runtime.FuncForPC(reflect.ValueOf(fn).Pointer()).Name()
 }
+
+// stubHandlerCall replaces one of this package's callRunXxx indirection vars with mock for
+// the duration of the calling test, restoring the original on cleanup. These vars are the
+// seam between a command's RunE function and the handlers package, letting tests assert a
+// command forwards the right arguments without exercising the real handler (and the real
+// container/database it reaches into).
+func stubHandlerCall[F any](t *testing.T, varPtr *F, mock F) {
+	t.Helper()
+	orig := *varPtr
+	*varPtr = mock
+	t.Cleanup(func() { *varPtr = orig })
+}

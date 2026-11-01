@@ -88,6 +88,19 @@ var profileSwitchSettingsCmd = &cobra.Command{
 	RunE:  runProfileSwitchSettings,
 }
 
+// Package-level indirections over the handlers package calls used by this file's RunE
+// functions, so tests can substitute mocks instead of exercising real handlers (and the
+// real container/database they reach into).
+var (
+	callRunSwitchProfile = handlers.RunSwitchProfile
+	callRunAddProfile    = handlers.RunAddProfile
+	callRunGetProfile    = handlers.RunGetProfile
+	callRunUpdateProfile = handlers.RunUpdateProfile
+	callRunListProfile   = handlers.RunListProfile
+	callRunDeleteProfile = handlers.RunDeleteProfile
+	callRunProfileStatus = handlers.RunProfileStatus
+)
+
 func init() {
 	profileAddCmd.Flags().BoolP("interactive", "i", false, "Prompt for every field")
 
@@ -133,7 +146,7 @@ func runProfileBareShorthand(cmd *cobra.Command, args []string) error {
 	if len(args) == 0 {
 		return cmd.Help()
 	}
-	return handlers.RunSwitchProfile(switchArgsFromFlags(cmd, args[0]))
+	return callRunSwitchProfile(switchArgsFromFlags(cmd, args[0]))
 }
 
 func runProfileAdd(cmd *cobra.Command, args []string) error {
@@ -145,11 +158,11 @@ func runProfileAdd(cmd *cobra.Command, args []string) error {
 		raw.Description = args[1]
 		raw.HasDescription = true
 	}
-	return handlers.RunAddProfile(raw)
+	return callRunAddProfile(raw)
 }
 
 func runProfileGet(cmd *cobra.Command, args []string) error {
-	return handlers.RunGetProfile(args[0])
+	return callRunGetProfile(args[0])
 }
 
 func runProfileUpdate(cmd *cobra.Command, args []string) error {
@@ -171,7 +184,7 @@ func runProfileUpdate(cmd *cobra.Command, args []string) error {
 		raw.Description = getStringFlag(cmd, "description")
 		raw.HasDescription = true
 	}
-	return handlers.RunUpdateProfile(raw)
+	return callRunUpdateProfile(raw)
 }
 
 func runProfileList(cmd *cobra.Command, args []string) error {
@@ -188,40 +201,40 @@ func runProfileList(cmd *cobra.Command, args []string) error {
 		raw.Limit = getLimit(cmd)
 		raw.HasLimit = true
 	}
-	return handlers.RunListProfile(raw)
+	return callRunListProfile(raw)
 }
 
 func runProfileDelete(cmd *cobra.Command, args []string) error {
-	return handlers.RunDeleteProfile(handlers.DeleteProfileArgs{
+	return callRunDeleteProfile(handlers.DeleteProfileArgs{
 		Name:  args[0],
 		Force: getBoolFlag(cmd, "force"),
 	})
 }
 
 func runProfileStatus(cmd *cobra.Command, args []string) error {
-	return handlers.RunProfileStatus()
+	return callRunProfileStatus()
 }
 
 func runProfileSwitch(cmd *cobra.Command, args []string) error {
-	return handlers.RunSwitchProfile(switchArgsFromFlags(cmd, args[0]))
+	return callRunSwitchProfile(switchArgsFromFlags(cmd, args[0]))
 }
 
 func runProfileSwitchCmd(cmd *cobra.Command, args []string) error {
-	return handlers.RunSwitchProfile(handlers.SwitchProfileArgs{
+	return callRunSwitchProfile(handlers.SwitchProfileArgs{
 		Name: args[0],
 		Cmd:  true,
 	})
 }
 
 func runProfileSwitchVar(cmd *cobra.Command, args []string) error {
-	return handlers.RunSwitchProfile(handlers.SwitchProfileArgs{
+	return callRunSwitchProfile(handlers.SwitchProfileArgs{
 		Name: args[0],
 		Var:  true,
 	})
 }
 
 func runProfileSwitchSettings(cmd *cobra.Command, args []string) error {
-	return handlers.RunSwitchProfile(handlers.SwitchProfileArgs{
+	return callRunSwitchProfile(handlers.SwitchProfileArgs{
 		Name:     args[0],
 		Settings: true,
 	})

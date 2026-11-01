@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/PhantomLambSoft/CmdBox/internal/cli/handlers"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -137,30 +139,73 @@ func TestProfileSwitchCmd_ScopeFlags(t *testing.T) {
 }
 
 func TestRunProfileBareShorthand_NoArgsShowsHelp(t *testing.T) {
+	stubHandlerCall(t, &callRunSwitchProfile, func(args handlers.SwitchProfileArgs) error {
+		t.Fatal("handler should not be called with no args")
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileCmd)
 	assert.NoError(t, runProfileBareShorthand(cmd, []string{}))
 }
 
 func TestRunProfileBareShorthand_WithNameSwitches(t *testing.T) {
+	var got handlers.SwitchProfileArgs
+	stubHandlerCall(t, &callRunSwitchProfile, func(args handlers.SwitchProfileArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileCmd)
+	require.NoError(t, cmd.Flags().Set("cmd", "true"))
 	assert.NoError(t, runProfileBareShorthand(cmd, []string{"myprofile"}))
+	assert.Equal(t, "myprofile", got.Name)
+	assert.True(t, got.Cmd)
 }
 
 func TestRunProfileAdd_NameIsSetFromFirstArg(t *testing.T) {
-	// AddProfileArgs.Name previously wasn't populated at all; this exercises the code path
-	// end-to-end (the stub handler can't be inspected, but this at least proves args[0] is
-	// read without panicking and the call succeeds).
+	var got handlers.AddProfileArgs
+	stubHandlerCall(t, &callRunAddProfile, func(args handlers.AddProfileArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileAddCmd)
 	assert.NoError(t, runProfileAdd(cmd, []string{"myprofile"}))
+	assert.Equal(t, "myprofile", got.Name)
+	assert.False(t, got.HasDescription)
+
 	assert.NoError(t, runProfileAdd(cmd, []string{"myprofile", "a description"}))
+	assert.Equal(t, "a description", got.Description)
+	assert.True(t, got.HasDescription)
 }
 
-func TestRunProfileGet(t *testing.T) {
+func TestRunProfileAdd_PropagatesHandlerError(t *testing.T) {
+	stubHandlerCall(t, &callRunAddProfile, func(args handlers.AddProfileArgs) error {
+		return errors.New("boom")
+	})
+
+	cmd := freshCmdWithFlagsOf(profileAddCmd)
+	assert.EqualError(t, runProfileAdd(cmd, []string{"myprofile"}), "boom")
+}
+
+func TestRunProfileGet_ForwardsName(t *testing.T) {
+	var gotName string
+	stubHandlerCall(t, &callRunGetProfile, func(name string) error {
+		gotName = name
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileGetCmd)
 	assert.NoError(t, runProfileGet(cmd, []string{"myprofile"}))
+	assert.Equal(t, "myprofile", gotName)
 }
 
 func TestRunProfileUpdate_EditFieldsRequiresEditFlag(t *testing.T) {
+	stubHandlerCall(t, &callRunUpdateProfile, func(args handlers.UpdateProfileArgs) error {
+		t.Fatal("handler should not be called when validation fails")
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileUpdateCmd)
 	require.NoError(t, cmd.Flags().Set("edit-fields", "description"))
 	err := runProfileUpdate(cmd, []string{"myprofile"})
@@ -168,51 +213,115 @@ func TestRunProfileUpdate_EditFieldsRequiresEditFlag(t *testing.T) {
 }
 
 func TestRunProfileUpdate_HappyPath(t *testing.T) {
+	var got handlers.UpdateProfileArgs
+	stubHandlerCall(t, &callRunUpdateProfile, func(args handlers.UpdateProfileArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileUpdateCmd)
 	require.NoError(t, cmd.Flags().Set("description", "new desc"))
 	assert.NoError(t, runProfileUpdate(cmd, []string{"myprofile"}))
+	assert.Equal(t, "myprofile", got.CurrentName)
+	assert.Equal(t, "new desc", got.Description)
+	assert.True(t, got.HasDescription)
 }
 
 func TestRunProfileList_HappyPath(t *testing.T) {
+	called := false
+	stubHandlerCall(t, &callRunListProfile, func(args handlers.ListProfileArgs) error {
+		called = true
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileListCmd)
 	assert.NoError(t, runProfileList(cmd, []string{}))
+	assert.True(t, called)
 }
 
 func TestRunProfileList_PageAndNoPageConflict(t *testing.T) {
+	stubHandlerCall(t, &callRunListProfile, func(args handlers.ListProfileArgs) error {
+		t.Fatal("handler should not be called when --page and --no-page conflict")
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileListCmd)
 	require.NoError(t, cmd.Flags().Set("page", "true"))
 	require.NoError(t, cmd.Flags().Set("no-page", "true"))
 	assert.Error(t, runProfileList(cmd, []string{}))
 }
 
-func TestRunProfileDelete(t *testing.T) {
+func TestRunProfileDelete_ForwardsNameAndForce(t *testing.T) {
+	var got handlers.DeleteProfileArgs
+	stubHandlerCall(t, &callRunDeleteProfile, func(args handlers.DeleteProfileArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileDeleteCmd)
+	require.NoError(t, cmd.Flags().Set("force", "true"))
 	assert.NoError(t, runProfileDelete(cmd, []string{"myprofile"}))
+	assert.Equal(t, handlers.DeleteProfileArgs{Name: "myprofile", Force: true}, got)
 }
 
-func TestRunProfileStatus(t *testing.T) {
+func TestRunProfileStatus_DelegatesToHandler(t *testing.T) {
+	called := false
+	stubHandlerCall(t, &callRunProfileStatus, func() error {
+		called = true
+		return nil
+	})
+
 	assert.NoError(t, runProfileStatus(profileStatusCmd, []string{}))
+	assert.True(t, called)
 }
 
 func TestRunProfileSwitch_ReadsScopeFlags(t *testing.T) {
+	var got handlers.SwitchProfileArgs
+	stubHandlerCall(t, &callRunSwitchProfile, func(args handlers.SwitchProfileArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileSwitchCmd)
 	require.NoError(t, cmd.Flags().Set("cmd", "true"))
 	assert.NoError(t, runProfileSwitch(cmd, []string{"myprofile"}))
+	assert.Equal(t, handlers.SwitchProfileArgs{Name: "myprofile", Cmd: true}, got)
 }
 
-func TestRunProfileSwitchCmd(t *testing.T) {
+func TestRunProfileSwitchCmd_SetsCmdScope(t *testing.T) {
+	var got handlers.SwitchProfileArgs
+	stubHandlerCall(t, &callRunSwitchProfile, func(args handlers.SwitchProfileArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileSwitchCmdCmd)
 	assert.NoError(t, runProfileSwitchCmd(cmd, []string{"myprofile"}))
+	assert.Equal(t, handlers.SwitchProfileArgs{Name: "myprofile", Cmd: true}, got)
 }
 
-func TestRunProfileSwitchVar(t *testing.T) {
+func TestRunProfileSwitchVar_SetsVarScope(t *testing.T) {
+	var got handlers.SwitchProfileArgs
+	stubHandlerCall(t, &callRunSwitchProfile, func(args handlers.SwitchProfileArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileSwitchVarCmd)
 	assert.NoError(t, runProfileSwitchVar(cmd, []string{"myprofile"}))
+	assert.Equal(t, handlers.SwitchProfileArgs{Name: "myprofile", Var: true}, got)
 }
 
-func TestRunProfileSwitchSettings(t *testing.T) {
+func TestRunProfileSwitchSettings_SetsSettingsScope(t *testing.T) {
+	var got handlers.SwitchProfileArgs
+	stubHandlerCall(t, &callRunSwitchProfile, func(args handlers.SwitchProfileArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(profileSwitchSettingsCmd)
 	assert.NoError(t, runProfileSwitchSettings(cmd, []string{"myprofile"}))
+	assert.Equal(t, handlers.SwitchProfileArgs{Name: "myprofile", Settings: true}, got)
 }
 
 func TestSwitchArgsFromFlags(t *testing.T) {

@@ -72,6 +72,20 @@ var cmdUntagCmd = &cobra.Command{
 	RunE:  runCmdDetachTags,
 }
 
+// Package-level indirections over the handlers package calls used by this file's RunE
+// functions, so tests can substitute mocks instead of exercising real handlers (and the
+// real container/database they reach into).
+var (
+	callRunAddCmd    = handlers.RunAddCmd
+	callRunGetCmd    = handlers.RunGetCmd
+	callRunUpdateCmd = handlers.RunUpdateCmd
+	callRunListCmd   = handlers.RunListCmd
+	callRunSearchCmd = handlers.RunSearchCmd
+	callRunDeleteCmd = handlers.RunDeleteCmd
+	callRunTagCmd    = handlers.RunTagCmd
+	callRunUntagCmd  = handlers.RunUntagCmd
+)
+
 func init() {
 	cmdAddCmd.Flags().StringP("description", "d", "", "Description of the command")
 	cmdAddCmd.Flags().BoolP("interactive", "i", false, "Prompt for every field")
@@ -80,6 +94,8 @@ func init() {
 	cmdAddCmd.Flags().StringArray("env", nil, "Environment variable KEY=VALUE (repeatable)")
 	cmdAddCmd.Flags().Int("timeout", 0, "Timeout in seconds")
 	cmdAddCmd.Flags().StringP("profile", "p", "", "Profile to add this command to")
+
+	cmdGetCmd.Flags().StringP("profile", "p", "", "Profile to look in")
 
 	cmdUpdateCmd.Flags().StringP("template", "t", "", "New template")
 	cmdUpdateCmd.Flags().StringP("description", "d", "", "New description")
@@ -162,12 +178,12 @@ func runCmdAdd(cmd *cobra.Command, args []string) error {
 	if cmd.Flags().Changed("timeout") {
 		raw.Timeout, _ = cmd.Flags().GetInt("timeout")
 	}
-	return handlers.RunAddCmd(raw)
+	return callRunAddCmd(raw)
 }
 
 func runCmdGet(cmd *cobra.Command, args []string) error {
 	profile := getProfile(cmd)
-	return handlers.RunGetCmd(args[0], profile)
+	return callRunGetCmd(args[0], profile)
 }
 
 func runCmdUpdate(cmd *cobra.Command, args []string) error {
@@ -218,7 +234,7 @@ func runCmdUpdate(cmd *cobra.Command, args []string) error {
 	}
 	raw.ClearTimeout = getBoolFlag(cmd, "clear-timeout")
 
-	return handlers.RunUpdateCmd(raw)
+	return callRunUpdateCmd(raw)
 }
 
 func runCmdList(cmd *cobra.Command, args []string) error {
@@ -237,7 +253,7 @@ func runCmdList(cmd *cobra.Command, args []string) error {
 		raw.Limit = getLimit(cmd)
 		raw.HasLimit = true
 	}
-	return handlers.RunListCmd(raw)
+	return callRunListCmd(raw)
 }
 
 func runCmdSearch(cmd *cobra.Command, args []string) error {
@@ -257,18 +273,18 @@ func runCmdSearch(cmd *cobra.Command, args []string) error {
 		raw.Limit = getLimit(cmd)
 		raw.HasLimit = true
 	}
-	return handlers.RunSearchCmd(raw)
+	return callRunSearchCmd(raw)
 }
 
 func runCmdDelete(cmd *cobra.Command, args []string) error {
-	return handlers.RunDeleteCmd(handlers.DeleteCmdArgs{
+	return callRunDeleteCmd(handlers.DeleteCmdArgs{
 		Alias:   args[0],
 		Profile: getProfile(cmd),
 	})
 }
 
 func runCmdAttachTags(cmd *cobra.Command, args []string) error {
-	return handlers.RunTagCmd(handlers.TagCmdArgs{
+	return callRunTagCmd(handlers.TagCmdArgs{
 		Alias:    args[0],
 		TagNames: args[1:],
 		Profile:  getProfile(cmd),
@@ -276,7 +292,7 @@ func runCmdAttachTags(cmd *cobra.Command, args []string) error {
 }
 
 func runCmdDetachTags(cmd *cobra.Command, args []string) error {
-	return handlers.RunUntagCmd(handlers.TagCmdArgs{
+	return callRunUntagCmd(handlers.TagCmdArgs{
 		Alias:    args[0],
 		TagNames: args[1:],
 		Profile:  getProfile(cmd),

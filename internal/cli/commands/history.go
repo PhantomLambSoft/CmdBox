@@ -55,6 +55,17 @@ var bangBangCmd = &cobra.Command{
 	RunE:   runHistoryLast,
 }
 
+// Package-level indirections over the handlers package calls used by this file's RunE
+// functions, so tests can substitute mocks instead of exercising real handlers (and the
+// real container/database they reach into).
+var (
+	callRunListHistory  = handlers.RunListHistory
+	callRunShowHistory  = handlers.RunShowHistory
+	callRunRerunHistory = handlers.RunRerunHistory
+	callRunLastHistory  = handlers.RunLastHistory
+	callRunClearHistory = handlers.RunClearHistory
+)
+
 func init() {
 	historyListCmd.Flags().String("alias", "", "Filter to a specific command alias")
 	historyListCmd.Flags().String("order", "", "Field to order by")
@@ -99,7 +110,7 @@ func runHistoryList(cmd *cobra.Command, args []string) error {
 		raw.Alias = getStringFlag(cmd, "alias")
 		raw.HasAlias = true
 	}
-	return handlers.RunListHistory(raw)
+	return callRunListHistory(raw)
 }
 
 func runHistoryShow(cmd *cobra.Command, args []string) error {
@@ -113,7 +124,7 @@ func runHistoryShow(cmd *cobra.Command, args []string) error {
 		rawProfile := getStringFlag(cmd, "profile")
 		profileName = &rawProfile
 	}
-	return handlers.RunShowHistory(args[0], alias, profileName)
+	return callRunShowHistory(args[0], alias, profileName)
 }
 
 func runHistoryRerun(cmd *cobra.Command, args []string) error {
@@ -127,11 +138,11 @@ func runHistoryRerun(cmd *cobra.Command, args []string) error {
 		rawProfile := getStringFlag(cmd, "profile")
 		profileName = &rawProfile
 	}
-	return handlers.RunRerunHistory(args[0], alias, profileName)
+	return callRunRerunHistory(args[0], alias, profileName)
 }
 
 func runHistoryLast(cmd *cobra.Command, args []string) error {
-	return handlers.RunLastHistory()
+	return callRunLastHistory()
 }
 
 func runHistoryClear(cmd *cobra.Command, args []string) error {
@@ -144,5 +155,5 @@ func runHistoryClear(cmd *cobra.Command, args []string) error {
 		raw.Profile = getStringFlag(cmd, "profile")
 		raw.HasProfile = true
 	}
-	return handlers.RunClearHistory(raw)
+	return callRunClearHistory(raw)
 }

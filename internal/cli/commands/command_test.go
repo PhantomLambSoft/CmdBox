@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/PhantomLambSoft/CmdBox/internal/cli/handlers"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -81,6 +83,12 @@ func TestCmdAddCmd_Flags(t *testing.T) {
 	assertFlag(t, f, "profile", "p", "string", "")
 }
 
+// cmdGetCmd previously had no --profile flag registered at all, even though runCmdGet reads
+// it via getProfile(cmd) - the flag silently had no effect. Guards against that regression.
+func TestCmdGetCmd_Flags(t *testing.T) {
+	assertFlag(t, cmdGetCmd.Flags(), "profile", "p", "string", "")
+}
+
 func TestCmdUpdateCmd_Flags(t *testing.T) {
 	f := cmdUpdateCmd.Flags()
 	assertFlag(t, f, "template", "t", "string", "")
@@ -150,24 +158,70 @@ func TestCmdUntagCmd_Flags(t *testing.T) {
 }
 
 func TestRunCmdAdd_BuildsArgsFromPositionalsAndFlags(t *testing.T) {
+	var got handlers.AddCmdArgs
+	stubHandlerCall(t, &callRunAddCmd, func(args handlers.AddCmdArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdAddCmd)
 	require.NoError(t, cmd.Flags().Set("timeout", "30"))
+	require.NoError(t, cmd.Flags().Set("description", "desc"))
+	require.NoError(t, cmd.Flags().Set("profile", "work"))
 	err := runCmdAdd(cmd, []string{"myalias", "echo hi"})
 	assert.NoError(t, err)
+
+	assert.Equal(t, "myalias", got.Alias)
+	assert.Equal(t, "echo hi", got.Template)
+	assert.True(t, got.HasTemplate)
+	assert.Equal(t, "desc", got.Description)
+	assert.Equal(t, 30, got.Timeout)
+	assert.Equal(t, "work", got.Profile)
 }
 
-func TestRunCmdAdd_NoArgs(t *testing.T) {
+func TestRunCmdAdd_NoArgsLeavesAliasAndTemplateUnset(t *testing.T) {
+	var got handlers.AddCmdArgs
+	stubHandlerCall(t, &callRunAddCmd, func(args handlers.AddCmdArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdAddCmd)
 	err := runCmdAdd(cmd, []string{})
 	assert.NoError(t, err)
+	assert.Equal(t, "", got.Alias)
+	assert.False(t, got.HasTemplate)
 }
 
-func TestRunCmdGet(t *testing.T) {
+func TestRunCmdAdd_PropagatesHandlerError(t *testing.T) {
+	stubHandlerCall(t, &callRunAddCmd, func(args handlers.AddCmdArgs) error {
+		return errors.New("boom")
+	})
+
+	cmd := freshCmdWithFlagsOf(cmdAddCmd)
+	assert.EqualError(t, runCmdAdd(cmd, []string{}), "boom")
+}
+
+func TestRunCmdGet_ForwardsAliasAndProfile(t *testing.T) {
+	var gotAlias, gotProfile string
+	stubHandlerCall(t, &callRunGetCmd, func(name, profile string) error {
+		gotAlias, gotProfile = name, profile
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdGetCmd)
+	require.NoError(t, cmd.Flags().Set("profile", "work"))
 	assert.NoError(t, runCmdGet(cmd, []string{"myalias"}))
+	assert.Equal(t, "myalias", gotAlias)
+	assert.Equal(t, "work", gotProfile)
 }
 
 func TestRunCmdUpdate_EditFieldsRequiresEditFlag(t *testing.T) {
+	stubHandlerCall(t, &callRunUpdateCmd, func(args handlers.UpdateCmdArgs) error {
+		t.Fatal("handler should not be called when validation fails")
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdUpdateCmd)
 	require.NoError(t, cmd.Flags().Set("edit-fields", "template"))
 	err := runCmdUpdate(cmd, []string{"myalias"})
@@ -175,14 +229,28 @@ func TestRunCmdUpdate_EditFieldsRequiresEditFlag(t *testing.T) {
 }
 
 func TestRunCmdUpdate_EditFieldsWithEditFlagIsAllowed(t *testing.T) {
+	var got handlers.UpdateCmdArgs
+	stubHandlerCall(t, &callRunUpdateCmd, func(args handlers.UpdateCmdArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdUpdateCmd)
 	require.NoError(t, cmd.Flags().Set("edit", "true"))
 	require.NoError(t, cmd.Flags().Set("edit-fields", "template"))
 	err := runCmdUpdate(cmd, []string{"myalias"})
 	assert.NoError(t, err)
+	assert.True(t, got.EditMode)
+	assert.Equal(t, "template", got.EditFields)
 }
 
 func TestRunCmdUpdate_HappyPath(t *testing.T) {
+	var got handlers.UpdateCmdArgs
+	stubHandlerCall(t, &callRunUpdateCmd, func(args handlers.UpdateCmdArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdUpdateCmd)
 	require.NoError(t, cmd.Flags().Set("template", "echo hi"))
 	require.NoError(t, cmd.Flags().Set("description", "desc"))
@@ -190,15 +258,47 @@ func TestRunCmdUpdate_HappyPath(t *testing.T) {
 	require.NoError(t, cmd.Flags().Set("timeout", "10"))
 	err := runCmdUpdate(cmd, []string{"myalias"})
 	assert.NoError(t, err)
+
+	assert.Equal(t, "myalias", got.CurrentAlias)
+	assert.Equal(t, "echo hi", got.Template)
+	assert.True(t, got.HasTemplate)
+	assert.Equal(t, "desc", got.Description)
+	assert.True(t, got.HasDescription)
+	assert.Equal(t, "/tmp", got.Cwd)
+	assert.True(t, got.HasCwd)
+	assert.Equal(t, 10, got.Timeout)
+	assert.True(t, got.HasTimeout)
+}
+
+func TestRunCmdUpdate_PropagatesHandlerError(t *testing.T) {
+	stubHandlerCall(t, &callRunUpdateCmd, func(args handlers.UpdateCmdArgs) error {
+		return errors.New("boom")
+	})
+
+	cmd := freshCmdWithFlagsOf(cmdUpdateCmd)
+	assert.EqualError(t, runCmdUpdate(cmd, []string{"myalias"}), "boom")
 }
 
 func TestRunCmdList_HappyPath(t *testing.T) {
+	var got handlers.ListCmdArgs
+	stubHandlerCall(t, &callRunListCmd, func(args handlers.ListCmdArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdListCmd)
+	require.NoError(t, cmd.Flags().Set("profile", "work"))
 	err := runCmdList(cmd, []string{})
 	assert.NoError(t, err)
+	assert.Equal(t, "work", got.Profile)
 }
 
 func TestRunCmdList_PageAndNoPageConflict(t *testing.T) {
+	stubHandlerCall(t, &callRunListCmd, func(args handlers.ListCmdArgs) error {
+		t.Fatal("handler should not be called when --page and --no-page conflict")
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdListCmd)
 	require.NoError(t, cmd.Flags().Set("page", "true"))
 	require.NoError(t, cmd.Flags().Set("no-page", "true"))
@@ -207,30 +307,60 @@ func TestRunCmdList_PageAndNoPageConflict(t *testing.T) {
 }
 
 func TestRunCmdSearch_HappyPath(t *testing.T) {
+	var got handlers.SearchCmdArgs
+	stubHandlerCall(t, &callRunSearchCmd, func(args handlers.SearchCmdArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdSearchCmd)
 	err := runCmdSearch(cmd, []string{"term"})
 	assert.NoError(t, err)
+	assert.Equal(t, "term", got.Term)
 }
 
-func TestRunCmdDelete(t *testing.T) {
+func TestRunCmdDelete_ForwardsAliasAndProfile(t *testing.T) {
+	var got handlers.DeleteCmdArgs
+	stubHandlerCall(t, &callRunDeleteCmd, func(args handlers.DeleteCmdArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdDeleteCmd)
+	require.NoError(t, cmd.Flags().Set("profile", "work"))
 	assert.NoError(t, runCmdDelete(cmd, []string{"myalias"}))
+	assert.Equal(t, handlers.DeleteCmdArgs{Alias: "myalias", Profile: "work"}, got)
 }
 
-func TestRunCmdAttachTags(t *testing.T) {
+func TestRunCmdAttachTags_UsesPositionalTagNames(t *testing.T) {
+	var got handlers.TagCmdArgs
+	stubHandlerCall(t, &callRunTagCmd, func(args handlers.TagCmdArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdTagCmd)
 	assert.NoError(t, runCmdAttachTags(cmd, []string{"myalias", "tag1", "tag2"}))
+	assert.Equal(t, "myalias", got.Alias)
+	assert.Equal(t, []string{"tag1", "tag2"}, got.TagNames)
 }
 
-func TestRunCmdDetachTags(t *testing.T) {
+func TestRunCmdDetachTags_UsesPositionalTagNames(t *testing.T) {
+	var got handlers.TagCmdArgs
+	stubHandlerCall(t, &callRunUntagCmd, func(args handlers.TagCmdArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(cmdUntagCmd)
 	assert.NoError(t, runCmdDetachTags(cmd, []string{"myalias", "tag1"}))
+	assert.Equal(t, "myalias", got.Alias)
+	assert.Equal(t, []string{"tag1"}, got.TagNames)
 }
 
 // runCmdDetachTags must call the untag handler, not the attach handler - this was a
-// copy/paste bug. Since the handlers are currently no-op stubs we can't observe which one
-// ran through behavior, so this pins the wiring itself: the two subcommands must not share
-// the same RunE function.
+// copy/paste bug. This pins the wiring itself: the two subcommands must not share the same
+// RunE function.
 func TestCmdTagAndUntag_UseDistinctHandlerFunctions(t *testing.T) {
 	assert.NotEqual(t,
 		functionName(cmdTagCmd.RunE),

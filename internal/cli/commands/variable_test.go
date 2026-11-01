@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/PhantomLambSoft/CmdBox/internal/cli/handlers"
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -77,6 +79,12 @@ func TestVarAddCmd_Flags(t *testing.T) {
 	assertFlag(t, f, "profile", "", "string", "")
 }
 
+// varGetCmd previously had no --profile flag registered at all, even though runVarGet reads
+// it via getProfile(cmd) - the flag silently had no effect. Guards against that regression.
+func TestVarGetCmd_Flags(t *testing.T) {
+	assertFlag(t, varGetCmd.Flags(), "profile", "p", "string", "")
+}
+
 func TestVarUpdateCmd_Flags(t *testing.T) {
 	f := varUpdateCmd.Flags()
 	assertFlag(t, f, "value", "", "string", "")
@@ -120,33 +128,97 @@ func TestVarDetachTagCmd_Flags(t *testing.T) {
 	assertFlag(t, varDetachTagCmd.Flags(), "profile", "p", "string", "")
 }
 
-func TestRunVarAdd_HappyPath(t *testing.T) {
+func TestRunVarAdd_BuildsArgsFromPositionalsAndFlags(t *testing.T) {
+	var got handlers.AddVarArgs
+	stubHandlerCall(t, &callRunAddVar, func(args handlers.AddVarArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varAddCmd)
+	require.NoError(t, cmd.Flags().Set("interactive", "true"))
+	require.NoError(t, cmd.Flags().Set("profile", "work"))
 	assert.NoError(t, runVarAdd(cmd, []string{"name", "value"}))
+
+	assert.Equal(t, handlers.AddVarArgs{
+		Name: "name", Value: "value", HasValue: true, Interactive: true, Profile: "work",
+	}, got)
 }
 
-func TestRunVarAdd_NoArgs(t *testing.T) {
+func TestRunVarAdd_NoArgsLeavesNameAndValueUnset(t *testing.T) {
+	var got handlers.AddVarArgs
+	stubHandlerCall(t, &callRunAddVar, func(args handlers.AddVarArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varAddCmd)
 	assert.NoError(t, runVarAdd(cmd, []string{}))
+	assert.Equal(t, "", got.Name)
+	assert.False(t, got.HasValue)
 }
 
-func TestRunVarGet(t *testing.T) {
+func TestRunVarAdd_PropagatesHandlerError(t *testing.T) {
+	stubHandlerCall(t, &callRunAddVar, func(args handlers.AddVarArgs) error {
+		return errors.New("boom")
+	})
+
+	cmd := freshCmdWithFlagsOf(varAddCmd)
+	assert.EqualError(t, runVarAdd(cmd, []string{}), "boom")
+}
+
+func TestRunVarGet_ForwardsNameAndProfile(t *testing.T) {
+	var gotName, gotProfile string
+	stubHandlerCall(t, &callRunGetVar, func(name, profile string) error {
+		gotName, gotProfile = name, profile
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varGetCmd)
+	require.NoError(t, cmd.Flags().Set("profile", "work"))
 	assert.NoError(t, runVarGet(cmd, []string{"name"}))
+	assert.Equal(t, "name", gotName)
+	assert.Equal(t, "work", gotProfile)
 }
 
 func TestRunVarUpdate_HappyPath(t *testing.T) {
+	var got handlers.UpdateVarArgs
+	stubHandlerCall(t, &callRunUpdateVar, func(args handlers.UpdateVarArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varUpdateCmd)
 	require.NoError(t, cmd.Flags().Set("value", "newvalue"))
 	assert.NoError(t, runVarUpdate(cmd, []string{"name"}))
+
+	assert.Equal(t, "name", got.CurrentName)
+	assert.Equal(t, "newvalue", got.NewValue)
+	assert.True(t, got.HasValue)
 }
 
 func TestRunVarList_HappyPath(t *testing.T) {
+	var got handlers.ListVarArgs
+	stubHandlerCall(t, &callRunListVar, func(args handlers.ListVarArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varListCmd)
+	require.NoError(t, cmd.Flags().Set("tag", "a,b"))
+	require.NoError(t, cmd.Flags().Set("profile", "work"))
 	assert.NoError(t, runVarList(cmd, []string{}))
+
+	assert.Equal(t, []string{"a", "b"}, got.Tags)
+	assert.Equal(t, "work", got.Profile)
 }
 
 func TestRunVarList_PageAndNoPageConflict(t *testing.T) {
+	stubHandlerCall(t, &callRunListVar, func(args handlers.ListVarArgs) error {
+		t.Fatal("handler should not be called when --page and --no-page conflict")
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varListCmd)
 	require.NoError(t, cmd.Flags().Set("page", "true"))
 	require.NoError(t, cmd.Flags().Set("no-page", "true"))
@@ -154,23 +226,57 @@ func TestRunVarList_PageAndNoPageConflict(t *testing.T) {
 }
 
 func TestRunVarSearch_HappyPath(t *testing.T) {
+	var got handlers.SearchParams
+	stubHandlerCall(t, &callRunSearchVar, func(args handlers.SearchParams) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varSearchCmd)
+	require.NoError(t, cmd.Flags().Set("in", "name,value"))
 	assert.NoError(t, runVarSearch(cmd, []string{"term"}))
+
+	assert.Equal(t, "term", got.Term)
+	assert.Equal(t, []string{"name", "value"}, got.SearchIn)
 }
 
-func TestRunVarDelete(t *testing.T) {
+func TestRunVarDelete_ForwardsNameAndProfile(t *testing.T) {
+	var got handlers.DeleteVarArgs
+	stubHandlerCall(t, &callRunDeleteVar, func(args handlers.DeleteVarArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varDeleteCmd)
+	require.NoError(t, cmd.Flags().Set("profile", "work"))
 	assert.NoError(t, runVarDelete(cmd, []string{"name"}))
+	assert.Equal(t, handlers.DeleteVarArgs{Name: "name", Profile: "work"}, got)
 }
 
 func TestRunVarAttachTags_UsesPositionalTagNames(t *testing.T) {
+	var got handlers.TagVarArgs
+	stubHandlerCall(t, &callRunTagVar, func(args handlers.TagVarArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varAttachTagCmd)
 	assert.NoError(t, runVarAttachTags(cmd, []string{"name", "tag1", "tag2"}))
+	assert.Equal(t, "name", got.Name)
+	assert.Equal(t, []string{"tag1", "tag2"}, got.TagNames)
 }
 
 func TestRunVarDetachTags_UsesPositionalTagNames(t *testing.T) {
+	var got handlers.TagVarArgs
+	stubHandlerCall(t, &callRunUntagVar, func(args handlers.TagVarArgs) error {
+		got = args
+		return nil
+	})
+
 	cmd := freshCmdWithFlagsOf(varDetachTagCmd)
 	assert.NoError(t, runVarDetachTags(cmd, []string{"name", "tag1"}))
+	assert.Equal(t, "name", got.Name)
+	assert.Equal(t, []string{"tag1"}, got.TagNames)
 }
 
 // runVarAttachTags/runVarDetachTags must call distinct handlers (RunTagVar vs RunUntagVar) -

@@ -1,8 +1,10 @@
 package commands
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/PhantomLambSoft/CmdBox/internal/cli/handlers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -216,14 +218,47 @@ func TestRunRun_ParseErrorPropagates(t *testing.T) {
 	assert.EqualError(t, err, "missing required argument: alias")
 }
 
-func TestRunRun_HappyPathDelegatesToHandler(t *testing.T) {
-	// handlers.RunRunCommand/RunPreviewCommand are currently stubs that always return nil,
-	// so this only proves runRun reaches the handler call without erroring.
+func TestRunRun_HappyPathDelegatesToRunCommandHandler(t *testing.T) {
+	var gotAlias string
+	var gotProfile *string
+	stubHandlerCall(t, &callRunRunCommand, func(alias string, runtimeVars map[string]string, ctx handlers.RawRunContext, profile *string) error {
+		gotAlias, gotProfile = alias, profile
+		return nil
+	})
+	stubHandlerCall(t, &callRunPreviewCommand, func(alias string, runtimeVars map[string]string, ctx handlers.RawRunContext, profile *string) error {
+		t.Fatal("preview handler should not be called without --preview")
+		return nil
+	})
+
 	err := runRun(runCmd, []string{"myalias"})
 	assert.NoError(t, err)
+	assert.Equal(t, "myalias", gotAlias)
+	require.NotNil(t, gotProfile)
+	assert.Equal(t, "", *gotProfile)
+}
 
-	err = runRun(runCmd, []string{"myalias", "--preview"})
+func TestRunRun_PreviewFlagDelegatesToPreviewCommandHandler(t *testing.T) {
+	called := false
+	stubHandlerCall(t, &callRunRunCommand, func(alias string, runtimeVars map[string]string, ctx handlers.RawRunContext, profile *string) error {
+		t.Fatal("run handler should not be called with --preview")
+		return nil
+	})
+	stubHandlerCall(t, &callRunPreviewCommand, func(alias string, runtimeVars map[string]string, ctx handlers.RawRunContext, profile *string) error {
+		called = true
+		return nil
+	})
+
+	err := runRun(runCmd, []string{"myalias", "--preview"})
 	assert.NoError(t, err)
+	assert.True(t, called)
+}
+
+func TestRunRun_PropagatesHandlerError(t *testing.T) {
+	stubHandlerCall(t, &callRunRunCommand, func(alias string, runtimeVars map[string]string, ctx handlers.RawRunContext, profile *string) error {
+		return errors.New("boom")
+	})
+
+	assert.EqualError(t, runRun(runCmd, []string{"myalias"}), "boom")
 }
 
 func TestRunPreview_HelpShortCircuitsBeforeParsing(t *testing.T) {
@@ -237,6 +272,21 @@ func TestRunPreview_ParseErrorPropagates(t *testing.T) {
 }
 
 func TestRunPreview_HappyPathDelegatesToHandler(t *testing.T) {
+	var gotAlias string
+	stubHandlerCall(t, &callRunPreviewCommand, func(alias string, runtimeVars map[string]string, ctx handlers.RawRunContext, profile *string) error {
+		gotAlias = alias
+		return nil
+	})
+
 	err := runPreview(previewCmd, []string{"myalias"})
 	assert.NoError(t, err)
+	assert.Equal(t, "myalias", gotAlias)
+}
+
+func TestRunPreview_PropagatesHandlerError(t *testing.T) {
+	stubHandlerCall(t, &callRunPreviewCommand, func(alias string, runtimeVars map[string]string, ctx handlers.RawRunContext, profile *string) error {
+		return errors.New("boom")
+	})
+
+	assert.EqualError(t, runPreview(previewCmd, []string{"myalias"}), "boom")
 }

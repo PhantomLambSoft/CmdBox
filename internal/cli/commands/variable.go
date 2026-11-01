@@ -71,9 +71,25 @@ var varDetachTagCmd = &cobra.Command{
 	RunE:    runVarDetachTags,
 }
 
+// Package-level indirections over the handlers package calls used by this file's RunE
+// functions, so tests can substitute mocks instead of exercising real handlers (and the
+// real container/database they reach into).
+var (
+	callRunAddVar    = handlers.RunAddVar
+	callRunGetVar    = handlers.RunGetVar
+	callRunUpdateVar = handlers.RunUpdateVar
+	callRunListVar   = handlers.RunListVar
+	callRunSearchVar = handlers.RunSearchVar
+	callRunDeleteVar = handlers.RunDeleteVar
+	callRunTagVar    = handlers.RunTagVar
+	callRunUntagVar  = handlers.RunUntagVar
+)
+
 func init() {
 	varAddCmd.Flags().BoolP("interactive", "i", false, "Prompt for every field")
 	varAddCmd.Flags().String("profile", "", "The profile to add this variable to")
+
+	varGetCmd.Flags().StringP("profile", "p", "", "Profile to look in")
 
 	varUpdateCmd.Flags().String("value", "", "New value")
 	varUpdateCmd.Flags().String("name", "", "New name (rename)")
@@ -127,12 +143,12 @@ func runVarAdd(cmd *cobra.Command, args []string) error {
 		raw.Value = args[1]
 		raw.HasValue = true
 	}
-	return handlers.RunAddVar(raw)
+	return callRunAddVar(raw)
 }
 
 func runVarGet(cmd *cobra.Command, args []string) error {
 	profile := getProfile(cmd)
-	return handlers.RunGetVar(args[0], profile)
+	return callRunGetVar(args[0], profile)
 }
 
 func runVarUpdate(cmd *cobra.Command, args []string) error {
@@ -154,7 +170,7 @@ func runVarUpdate(cmd *cobra.Command, args []string) error {
 		raw.NewValue, _ = cmd.Flags().GetString("value")
 		raw.HasValue = true
 	}
-	return handlers.RunUpdateVar(raw)
+	return callRunUpdateVar(raw)
 }
 
 func runVarList(cmd *cobra.Command, args []string) error {
@@ -175,7 +191,7 @@ func runVarList(cmd *cobra.Command, args []string) error {
 	}
 	raw.Page = page
 
-	return handlers.RunListVar(raw)
+	return callRunListVar(raw)
 }
 
 func runVarSearch(cmd *cobra.Command, args []string) error {
@@ -195,17 +211,17 @@ func runVarSearch(cmd *cobra.Command, args []string) error {
 	}
 	raw.Page = page
 
-	return handlers.RunSearchVar(raw)
+	return callRunSearchVar(raw)
 }
 
 func runVarDelete(cmd *cobra.Command, args []string) error {
 	profile := getProfile(cmd)
-	return handlers.RunDeleteVar(handlers.DeleteVarArgs{Name: args[0], Profile: profile})
+	return callRunDeleteVar(handlers.DeleteVarArgs{Name: args[0], Profile: profile})
 }
 
 func runVarAttachTags(cmd *cobra.Command, args []string) error {
 	profile := getProfile(cmd)
-	return handlers.RunTagVar(handlers.TagVarArgs{
+	return callRunTagVar(handlers.TagVarArgs{
 		Name:     args[0],
 		TagNames: args[1:],
 		Profile:  profile,
@@ -214,7 +230,7 @@ func runVarAttachTags(cmd *cobra.Command, args []string) error {
 
 func runVarDetachTags(cmd *cobra.Command, args []string) error {
 	profile := getProfile(cmd)
-	return handlers.RunUntagVar(handlers.TagVarArgs{
+	return callRunUntagVar(handlers.TagVarArgs{
 		Name:     args[0],
 		TagNames: args[1:],
 		Profile:  profile,
