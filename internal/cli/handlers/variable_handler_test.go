@@ -69,6 +69,11 @@ type fakeVariableService struct {
 	removeTagsProfile *string
 	removeTagsResult  repository.TagDetachResult
 	removeTagsErr     error
+
+	// orNilVar/orNilErr configure GetVariableOrNil's return value. Left unset (nil, nil) by
+	// default so existing tests that never call it keep seeing "not found".
+	orNilVar *models.Variable
+	orNilErr error
 }
 
 func (f *fakeVariableService) CreateVariable(input services.CreateVariableConfig) (*models.Variable, error) {
@@ -117,7 +122,7 @@ func (f *fakeVariableService) GetVariableWithTags(name string, profileName *stri
 }
 
 func (f *fakeVariableService) GetVariableOrNil(name string, profileName *string) (*models.Variable, error) {
-	return nil, nil
+	return f.orNilVar, f.orNilErr
 }
 
 func (f *fakeVariableService) GetVariableByID(id uint, profileName *string) (*models.Variable, error) {

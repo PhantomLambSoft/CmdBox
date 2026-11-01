@@ -71,6 +71,11 @@ type fakeCommandService struct {
 	removeTagsProfile *string
 	removeTagsResult  repository.TagDetachResult
 	removeTagsErr     error
+
+	// orNilCmd/orNilErr configure GetCommandOrNil's return value. Left unset (nil, nil) by
+	// default so existing tests that never call it keep seeing "not found".
+	orNilCmd *models.Command
+	orNilErr error
 }
 
 func (f *fakeCommandService) CreateCommand(input services.CreateCommandConfig) (*models.Command, error) {
@@ -119,7 +124,7 @@ func (f *fakeCommandService) GetCommandWithTags(alias string, profileName *strin
 }
 
 func (f *fakeCommandService) GetCommandOrNil(alias string, profileName *string) (*models.Command, error) {
-	return nil, nil
+	return f.orNilCmd, f.orNilErr
 }
 
 func (f *fakeCommandService) GetCommandByID(id uint, profileName *string) (*models.Command, error) {
