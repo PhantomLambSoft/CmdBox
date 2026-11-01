@@ -617,7 +617,12 @@ func TestExportCmdsExplicitAliasesFlattenWritesFileAndResult(t *testing.T) {
 	seedCommandFull(h.cmdSvc, "top", profile, "<cmd:dep>", []models.Tag{{Name: "t1"}})
 	out := filepath.Join(t.TempDir(), "out.json")
 
-	result, err := h.svc.ExportCmds([]string{"top"}, nil, true, &out, profile, profile)
+	result, err := h.svc.ExportCmds(ExportCmdConfig{
+		Aliases: []string{"top"},
+		ExportConfig: ExportConfig{
+			Flatten: true, Output: &out, CmdProfileName: profile, VarProfileName: profile,
+		},
+	})
 	if err != nil {
 		t.Fatalf("ExportCmds() error = %v", err)
 	}
@@ -639,7 +644,12 @@ func TestExportCmdsExplicitAliasesFlattenWarnsOnMissing(t *testing.T) {
 	profile := strPtr("default")
 	out := filepath.Join(t.TempDir(), "out.json")
 
-	result, err := h.svc.ExportCmds([]string{"ghost"}, nil, true, &out, profile, profile)
+	result, err := h.svc.ExportCmds(ExportCmdConfig{
+		Aliases: []string{"ghost"},
+		ExportConfig: ExportConfig{
+			Flatten: true, Output: &out, CmdProfileName: profile, VarProfileName: profile,
+		},
+	})
 	if err != nil {
 		t.Fatalf("ExportCmds() error = %v", err)
 	}
@@ -659,7 +669,12 @@ func TestExportCmdsNoAliasesListsFromRepositoryWithTagFilter(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "out.json")
 	tag := "keep"
 
-	result, err := h.svc.ExportCmds(nil, &tag, false, &out, profile, profile)
+	result, err := h.svc.ExportCmds(ExportCmdConfig{
+		Tag: &tag,
+		ExportConfig: ExportConfig{
+			Flatten: false, Output: &out, CmdProfileName: profile, VarProfileName: profile,
+		},
+	})
 	if err != nil {
 		t.Fatalf("ExportCmds() error = %v", err)
 	}
@@ -676,7 +691,12 @@ func TestExportCmdsDeepCollectSeparatesDirectAndTransient(t *testing.T) {
 	seedVariableFull(h.varSvc, "v1", profile, "1", nil)
 	out := filepath.Join(t.TempDir(), "out.json")
 
-	result, err := h.svc.ExportCmds([]string{"top"}, nil, false, &out, profile, profile)
+	result, err := h.svc.ExportCmds(ExportCmdConfig{
+		Aliases: []string{"top"},
+		ExportConfig: ExportConfig{
+			Flatten: false, Output: &out, CmdProfileName: profile, VarProfileName: profile,
+		},
+	})
 	if err != nil {
 		t.Fatalf("ExportCmds() error = %v", err)
 	}
@@ -696,7 +716,12 @@ func TestExportCmdsDeepCollectWarnsOnMissingDirectAlias(t *testing.T) {
 	profile := strPtr("default")
 	out := filepath.Join(t.TempDir(), "out.json")
 
-	result, err := h.svc.ExportCmds([]string{"ghost"}, nil, false, &out, profile, profile)
+	result, err := h.svc.ExportCmds(ExportCmdConfig{
+		Aliases: []string{"ghost"},
+		ExportConfig: ExportConfig{
+			Flatten: false, Output: &out, CmdProfileName: profile, VarProfileName: profile,
+		},
+	})
 	if err != nil {
 		t.Fatalf("ExportCmds() error = %v", err)
 	}
@@ -710,7 +735,9 @@ func TestExportCmdsCommandProfileResolutionError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.profileRepo.activeErr = sentinel
 
-	_, err := h.svc.ExportCmds(nil, nil, false, nil, nil, strPtr("default"))
+	_, err := h.svc.ExportCmds(ExportCmdConfig{
+		ExportConfig: ExportConfig{Flatten: false, VarProfileName: strPtr("default")},
+	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportCmds() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -721,7 +748,9 @@ func TestExportCmdsVariableProfileResolutionError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.profileRepo.activeVariableErr = sentinel
 
-	_, err := h.svc.ExportCmds(nil, nil, false, nil, strPtr("default"), nil)
+	_, err := h.svc.ExportCmds(ExportCmdConfig{
+		ExportConfig: ExportConfig{Flatten: false, CmdProfileName: strPtr("default")},
+	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportCmds() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -732,7 +761,9 @@ func TestExportCmdsListCommandsError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.cmdSvc.listErr = sentinel
 
-	_, err := h.svc.ExportCmds(nil, nil, false, nil, strPtr("default"), strPtr("default"))
+	_, err := h.svc.ExportCmds(ExportCmdConfig{
+		ExportConfig: ExportConfig{Flatten: false, CmdProfileName: strPtr("default"), VarProfileName: strPtr("default")},
+	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportCmds() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -743,7 +774,10 @@ func TestExportCmdsFlattenGetCommandOrNilError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.cmdSvc.getOrNilErr = sentinel
 
-	_, err := h.svc.ExportCmds([]string{"a"}, nil, true, nil, strPtr("default"), strPtr("default"))
+	_, err := h.svc.ExportCmds(ExportCmdConfig{
+		Aliases:      []string{"a"},
+		ExportConfig: ExportConfig{Flatten: true, CmdProfileName: strPtr("default"), VarProfileName: strPtr("default")},
+	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportCmds() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -754,7 +788,10 @@ func TestExportCmdsCollectDeepCommandsError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.cmdSvc.getOrNilErr = sentinel
 
-	_, err := h.svc.ExportCmds([]string{"a"}, nil, false, nil, strPtr("default"), strPtr("default"))
+	_, err := h.svc.ExportCmds(ExportCmdConfig{
+		Aliases:      []string{"a"},
+		ExportConfig: ExportConfig{Flatten: false, CmdProfileName: strPtr("default"), VarProfileName: strPtr("default")},
+	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportCmds() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -767,7 +804,10 @@ func TestExportCmdsCommandTagNamesError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.cmdSvc.getWithTagsErr = sentinel
 
-	_, err := h.svc.ExportCmds([]string{"a"}, nil, true, nil, profile, profile)
+	_, err := h.svc.ExportCmds(ExportCmdConfig{
+		Aliases:      []string{"a"},
+		ExportConfig: ExportConfig{Flatten: true, CmdProfileName: profile, VarProfileName: profile},
+	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportCmds() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -784,7 +824,10 @@ func TestExportCmdsWriteError(t *testing.T) {
 	}
 	out := filepath.Join(blocker, "out.json")
 
-	_, err := h.svc.ExportCmds([]string{"a"}, nil, true, &out, profile, profile)
+	_, err := h.svc.ExportCmds(ExportCmdConfig{
+		Aliases:      []string{"a"},
+		ExportConfig: ExportConfig{Flatten: true, Output: &out, CmdProfileName: profile, VarProfileName: profile},
+	})
 	if err == nil {
 		t.Fatal("ExportCmds() error = nil, want error")
 	}
@@ -799,7 +842,10 @@ func TestExportVarsExplicitNamesFlattenWritesFile(t *testing.T) {
 	seedVariableFull(h.varSvc, "top", profile, "<var:dep>", []models.Tag{{Name: "t1"}})
 	out := filepath.Join(t.TempDir(), "out.json")
 
-	result, err := h.svc.ExportVars([]string{"top"}, nil, true, &out, profile)
+	result, err := h.svc.ExportVars(ExportVarConfig{
+		Names:        []string{"top"},
+		ExportConfig: ExportConfig{Flatten: true, Output: &out, VarProfileName: profile},
+	})
 	if err != nil {
 		t.Fatalf("ExportVars() error = %v", err)
 	}
@@ -818,7 +864,10 @@ func TestExportVarsWarnsOnMissingExplicitName(t *testing.T) {
 	profile := strPtr("default")
 	out := filepath.Join(t.TempDir(), "out.json")
 
-	result, err := h.svc.ExportVars([]string{"ghost"}, nil, true, &out, profile)
+	result, err := h.svc.ExportVars(ExportVarConfig{
+		Names:        []string{"ghost"},
+		ExportConfig: ExportConfig{Flatten: true, Output: &out, VarProfileName: profile},
+	})
 	if err != nil {
 		t.Fatalf("ExportVars() error = %v", err)
 	}
@@ -835,7 +884,10 @@ func TestExportVarsNoNamesListsWithTagFilter(t *testing.T) {
 	out := filepath.Join(t.TempDir(), "out.json")
 	tag := "keep"
 
-	result, err := h.svc.ExportVars(nil, &tag, false, &out, profile)
+	result, err := h.svc.ExportVars(ExportVarConfig{
+		Tag:          &tag,
+		ExportConfig: ExportConfig{Flatten: false, Output: &out, VarProfileName: profile},
+	})
 	if err != nil {
 		t.Fatalf("ExportVars() error = %v", err)
 	}
@@ -851,7 +903,10 @@ func TestExportVarsDeepCollectSeparatesDirectAndTransient(t *testing.T) {
 	seedVariableFull(h.varSvc, "dep", profile, "1", nil)
 	out := filepath.Join(t.TempDir(), "out.json")
 
-	result, err := h.svc.ExportVars([]string{"top"}, nil, false, &out, profile)
+	result, err := h.svc.ExportVars(ExportVarConfig{
+		Names:        []string{"top"},
+		ExportConfig: ExportConfig{Flatten: false, Output: &out, VarProfileName: profile},
+	})
 	if err != nil {
 		t.Fatalf("ExportVars() error = %v", err)
 	}
@@ -868,7 +923,7 @@ func TestExportVarsProfileResolutionError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.profileRepo.activeVariableErr = sentinel
 
-	_, err := h.svc.ExportVars(nil, nil, false, nil, nil)
+	_, err := h.svc.ExportVars(ExportVarConfig{})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportVars() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -879,7 +934,9 @@ func TestExportVarsListVariablesError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.varSvc.listErr = sentinel
 
-	_, err := h.svc.ExportVars(nil, nil, false, nil, strPtr("default"))
+	_, err := h.svc.ExportVars(ExportVarConfig{
+		ExportConfig: ExportConfig{VarProfileName: strPtr("default")},
+	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportVars() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -890,7 +947,10 @@ func TestExportVarsFlattenGetVariableOrNilError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.varSvc.getOrNilErr = sentinel
 
-	_, err := h.svc.ExportVars([]string{"v"}, nil, true, nil, strPtr("default"))
+	_, err := h.svc.ExportVars(ExportVarConfig{
+		Names:        []string{"v"},
+		ExportConfig: ExportConfig{Flatten: true, VarProfileName: strPtr("default")},
+	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportVars() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -903,7 +963,10 @@ func TestExportVarsVariableTagNamesError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.varSvc.getWithTagsErr = sentinel
 
-	_, err := h.svc.ExportVars([]string{"v"}, nil, true, nil, profile)
+	_, err := h.svc.ExportVars(ExportVarConfig{
+		Names:        []string{"v"},
+		ExportConfig: ExportConfig{Flatten: true, VarProfileName: profile},
+	})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportVars() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -920,7 +983,10 @@ func TestExportVarsWriteError(t *testing.T) {
 	}
 	out := filepath.Join(blocker, "out.json")
 
-	_, err := h.svc.ExportVars([]string{"v"}, nil, true, &out, profile)
+	_, err := h.svc.ExportVars(ExportVarConfig{
+		Names:        []string{"v"},
+		ExportConfig: ExportConfig{Flatten: true, Output: &out, VarProfileName: profile},
+	})
 	if err == nil {
 		t.Fatal("ExportVars() error = nil, want error")
 	}
@@ -935,7 +1001,7 @@ func TestExportAllWritesAllCommandsAndVariables(t *testing.T) {
 	seedVariableFull(h.varSvc, "v", profile, "1", nil)
 	out := filepath.Join(t.TempDir(), "out.json")
 
-	result, err := h.svc.ExportAll(false, &out, profile, profile)
+	result, err := h.svc.ExportAll(ExportConfig{Flatten: false, Output: &out, CmdProfileName: profile, VarProfileName: profile})
 	if err != nil {
 		t.Fatalf("ExportAll() error = %v", err)
 	}
@@ -962,7 +1028,7 @@ func TestExportAllFlattenTrue(t *testing.T) {
 	seedCommandFull(h.cmdSvc, "a", profile, "echo <var:name>", nil)
 	out := filepath.Join(t.TempDir(), "out.json")
 
-	_, err := h.svc.ExportAll(true, &out, profile, profile)
+	_, err := h.svc.ExportAll(ExportConfig{Flatten: true, Output: &out, CmdProfileName: profile, VarProfileName: profile})
 	if err != nil {
 		t.Fatalf("ExportAll() error = %v", err)
 	}
@@ -978,7 +1044,7 @@ func TestExportAllListCommandsError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.cmdSvc.listErr = sentinel
 
-	_, err := h.svc.ExportAll(false, nil, strPtr("default"), strPtr("default"))
+	_, err := h.svc.ExportAll(ExportConfig{CmdProfileName: strPtr("default"), VarProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportAll() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -989,7 +1055,7 @@ func TestExportAllListVariablesError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.varSvc.listErr = sentinel
 
-	_, err := h.svc.ExportAll(false, nil, strPtr("default"), strPtr("default"))
+	_, err := h.svc.ExportAll(ExportConfig{CmdProfileName: strPtr("default"), VarProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportAll() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -1002,7 +1068,7 @@ func TestExportAllCommandTagError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.cmdSvc.getWithTagsErr = sentinel
 
-	_, err := h.svc.ExportAll(false, nil, profile, profile)
+	_, err := h.svc.ExportAll(ExportConfig{CmdProfileName: profile, VarProfileName: profile})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportAll() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -1015,7 +1081,7 @@ func TestExportAllVariableTagError(t *testing.T) {
 	sentinel := errors.New("boom")
 	h.varSvc.getWithTagsErr = sentinel
 
-	_, err := h.svc.ExportAll(false, nil, profile, profile)
+	_, err := h.svc.ExportAll(ExportConfig{CmdProfileName: profile, VarProfileName: profile})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ExportAll() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -1031,7 +1097,7 @@ func TestExportAllWriteError(t *testing.T) {
 	}
 	out := filepath.Join(blocker, "out.json")
 
-	_, err := h.svc.ExportAll(false, &out, profile, profile)
+	_, err := h.svc.ExportAll(ExportConfig{Output: &out, CmdProfileName: profile, VarProfileName: profile})
 	if err == nil {
 		t.Fatal("ExportAll() error = nil, want error")
 	}

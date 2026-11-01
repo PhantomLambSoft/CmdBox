@@ -287,6 +287,25 @@ func serializeVariable(v *models.Variable, tags []string, flatten bool, cmdServi
 	}, nil
 }
 
+type ExportConfig struct {
+	Flatten        bool
+	Output         *string
+	CmdProfileName *string
+	VarProfileName *string
+}
+
+type ExportCmdConfig struct {
+	Aliases []string
+	Tag     *string
+	ExportConfig
+}
+
+type ExportVarConfig struct {
+	Names []string
+	Tag   *string
+	ExportConfig
+}
+
 type ExportService struct {
 	CmdService  CommandService
 	VarService  VariableService
@@ -319,17 +338,17 @@ func (s *ExportService) resolveVariableProfileName(profileName *string) (string,
 	return profile.Name, nil
 }
 
-func (s *ExportService) ExportCmds(aliases []string, tag *string, flatten bool, outputPath *string, cmdProfileName, varProfileName *string) (ExportResult, error) {
-	resolvedCmdProfile, err := s.resolveCommandProfileName(cmdProfileName)
+func (s *ExportService) ExportCmds(config ExportCmdConfig) (ExportResult, error) {
+	resolvedCmdProfile, err := s.resolveCommandProfileName(config.CmdProfileName)
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("resolving command profile %w", err)
 	}
-	resolvedVarProfile, err := s.resolveVariableProfileName(varProfileName)
+	resolvedVarProfile, err := s.resolveVariableProfileName(config.VarProfileName)
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("resolving variable profile %w", err)
 	}
 
-	path, err := resolveOutputPath(outputPath, "cmds")
+	path, err := resolveOutputPath(config.Output, "cmds")
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("resolving output path %w", err)
 	}
@@ -340,10 +359,10 @@ func (s *ExportService) ExportCmds(aliases []string, tag *string, flatten bool, 
 		VariableProfile: resolvedVarProfile,
 	}
 
-	targetAliases := aliases
+	targetAliases := config.Aliases
 	if len(targetAliases) == 0 {
 		limit := exportLimit
-		cmds, err := s.CmdService.ListCommands("", tagFilter(tag), &limit, &resolvedCmdProfile)
+		cmds, err := s.CmdService.ListCommands("", tagFilter(config.Tag), &limit, &resolvedCmdProfile)
 		if err != nil {
 			return ExportResult{}, fmt.Errorf("listing commands %w", err)
 		}
@@ -356,7 +375,7 @@ func (s *ExportService) ExportCmds(aliases []string, tag *string, flatten bool, 
 	var serializedCmds []TransferCommand
 	var serializedVars []TransferVariable
 
-	if flatten {
+	if config.Flatten {
 		for _, alias := range targetAliases {
 			cmd, err := s.CmdService.GetCommandOrNil(alias, &resolvedCmdProfile)
 			if err != nil {
@@ -436,23 +455,23 @@ func (s *ExportService) ExportCmds(aliases []string, tag *string, flatten bool, 
 	return result, nil
 }
 
-func (s *ExportService) ExportVars(names []string, tag *string, flatten bool, outputPath *string, varProfileName *string) (ExportResult, error) {
-	resolvedVarProfile, err := s.resolveVariableProfileName(varProfileName)
+func (s *ExportService) ExportVars(config ExportVarConfig) (ExportResult, error) {
+	resolvedVarProfile, err := s.resolveVariableProfileName(config.VarProfileName)
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("resolving variable profile %w", err)
 	}
 
-	path, err := resolveOutputPath(outputPath, "vars")
+	path, err := resolveOutputPath(config.Output, "vars")
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("resolving output path %w", err)
 	}
 
 	result := ExportResult{Path: path, VariableProfile: resolvedVarProfile}
 
-	targetNames := names
+	targetNames := config.Names
 	if len(targetNames) == 0 {
 		limit := exportLimit
-		vars, err := s.VarService.ListVariables("", tagFilter(tag), &limit, &resolvedVarProfile)
+		vars, err := s.VarService.ListVariables("", tagFilter(config.Tag), &limit, &resolvedVarProfile)
 		if err != nil {
 			return ExportResult{}, fmt.Errorf("listing variables %w", err)
 		}
@@ -464,7 +483,7 @@ func (s *ExportService) ExportVars(names []string, tag *string, flatten bool, ou
 
 	var serializedVars []TransferVariable
 
-	if flatten {
+	if config.Flatten {
 		for _, name := range targetNames {
 			v, err := s.VarService.GetVariableOrNil(name, &resolvedVarProfile)
 			if err != nil {
@@ -527,17 +546,17 @@ func (s *ExportService) ExportVars(names []string, tag *string, flatten bool, ou
 	return result, nil
 }
 
-func (s *ExportService) ExportAll(flatten bool, outputPath *string, cmdProfileName, varProfileName *string) (ExportResult, error) {
-	resolvedCmdProfile, err := s.resolveCommandProfileName(cmdProfileName)
+func (s *ExportService) ExportAll(config ExportConfig) (ExportResult, error) {
+	resolvedCmdProfile, err := s.resolveCommandProfileName(config.CmdProfileName)
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("resolving command profile %w", err)
 	}
-	resolvedVarProfile, err := s.resolveVariableProfileName(varProfileName)
+	resolvedVarProfile, err := s.resolveVariableProfileName(config.VarProfileName)
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("resolving variable profile %w", err)
 	}
 
-	path, err := resolveOutputPath(outputPath, "all")
+	path, err := resolveOutputPath(config.Output, "all")
 	if err != nil {
 		return ExportResult{}, fmt.Errorf("resolving output path %w", err)
 	}
@@ -564,7 +583,7 @@ func (s *ExportService) ExportAll(flatten bool, outputPath *string, cmdProfileNa
 		if err != nil {
 			return ExportResult{}, err
 		}
-		serialized, err := serializeCommand(&cmd, tags, flatten, s.CmdService, s.VarService, &resolvedCmdProfile, &resolvedVarProfile)
+		serialized, err := serializeCommand(&cmd, tags, config.Flatten, s.CmdService, s.VarService, &resolvedCmdProfile, &resolvedVarProfile)
 		if err != nil {
 			return ExportResult{}, err
 		}
@@ -579,7 +598,7 @@ func (s *ExportService) ExportAll(flatten bool, outputPath *string, cmdProfileNa
 			return ExportResult{}, err
 		}
 
-		serialized, err := serializeVariable(&v, tags, flatten, s.CmdService, s.VarService, &resolvedCmdProfile, &resolvedVarProfile)
+		serialized, err := serializeVariable(&v, tags, config.Flatten, s.CmdService, s.VarService, &resolvedCmdProfile, &resolvedVarProfile)
 		if err != nil {
 			return ExportResult{}, err
 		}
