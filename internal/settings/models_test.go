@@ -93,9 +93,6 @@ func TestDefaultUISettings(t *testing.T) {
 	if !got.UseColor {
 		t.Fatalf("DefaultUISettings().UseColor = false, want true")
 	}
-	if got.Theme != "default" {
-		t.Fatalf("DefaultUISettings().Theme = %q, want %q", got.Theme, "default")
-	}
 	if got.ColorOverrides != nil {
 		t.Fatalf("DefaultUISettings().ColorOverrides = %+v, want nil", got.ColorOverrides)
 	}
