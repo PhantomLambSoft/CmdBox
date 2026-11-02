@@ -18,10 +18,15 @@ import (
 // arguments it was called with and returns canned results, so handler tests can assert on
 // argument mapping without touching a real database.
 type fakeTagService struct {
-	createName string
-	createDesc *string
-	createTag  *models.Tag
-	createErr  error
+	createName  string
+	createDesc  *string
+	createTag   *models.Tag
+	createErr   error
+	createCalls []string
+
+	// orNilTag/orNilErr configure GetTagOrNil's return value. Left unset (nil, nil) by default.
+	orNilTag *models.Tag
+	orNilErr error
 
 	updateName  string
 	updateInput services.UpdateTagConfig
@@ -51,6 +56,7 @@ type fakeTagService struct {
 func (f *fakeTagService) CreateTag(name string, description *string) (*models.Tag, error) {
 	f.createName = name
 	f.createDesc = description
+	f.createCalls = append(f.createCalls, name)
 	return f.createTag, f.createErr
 }
 
@@ -72,7 +78,7 @@ func (f *fakeTagService) GetTag(name string) (*models.Tag, error) {
 }
 
 func (f *fakeTagService) GetTagOrNil(name string) (*models.Tag, error) {
-	return nil, nil
+	return f.orNilTag, f.orNilErr
 }
 
 func (f *fakeTagService) GetTagById(id uint) (*models.Tag, error) {
