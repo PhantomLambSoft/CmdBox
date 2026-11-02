@@ -135,6 +135,34 @@ func RunSettingsDataDir(print bool) error {
 	return nil
 }
 
+// RunThemeDump updates the UI theme based on the provided theme name and outputs the current theme's styles.
+func RunThemeDump(themeName string) error {
+	settingsService, err := container.GetSettingsService()
+	if err != nil {
+		return fmt.Errorf("getting settings service: %w", err)
+	}
+	dataDir, err := container.GetAppDataDir()
+	if err != nil {
+		return fmt.Errorf("getting app data dir: %w", err)
+	}
+
+	cfg := settingsService.Get().UI
+	if themeName != "" {
+		cfg.Theme = themeName
+	}
+
+	console, unknown, err := ui.Setup(cfg, dataDir)
+	if err != nil {
+		return fmt.Errorf("setting up console: %w", err)
+	}
+	for _, k := range unknown {
+		console.Warning(fmt.Sprintf("unknown color override key %q", k))
+	}
+
+	console.DumpStyles()
+	return nil
+}
+
 func defaultOpenDataDir(dataDir string) error {
 	var cmd *exec.Cmd
 	switch runtime.GOOS {

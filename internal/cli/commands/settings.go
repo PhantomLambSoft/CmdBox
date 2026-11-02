@@ -31,6 +31,14 @@ var settingsDataDirCmd = &cobra.Command{
 	RunE:  runSettingsDataDir,
 }
 
+var themeDumpCmd = &cobra.Command{
+	Use:    "theme-dump [theme]",
+	Short:  "Render every palette style of theme.",
+	Hidden: true,
+	Args:   cobra.MaximumNArgs(1),
+	RunE:   runThemeDump,
+}
+
 func init() {
 	settingsShowCmd.Flags().StringSlice("field", nil, "Comma-separated list of setting fields to display")
 
@@ -38,7 +46,7 @@ func init() {
 
 	settingsDataDirCmd.Flags().BoolP("print", "p", false, "Print the data directory path instead of opening it")
 
-	settingsCmd.AddCommand(settingsShowCmd, settingsEditCmd, settingsDataDirCmd)
+	settingsCmd.AddCommand(settingsShowCmd, settingsEditCmd, settingsDataDirCmd, themeDumpCmd)
 	rootCmd.AddCommand(settingsCmd)
 }
 
@@ -52,4 +60,12 @@ func runSettingsEdit(cmd *cobra.Command, args []string) error {
 
 func runSettingsDataDir(cmd *cobra.Command, args []string) error {
 	return handlers.RunSettingsDataDir(getBoolFlag(cmd, "print"))
+}
+
+func runThemeDump(cmd *cobra.Command, args []string) error {
+	name := ""
+	if len(args) > 0 {
+		name = args[0]
+	}
+	return handlers.RunThemeDump(name)
 }
