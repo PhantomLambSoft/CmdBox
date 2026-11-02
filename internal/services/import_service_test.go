@@ -629,7 +629,7 @@ func TestImportFileProfileResolutionError(t *testing.T) {
 	h.profileRepo.activeErr = sentinel
 	path := writeImportFile(t, minimalDoc())
 
-	_, err := h.svc.ImportFile(path, false, false, nil)
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: nil})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -638,7 +638,7 @@ func TestImportFileProfileResolutionError(t *testing.T) {
 func TestImportFileParseError(t *testing.T) {
 	h := newImportServiceHarness()
 
-	_, err := h.svc.ImportFile(filepath.Join(t.TempDir(), "missing.json"), false, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: filepath.Join(t.TempDir(), "missing.json"), Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	var fileErr *ImportFileError
 	if !errors.As(err, &fileErr) {
 		t.Fatalf("ImportFile() error = %v, want wrapping *ImportFileError", err)
@@ -656,7 +656,7 @@ func TestImportFileCycleDetected(t *testing.T) {
 	}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, ErrImportCycle) {
 		t.Fatalf("ImportFile() error = %v, want ErrImportCycle", err)
 	}
@@ -669,7 +669,7 @@ func TestImportFileGetCommandOrNilError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -682,7 +682,7 @@ func TestImportFileGetVariableOrNilError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -699,7 +699,7 @@ func TestImportFileClassifiesNewCommandsAndVariablesAsCreated(t *testing.T) {
 	}
 	path := writeImportFile(t, doc)
 
-	result, err := h.svc.ImportFile(path, false, false, strPtr("default"))
+	result, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	if err != nil {
 		t.Fatalf("ImportFile() error = %v", err)
 	}
@@ -728,7 +728,7 @@ func TestImportFileClassifiesExistingWithoutOverwriteAsSkipped(t *testing.T) {
 	}
 	path := writeImportFile(t, doc)
 
-	result, err := h.svc.ImportFile(path, false, false, strPtr("default"))
+	result, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	if err != nil {
 		t.Fatalf("ImportFile() error = %v", err)
 	}
@@ -757,7 +757,7 @@ func TestImportFileClassifiesExistingWithOverwriteAsOverwritten(t *testing.T) {
 	}
 	path := writeImportFile(t, doc)
 
-	result, err := h.svc.ImportFile(path, true, false, strPtr("default"))
+	result, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")})
 	if err != nil {
 		t.Fatalf("ImportFile() error = %v", err)
 	}
@@ -785,7 +785,7 @@ func TestImportFilePreviewDoesNotMutate(t *testing.T) {
 	}
 	path := writeImportFile(t, doc)
 
-	result, err := h.svc.ImportFile(path, false, true, strPtr("default"))
+	result, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: true, ProfileName: strPtr("default")})
 	if err != nil {
 		t.Fatalf("ImportFile() error = %v", err)
 	}
@@ -807,7 +807,7 @@ func TestImportFileSetsResultProfileAndPreview(t *testing.T) {
 	h := newImportServiceHarness()
 	path := writeImportFile(t, minimalDoc())
 
-	result, err := h.svc.ImportFile(path, false, false, strPtr("custom-profile"))
+	result, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("custom-profile")})
 	if err != nil {
 		t.Fatalf("ImportFile() error = %v", err)
 	}
@@ -830,7 +830,7 @@ func TestImportFileCreatesMissingTagsButNotExistingOnes(t *testing.T) {
 	}
 	path := writeImportFile(t, doc)
 
-	if _, err := h.svc.ImportFile(path, false, false, strPtr("default")); err != nil {
+	if _, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")}); err != nil {
 		t.Fatalf("ImportFile() error = %v", err)
 	}
 	if len(h.tagSvc.createCalls) != 1 || h.tagSvc.createCalls[0] != "new-tag" {
@@ -847,7 +847,7 @@ func TestImportFileSkipsTagsFromSkippedItems(t *testing.T) {
 	}
 	path := writeImportFile(t, doc)
 
-	if _, err := h.svc.ImportFile(path, false, false, strPtr("default")); err != nil {
+	if _, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")}); err != nil {
 		t.Fatalf("ImportFile() error = %v", err)
 	}
 	if len(h.tagSvc.createCalls) != 0 {
@@ -862,7 +862,7 @@ func TestImportFileGetTagError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"t"}}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -875,7 +875,7 @@ func TestImportFileCreateTagError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"t"}}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -890,7 +890,7 @@ func TestImportFileCreateCommandError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -903,7 +903,7 @@ func TestImportFileCreateVariableError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, false, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: false, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -917,7 +917,7 @@ func TestImportFileOverwriteCommandGetWithTagsError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -931,7 +931,7 @@ func TestImportFileOverwriteCommandUpdateError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -945,7 +945,7 @@ func TestImportFileOverwriteCommandRemoveTagsError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -959,7 +959,7 @@ func TestImportFileOverwriteCommandAddTagsError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Commands: []TransferCommand{{Alias: "a", Template: "echo hi", Tags: []string{"new"}}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -974,7 +974,7 @@ func TestImportFileOverwriteCommandTagDiff(t *testing.T) {
 	}
 	path := writeImportFile(t, doc)
 
-	if _, err := h.svc.ImportFile(path, true, false, strPtr("default")); err != nil {
+	if _, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")}); err != nil {
 		t.Fatalf("ImportFile() error = %v", err)
 	}
 
@@ -998,7 +998,7 @@ func TestImportFileOverwriteVariableGetWithTagsError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -1012,7 +1012,7 @@ func TestImportFileOverwriteVariableUpdateError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -1026,7 +1026,7 @@ func TestImportFileOverwriteVariableRemoveTagsError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1"}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -1040,7 +1040,7 @@ func TestImportFileOverwriteVariableAddTagsError(t *testing.T) {
 	doc := TransferDocument{Version: "1", Variables: []TransferVariable{{Name: "v", Value: "1", Tags: []string{"new"}}}}
 	path := writeImportFile(t, doc)
 
-	_, err := h.svc.ImportFile(path, true, false, strPtr("default"))
+	_, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")})
 	if !errors.Is(err, sentinel) {
 		t.Fatalf("ImportFile() error = %v, want wrapping %v", err, sentinel)
 	}
@@ -1055,7 +1055,7 @@ func TestImportFileOverwriteVariableTagDiff(t *testing.T) {
 	}
 	path := writeImportFile(t, doc)
 
-	if _, err := h.svc.ImportFile(path, true, false, strPtr("default")); err != nil {
+	if _, err := h.svc.ImportFile(ImportConfig{ImportPath: path, Overwrite: true, Preview: false, ProfileName: strPtr("default")}); err != nil {
 		t.Fatalf("ImportFile() error = %v", err)
 	}
 

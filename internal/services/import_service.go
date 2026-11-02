@@ -13,6 +13,7 @@ import (
 var supportedVersions = []string{"1"}
 
 type ImportResult struct {
+	Path                 string
 	CommandsCreated      []string
 	CommandsSkipped      []string
 	CommandsOverwritten  []string
@@ -121,6 +122,13 @@ func parseImportFile(path string) (TransferDocument, error) {
 	return doc, nil
 }
 
+type ImportConfig struct {
+	ImportPath  string
+	Overwrite   bool
+	Preview     bool
+	ProfileName *string
+}
+
 type ImportService struct {
 	CmdService  CommandService
 	VarService  VariableService
@@ -174,15 +182,16 @@ type variableAction struct {
 	Action actionType
 }
 
-func (s *ImportService) ImportFile(path string, overwrite bool, preview bool, profileName *string) (ImportResult, error) {
-	resolvedProfileName, err := s.resolveProfileName(profileName)
+func (s *ImportService) ImportFile(config ImportConfig) (ImportResult, error) {
+	resolvedProfileName, err := s.resolveProfileName(config.ProfileName)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("resolving profile %w", err)
 	}
-	s.Result.Preview = preview
+	s.Result.Path = config.ImportPath
+	s.Result.Preview = config.Preview
 	s.Result.Profile = resolvedProfileName
 
-	doc, err := parseImportFile(path)
+	doc, err := parseImportFile(config.ImportPath)
 	if err != nil {
 		return ImportResult{}, fmt.Errorf("parsing import file %w", err)
 	}
@@ -202,7 +211,7 @@ func (s *ImportService) ImportFile(path string, overwrite bool, preview bool, pr
 		switch {
 		case existing == nil:
 			cmdActions = append(cmdActions, commandAction{Data: cmdData, Action: actionCreate})
-		case overwrite:
+		case config.Overwrite:
 			cmdActions = append(cmdActions, commandAction{Data: cmdData, Action: actionOverwrite})
 		default:
 			cmdActions = append(cmdActions, commandAction{Data: cmdData, Action: actionSkip})
@@ -219,7 +228,7 @@ func (s *ImportService) ImportFile(path string, overwrite bool, preview bool, pr
 		switch {
 		case existing == nil:
 			varActions = append(varActions, variableAction{Data: varData, Action: actionCreate})
-		case overwrite:
+		case config.Overwrite:
 			varActions = append(varActions, variableAction{Data: varData, Action: actionOverwrite})
 		default:
 			varActions = append(varActions, variableAction{Data: varData, Action: actionSkip})
@@ -229,7 +238,7 @@ func (s *ImportService) ImportFile(path string, overwrite bool, preview bool, pr
 	s.classifyCommands(cmdActions)
 	s.classifyVariables(varActions)
 
-	if preview {
+	if config.Preview {
 		return s.Result, nil
 	}
 
