@@ -13,6 +13,7 @@ var embedMigrations embed.FS
 
 // Run applies database migrations using goose with the embedded migration files and specified SQLite dialect.
 func Run(db *sql.DB) error {
+	goose.SetLogger(goose.NopLogger())
 	goose.SetBaseFS(embedMigrations)
 
 	if err := goose.SetDialect("sqlite3"); err != nil {
