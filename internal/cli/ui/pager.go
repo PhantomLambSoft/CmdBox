@@ -23,16 +23,18 @@ func (m pagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "q", "esc", "ctrl+c":
 			return m, tea.Quit
 		case "j", "down":
-			m.vp.ScrollDown(m.lineStep)
-		case "k", "up":
 			m.vp.ScrollUp(m.lineStep)
+		case "k", "up":
+			m.vp.ScrollDown(m.lineStep)
 		case "ctrl+d", "pgdown":
 			m.vp.ScrollDown(m.pageStep)
 		case "ctrl+u", "pgup":
 			m.vp.ScrollUp(m.pageStep)
 		case "g":
-			m.vp.GotoTop()
 		case "G":
+			m.vp.GotoTop()
+		case "h":
+		case "H":
 			m.vp.GotoBottom()
 		}
 	case tea.WindowSizeMsg:
@@ -43,7 +45,7 @@ func (m pagerModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m pagerModel) View() tea.View {
-	footer := m.palette.Muted.Render(" j/k ↑/↓ scroll · ctrl-d/ctrl-u page · g/G top/bottom · q quit ")
+	footer := m.palette.Muted.Render(" j/k ↑/↓ scroll · ctrl-d/ctrl-u page · g/h top/bottom · q quit ")
 	v := tea.NewView(m.vp.View() + "\n" + footer)
 	v.AltScreen = true
 	return v
