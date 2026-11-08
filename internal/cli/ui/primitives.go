@@ -25,7 +25,6 @@ func GetElementWidth(element string) int {
 
 func TablePanel(title string, headers []string, rows [][]string, caption string, palette Palette) string {
 	tWidth := GetTerminalWidth()
-	widths := columnWidths(headers, rows, tWidth-4)
 	borderStyle := lipgloss.NewStyle().Foreground(palette.Border)
 	t := table.New().
 		Headers(headers...).
@@ -38,15 +37,13 @@ func TablePanel(title string, headers []string, rows [][]string, caption string,
 		BorderColumn(false).
 		BorderHeader(true).
 		BorderColumn(true).
-		BorderStyle(borderStyle).
-		StyleFunc(func(row, col int) lipgloss.Style {
-			base := lipgloss.NewStyle()
-			if row == 0 {
-				base = palette.TableHeader
-			}
-			return base.Width(widths[col])
-		})
+		BorderStyle(borderStyle)
 	body := t.Render()
+
+	tableWidth := GetElementWidth(body)
+	if tableWidth > tWidth {
+		body = t.Width(tWidth - 4).Render()
+	}
 
 	capStyle := palette.Caption.PaddingTop(1).Align(lipgloss.Center)
 	renderedCaption := capStyle.Render(caption)
@@ -61,92 +58,13 @@ func TablePanel(title string, headers []string, rows [][]string, caption string,
 	return panel.Render(lipgloss.JoinVertical(lipgloss.Center, titleStyle.Render(title), body, renderedCaption))
 }
 
-// columnWidths calculates the appropriate widths for table columns based on headers, rows, and a maximum total width constraint.
-func columnWidths(headers []string, rows [][]string, maxTotal int) []int {
-	n := len(headers)
-	natural := make([]int, n)
-	for i, h := range headers {
-		natural[i] = lipgloss.Width(h)
-	}
-	for _, row := range rows {
-		for i, cell := range row {
-			if i < n {
-				if w := lipgloss.Width(cell); w > natural[i] {
-					natural[i] = w
-				}
-			}
-		}
-	}
-
-	overhead := (n * 2) + (n - 1) // padding + column separators
-	available := maxTotal - overhead
-
-	total := 0
-	for _, w := range natural {
-		total += w
-	}
-	if total <= available {
-		return natural
-	}
-
-	const minColWidth = 8
-
-	// If the floor doesn't fit (very narrow terminal, many columns). Divide available space evenly - never exceeds budget.
-	if n*minColWidth >= available || available <= 0 {
-		widths := make([]int, n)
-		base := available / n
-		remainder := available % n
-		for i := range widths {
-			widths[i] = base
-			if i < remainder {
-				widths[i]++
-			}
-		}
-		return widths
-	}
-
-	// Every column gets the floor first. Only the genuine leftover gets distributed, proportionally to how much
-	// each column wants beyond the floor - this can never be more than available.
-	widths := make([]int, n)
-	for i := range widths {
-		widths[i] = minColWidth
-	}
-	leftover := available - n*minColWidth
-
-	extraWanted := make([]int, n)
-	totalExtraWanted := 0
-	for i, w := range natural {
-		if w > minColWidth {
-			extraWanted[i] = w - minColWidth
-			totalExtraWanted += extraWanted[i]
-		}
-	}
-
-	if totalExtraWanted > 0 {
-		distributed := 0
-		widest := 0
-		for i := range widths {
-			share := leftover * extraWanted[i] / totalExtraWanted
-			widths[i] += share
-			distributed += share
-			if widths[i] > widths[widest] {
-				widest = i
-			}
-		}
-		widths[widest] += leftover - distributed
-	} else {
-		widths[0] += leftover
-	}
-
-	return widths
-}
-
 func KVTable(rows [][2]string, palette Palette) string {
 	data := make([][]string, len(rows))
 	for i, r := range rows {
 		data[i] = []string{palette.KVKey.Render(r[0]), r[1]}
 	}
-	return table.New().
+
+	kvTable := table.New().
 		Rows(data...).
 		Border(lipgloss.HiddenBorder()).
 		StyleFunc(func(row, col int) lipgloss.Style {
@@ -154,8 +72,18 @@ func KVTable(rows [][2]string, palette Palette) string {
 				return lipgloss.NewStyle().Align(lipgloss.Right)
 			}
 			return lipgloss.NewStyle().Align(lipgloss.Left)
-		}).
-		Render()
+		})
+
+	renderedTable := kvTable.Render()
+
+	terminalWidth := GetTerminalWidth()
+	tableWidth := GetElementWidth(renderedTable)
+
+	if tableWidth < terminalWidth {
+		return renderedTable
+	}
+	kvTable = kvTable.Width(terminalWidth - 4)
+	return kvTable.Render()
 }
 
 func KVPanel(title string, rows [][2]string, palette Palette) string {
@@ -228,7 +156,13 @@ func Section(title, body, caption string, borderColor color.Color, titleStyle li
 		content += "\n" + caption
 	}
 
-	return panel.Render(content)
+	renderedPanel := panel.Render(content)
+	panelWidth := GetElementWidth(renderedPanel)
+	terminalWidth := GetTerminalWidth()
+	if panelWidth < terminalWidth {
+		return renderedPanel
+	}
+	return panel.Width(terminalWidth - 4).Render(content)
 }
 
 func SectionSuccess(title, body string, palette Palette) string {
