@@ -14,9 +14,9 @@ var cmdCmd = &cobra.Command{
 }
 
 var cmdAddCmd = &cobra.Command{
-	Use:   "add [alias] [template]",
+	Use:   "add [alias] [template] [description]",
 	Short: "Add a new command",
-	Args:  cobra.RangeArgs(0, 2),
+	Args:  cobra.RangeArgs(0, 3),
 	RunE:  runCmdAdd,
 }
 
@@ -155,13 +155,11 @@ func init() {
 func runCmdAdd(cmd *cobra.Command, args []string) error {
 	profile := getProfile(cmd)
 	interactive := getInteractiveFlag(cmd)
-	description := getDescriptionFlag(cmd)
 	cwd := getStringFlag(cmd, "cwd")
 	shell := getStringFlag(cmd, "shell")
 	env, _ := cmd.Flags().GetStringArray("env")
 
 	raw := handlers.AddCmdArgs{
-		Description: description,
 		Interactive: interactive,
 		Cwd:         cwd,
 		Shell:       shell,
@@ -175,6 +173,18 @@ func runCmdAdd(cmd *cobra.Command, args []string) error {
 		raw.Template = args[1]
 		raw.HasTemplate = true
 	}
+	if len(args) > 2 {
+		raw.Description = args[2]
+		raw.HasDescription = true
+	}
+	if !raw.HasDescription {
+		description := getDescriptionFlag(cmd)
+		if description != "" {
+			raw.Description = description
+			raw.HasDescription = true
+		}
+	}
+
 	if cmd.Flags().Changed("timeout") {
 		raw.Timeout, _ = cmd.Flags().GetInt("timeout")
 	}

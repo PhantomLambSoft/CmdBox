@@ -29,7 +29,8 @@ func TestCmdAddCmd_Args(t *testing.T) {
 	assert.NoError(t, cmdAddCmd.ValidateArgs([]string{}))
 	assert.NoError(t, cmdAddCmd.ValidateArgs([]string{"alias"}))
 	assert.NoError(t, cmdAddCmd.ValidateArgs([]string{"alias", "template"}))
-	assert.Error(t, cmdAddCmd.ValidateArgs([]string{"alias", "template", "extra"}))
+	assert.NoError(t, cmdAddCmd.ValidateArgs([]string{"alias", "template", "description"}))
+	assert.Error(t, cmdAddCmd.ValidateArgs([]string{"alias", "template", "description", "extra"}))
 }
 
 func TestCmdGetCmd_Args(t *testing.T) {
@@ -166,17 +167,49 @@ func TestRunCmdAdd_BuildsArgsFromPositionalsAndFlags(t *testing.T) {
 
 	cmd := freshCmdWithFlagsOf(cmdAddCmd)
 	require.NoError(t, cmd.Flags().Set("timeout", "30"))
-	require.NoError(t, cmd.Flags().Set("description", "desc"))
 	require.NoError(t, cmd.Flags().Set("profile", "work"))
-	err := runCmdAdd(cmd, []string{"myalias", "echo hi"})
+	err := runCmdAdd(cmd, []string{"myalias", "echo hi", "desc"})
 	assert.NoError(t, err)
 
 	assert.Equal(t, "myalias", got.Alias)
 	assert.Equal(t, "echo hi", got.Template)
 	assert.True(t, got.HasTemplate)
 	assert.Equal(t, "desc", got.Description)
+	assert.True(t, got.HasDescription)
 	assert.Equal(t, 30, got.Timeout)
 	assert.Equal(t, "work", got.Profile)
+}
+
+func TestRunCmdAdd_DescriptionFlagUsedWhenNoPositionalDescription(t *testing.T) {
+	var got handlers.AddCmdArgs
+	stubHandlerCall(t, &callRunAddCmd, func(args handlers.AddCmdArgs) error {
+		got = args
+		return nil
+	})
+
+	cmd := freshCmdWithFlagsOf(cmdAddCmd)
+	require.NoError(t, cmd.Flags().Set("description", "flag desc"))
+	err := runCmdAdd(cmd, []string{"myalias", "echo hi"})
+	assert.NoError(t, err)
+
+	assert.Equal(t, "flag desc", got.Description)
+	assert.True(t, got.HasDescription)
+}
+
+func TestRunCmdAdd_PositionalDescriptionTakesPrecedenceOverFlag(t *testing.T) {
+	var got handlers.AddCmdArgs
+	stubHandlerCall(t, &callRunAddCmd, func(args handlers.AddCmdArgs) error {
+		got = args
+		return nil
+	})
+
+	cmd := freshCmdWithFlagsOf(cmdAddCmd)
+	require.NoError(t, cmd.Flags().Set("description", "flag desc"))
+	err := runCmdAdd(cmd, []string{"myalias", "echo hi", "positional desc"})
+	assert.NoError(t, err)
+
+	assert.Equal(t, "positional desc", got.Description)
+	assert.True(t, got.HasDescription)
 }
 
 func TestRunCmdAdd_NoArgsLeavesAliasAndTemplateUnset(t *testing.T) {
@@ -191,6 +224,7 @@ func TestRunCmdAdd_NoArgsLeavesAliasAndTemplateUnset(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, "", got.Alias)
 	assert.False(t, got.HasTemplate)
+	assert.False(t, got.HasDescription)
 }
 
 func TestRunCmdAdd_PropagatesHandlerError(t *testing.T) {

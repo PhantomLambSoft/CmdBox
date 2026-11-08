@@ -60,7 +60,9 @@ func TestTagDeleteCmd_ArgsAndAliases(t *testing.T) {
 }
 
 func TestTagAddCmd_Flags(t *testing.T) {
-	assertFlag(t, tagAddCmd.Flags(), "interactive", "i", "bool", "false")
+	f := tagAddCmd.Flags()
+	assertFlag(t, f, "description", "d", "string", "")
+	assertFlag(t, f, "interactive", "i", "bool", "false")
 }
 
 func TestTagUpdateCmd_Flags(t *testing.T) {
@@ -106,6 +108,34 @@ func TestRunTagAdd_BuildsArgsFromPositionalsAndFlags(t *testing.T) {
 
 	assert.NoError(t, runTagAdd(cmd, []string{"name", "desc"}))
 	assert.Equal(t, "desc", got.Description)
+	assert.True(t, got.HasDescription)
+}
+
+func TestRunTagAdd_DescriptionFlagUsedWhenNoPositionalDescription(t *testing.T) {
+	var got handlers.AddTagArgs
+	stubHandlerCall(t, &callRunAddTag, func(args handlers.AddTagArgs) error {
+		got = args
+		return nil
+	})
+
+	cmd := freshCmdWithFlagsOf(tagAddCmd)
+	require.NoError(t, cmd.Flags().Set("description", "flag desc"))
+	assert.NoError(t, runTagAdd(cmd, []string{"name"}))
+	assert.Equal(t, "flag desc", got.Description)
+	assert.True(t, got.HasDescription)
+}
+
+func TestRunTagAdd_PositionalDescriptionTakesPrecedenceOverFlag(t *testing.T) {
+	var got handlers.AddTagArgs
+	stubHandlerCall(t, &callRunAddTag, func(args handlers.AddTagArgs) error {
+		got = args
+		return nil
+	})
+
+	cmd := freshCmdWithFlagsOf(tagAddCmd)
+	require.NoError(t, cmd.Flags().Set("description", "flag desc"))
+	assert.NoError(t, runTagAdd(cmd, []string{"name", "positional desc"}))
+	assert.Equal(t, "positional desc", got.Description)
 	assert.True(t, got.HasDescription)
 }
 

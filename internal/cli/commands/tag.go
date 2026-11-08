@@ -14,7 +14,7 @@ var tagCmd = &cobra.Command{
 }
 
 var tagAddCmd = &cobra.Command{
-	Use:   "add",
+	Use:   "add [name] [description]",
 	Short: "Add a tag",
 	Args:  cobra.RangeArgs(1, 2),
 	RunE:  runTagAdd,
@@ -71,6 +71,7 @@ var (
 )
 
 func init() {
+	tagAddCmd.Flags().StringP("description", "d", "", "Description of the command")
 	tagAddCmd.Flags().BoolP("interactive", "i", false, "Prompt for every field")
 
 	tagUpdateCmd.Flags().String("description", "", "New description")
@@ -113,6 +114,15 @@ func runTagAdd(cmd *cobra.Command, args []string) error {
 		raw.Description = args[1]
 		raw.HasDescription = true
 	}
+
+	if !raw.HasDescription {
+		description := getDescriptionFlag(cmd)
+		if description != "" {
+			raw.Description = description
+			raw.HasDescription = true
+		}
+	}
+
 	return callRunAddTag(raw)
 }
 
