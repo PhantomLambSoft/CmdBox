@@ -8,17 +8,25 @@ _UNITS = {
 
 def parse_byte_size(value: str | int) -> int:
     if isinstance(value, int):
-        return value  # Already bytes, pass through
-    cleaned = value.strip().lower().replace(" ", "")
-    for suffix, multiplier in sorted(_UNITS.items(), key=lambda x: -len(x[0])):
-        if cleaned.endswith(suffix):
-            number = cleaned[: -len(suffix)]
+        result = value  # Already bytes, pass through
+    else:
+        cleaned = value.strip().lower().replace(" ", "")
+        for suffix, multiplier in sorted(_UNITS.items(), key=lambda x: -len(x[0])):
+            if cleaned.endswith(suffix):
+                number = cleaned[: -len(suffix)]
+                try:
+                    result = int(float(number) * multiplier)
+                    break
+                except ValueError:
+                    raise ValueError(f"Invalid byte size: '{value}'")
+        else:
+            # If no unit, treat as raw bytes
             try:
-                return int(float(number) * multiplier)
+                result = int(cleaned)
             except ValueError:
                 raise ValueError(f"Invalid byte size: '{value}'")
-    # If no unit, treat as raw bytes
-    try:
-        return int(cleaned)
-    except ValueError:
+    if result < 0:
+        # A negative size is never valid (e.g. it would silently disable
+        # log-file rotation downstream).
         raise ValueError(f"Invalid byte size: '{value}'")
+    return result
