@@ -63,6 +63,12 @@ func TestTagAddCmd_Flags(t *testing.T) {
 	f := tagAddCmd.Flags()
 	assertFlag(t, f, "description", "d", "string", "")
 	assertFlag(t, f, "interactive", "i", "bool", "false")
+	assertFlag(t, f, "no-prompt", "", "bool", "false")
+	assertFlag(t, f, "prompt", "", "bool", "false")
+}
+
+func TestTagAddCmd_MutuallyExclusiveGroups(t *testing.T) {
+	assertMutuallyExclusive(t, tagAddCmd, "no-prompt", "prompt")
 }
 
 func TestTagUpdateCmd_Flags(t *testing.T) {
@@ -137,6 +143,70 @@ func TestRunTagAdd_PositionalDescriptionTakesPrecedenceOverFlag(t *testing.T) {
 	assert.NoError(t, runTagAdd(cmd, []string{"name", "positional desc"}))
 	assert.Equal(t, "positional desc", got.Description)
 	assert.True(t, got.HasDescription)
+}
+
+func TestRunTagAdd_PromptForDescriptionUnsetByDefault(t *testing.T) {
+	var got handlers.AddTagArgs
+	stubHandlerCall(t, &callRunAddTag, func(args handlers.AddTagArgs) error {
+		got = args
+		return nil
+	})
+
+	cmd := freshCmdWithFlagsOf(tagAddCmd)
+	assert.NoError(t, runTagAdd(cmd, []string{"name"}))
+	assert.Nil(t, got.PromptForDescription, "neither --prompt nor --no-prompt was passed, so the handler should fall back to settings")
+}
+
+func TestRunTagAdd_NoPromptFlag(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		want  bool
+	}{
+		{"no-prompt=true disables prompting", "true", false},
+		{"no-prompt=false allows prompting", "false", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var got handlers.AddTagArgs
+			stubHandlerCall(t, &callRunAddTag, func(args handlers.AddTagArgs) error {
+				got = args
+				return nil
+			})
+
+			cmd := freshCmdWithFlagsOf(tagAddCmd)
+			require.NoError(t, cmd.Flags().Set("no-prompt", tc.value))
+			assert.NoError(t, runTagAdd(cmd, []string{"name"}))
+			require.NotNil(t, got.PromptForDescription)
+			assert.Equal(t, tc.want, *got.PromptForDescription)
+		})
+	}
+}
+
+func TestRunTagAdd_PromptFlag(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		want  bool
+	}{
+		{"prompt=true forces prompting", "true", true},
+		{"prompt=false forces no prompting", "false", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var got handlers.AddTagArgs
+			stubHandlerCall(t, &callRunAddTag, func(args handlers.AddTagArgs) error {
+				got = args
+				return nil
+			})
+
+			cmd := freshCmdWithFlagsOf(tagAddCmd)
+			require.NoError(t, cmd.Flags().Set("prompt", tc.value))
+			assert.NoError(t, runTagAdd(cmd, []string{"name"}))
+			require.NotNil(t, got.PromptForDescription)
+			assert.Equal(t, tc.want, *got.PromptForDescription)
+		})
+	}
 }
 
 func TestRunTagAdd_PropagatesHandlerError(t *testing.T) {

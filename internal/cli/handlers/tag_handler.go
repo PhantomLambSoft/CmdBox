@@ -9,10 +9,11 @@ import (
 )
 
 type AddTagArgs struct {
-	Name           string
-	Description    string
-	HasDescription bool
-	Interactive    bool
+	Name                 string
+	Description          string
+	HasDescription       bool
+	PromptForDescription *bool
+	Interactive          bool
 }
 
 type UpdateTagArgs struct {
@@ -50,7 +51,29 @@ func RunAddTag(args AddTagArgs) error {
 	var description *string
 	if args.HasDescription {
 		description = &args.Description
+	} else {
+		settingsService, err := container.GetSettingsService()
+		if err != nil {
+			return fmt.Errorf("getting settings service: %w", err)
+		}
+		settings := settingsService.Get()
+		shouldPrompt := settings.ExecutionSettings.PromptForDescription
+		if args.PromptForDescription != nil {
+			shouldPrompt = *args.PromptForDescription
+		}
+		if shouldPrompt {
+			prompter, err := container.GetPrompter()
+			if err != nil {
+				return fmt.Errorf("getting prompter: %w", err)
+			}
+			promptedDescription, err := prompter.PromptForDescription()
+			if err != nil {
+				return fmt.Errorf("prompting for description: %w", err)
+			}
+			description = &promptedDescription
+		}
 	}
+
 	tag, err := tagService.CreateTag(args.Name, description)
 	if err != nil {
 		return fmt.Errorf("creating tag: %w", err)

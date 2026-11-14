@@ -73,6 +73,10 @@ var (
 func init() {
 	tagAddCmd.Flags().StringP("description", "d", "", "Description of the command")
 	tagAddCmd.Flags().BoolP("interactive", "i", false, "Prompt for every field")
+	tagAddCmd.Flags().Bool("no-prompt", false, "Do not prompt for description")
+	tagAddCmd.Flags().Bool("prompt", false, "Prompt for description")
+
+	tagAddCmd.MarkFlagsMutuallyExclusive("no-prompt", "prompt")
 
 	tagUpdateCmd.Flags().String("description", "", "New description")
 	tagUpdateCmd.Flags().String("name", "", "New name (rename)")
@@ -121,6 +125,15 @@ func runTagAdd(cmd *cobra.Command, args []string) error {
 			raw.Description = description
 			raw.HasDescription = true
 		}
+	}
+
+	if cmd.Flags().Changed("no-prompt") {
+		noPrompt := getBoolFlag(cmd, "no-prompt")
+		shouldPrompt := !noPrompt
+		raw.PromptForDescription = &shouldPrompt
+	} else if cmd.Flags().Changed("prompt") {
+		shouldPrompt := getBoolFlag(cmd, "prompt")
+		raw.PromptForDescription = &shouldPrompt
 	}
 
 	return callRunAddTag(raw)

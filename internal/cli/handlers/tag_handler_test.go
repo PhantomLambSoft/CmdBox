@@ -98,18 +98,25 @@ func (f *fakeTagService) Search(query string, fields []string, limit *int) ([]mo
 	return f.searchTags, f.searchErr
 }
 
-// withFakeTagContainer swaps container.GetTagService and container.GetConsole for the duration
-// of the test, restoring the originals on cleanup. The console is built lazily (at call time) so
-// that tests which redirect os.Stdout via captureStdout after this setup runs still have their
-// output captured.
+// withFakeTagContainer swaps container.GetTagService, container.GetConsole,
+// container.GetSettingsService, and container.GetPrompter for the duration of the test,
+// restoring the originals on cleanup. The console is built lazily (at call time) so that tests
+// which redirect os.Stdout via captureStdout after this setup runs still have their output
+// captured. Description prompting defaults to disabled (ExecutionSettings.PromptForDescription =
+// false) so existing tests that don't care about it aren't left blocking on stdin; use
+// withSettingsService (defined in command_handler_test.go) to override.
 func withFakeTagContainer(t *testing.T, svc services.TagService, svcErr error) {
 	t.Helper()
 
 	origSvc := container.GetTagService
 	origConsole := container.GetConsole
+	origSettings := container.GetSettingsService
+	origPrompter := container.GetPrompter
 	t.Cleanup(func() {
 		container.GetTagService = origSvc
 		container.GetConsole = origConsole
+		container.GetSettingsService = origSettings
+		container.GetPrompter = origPrompter
 	})
 
 	container.GetTagService = func() (services.TagService, error) {
@@ -118,6 +125,12 @@ func withFakeTagContainer(t *testing.T, svc services.TagService, svcErr error) {
 	container.GetConsole = func() (*ui.Console, error) {
 		return ui.NewConsole(ui.NewPalette(settings.UIColors{}), false, "never", 0, 0, 0), nil
 	}
+
+	settingsSvc := testSettingsService(t, false)
+	container.GetSettingsService = func() (*settings.Service, error) {
+		return settingsSvc, nil
+	}
+	container.GetPrompter = freshTestPrompter
 }
 
 // withFailingTagConsole makes container.GetConsole return an error, to exercise handler error
@@ -126,9 +139,13 @@ func withFailingTagConsole(t *testing.T, svc services.TagService) {
 	t.Helper()
 	origSvc := container.GetTagService
 	origConsole := container.GetConsole
+	origSettings := container.GetSettingsService
+	origPrompter := container.GetPrompter
 	t.Cleanup(func() {
 		container.GetTagService = origSvc
 		container.GetConsole = origConsole
+		container.GetSettingsService = origSettings
+		container.GetPrompter = origPrompter
 	})
 	container.GetTagService = func() (services.TagService, error) {
 		return svc, nil
@@ -136,6 +153,11 @@ func withFailingTagConsole(t *testing.T, svc services.TagService) {
 	container.GetConsole = func() (*ui.Console, error) {
 		return nil, errors.New("console boom")
 	}
+	settingsSvc := testSettingsService(t, false)
+	container.GetSettingsService = func() (*settings.Service, error) {
+		return settingsSvc, nil
+	}
+	container.GetPrompter = freshTestPrompter
 }
 
 // --- RunAddTag ---
@@ -192,6 +214,127 @@ func TestRunAddTag_ConsoleUnavailable(t *testing.T) {
 	err := RunAddTag(AddTagArgs{Name: "infra"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "getting console")
+}
+
+// --- RunAddTag description prompting ---
+
+func TestRunAddTag_HasDescription_NeverPrompts(t *testing.T) {
+	// Even with settings and an explicit override both asking to prompt, an explicit
+	// description should win and the prompter should never be consulted.
+	fake := &fakeTagService{createTag: &models.Tag{Name: "infra"}}
+	withFakeTagContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	withFailingPrompter(t) // would error immediately if called
+
+	trueVal := true
+	captureStdout(t, func() {
+		err := RunAddTag(AddTagArgs{
+			Name:                 "infra",
+			HasDescription:       true,
+			Description:          "explicit",
+			PromptForDescription: &trueVal,
+		})
+		require.NoError(t, err)
+	})
+
+	require.NotNil(t, fake.createDesc)
+	assert.Equal(t, "explicit", *fake.createDesc)
+}
+
+func TestRunAddTag_NoDescription_SettingDisabled_DoesNotPrompt(t *testing.T) {
+	fake := &fakeTagService{createTag: &models.Tag{Name: "infra"}}
+	withFakeTagContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, false), nil)
+	withFailingPrompter(t) // would error immediately if called
+
+	captureStdout(t, func() {
+		err := RunAddTag(AddTagArgs{Name: "infra"})
+		require.NoError(t, err)
+	})
+
+	assert.Nil(t, fake.createDesc)
+}
+
+func TestRunAddTag_NoDescription_SettingEnabled_PromptsAndUsesValue(t *testing.T) {
+	fake := &fakeTagService{createTag: &models.Tag{Name: "infra"}}
+	withFakeTagContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	withStdin(t, "typed description\n")
+
+	captureStdout(t, func() {
+		err := RunAddTag(AddTagArgs{Name: "infra"})
+		require.NoError(t, err)
+	})
+
+	require.NotNil(t, fake.createDesc)
+	assert.Equal(t, "typed description", *fake.createDesc)
+}
+
+func TestRunAddTag_NoDescription_OverrideForcesPromptOnWhenSettingDisabled(t *testing.T) {
+	fake := &fakeTagService{createTag: &models.Tag{Name: "infra"}}
+	withFakeTagContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, false), nil)
+	withStdin(t, "forced on\n")
+
+	trueVal := true
+	captureStdout(t, func() {
+		err := RunAddTag(AddTagArgs{Name: "infra", PromptForDescription: &trueVal})
+		require.NoError(t, err)
+	})
+
+	require.NotNil(t, fake.createDesc)
+	assert.Equal(t, "forced on", *fake.createDesc)
+}
+
+func TestRunAddTag_NoDescription_OverrideForcesPromptOffWhenSettingEnabled(t *testing.T) {
+	fake := &fakeTagService{createTag: &models.Tag{Name: "infra"}}
+	withFakeTagContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	withFailingPrompter(t) // would error immediately if called
+
+	falseVal := false
+	captureStdout(t, func() {
+		err := RunAddTag(AddTagArgs{Name: "infra", PromptForDescription: &falseVal})
+		require.NoError(t, err)
+	})
+
+	assert.Nil(t, fake.createDesc)
+}
+
+func TestRunAddTag_PromptError(t *testing.T) {
+	fake := &fakeTagService{}
+	withFakeTagContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	// Close stdin immediately so the plain-prompt reader hits EOF instead of blocking.
+	withStdin(t, "")
+
+	err := RunAddTag(AddTagArgs{Name: "infra"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "prompting for description")
+	assert.Empty(t, fake.createName, "service should not be called when prompting fails")
+}
+
+func TestRunAddTag_SettingsServiceUnavailable(t *testing.T) {
+	fake := &fakeTagService{}
+	withFakeTagContainer(t, fake, nil)
+	withSettingsService(t, nil, errors.New("settings boom"))
+
+	err := RunAddTag(AddTagArgs{Name: "infra"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "getting settings")
+	assert.Contains(t, err.Error(), "settings boom")
+}
+
+func TestRunAddTag_PrompterUnavailable(t *testing.T) {
+	fake := &fakeTagService{}
+	withFakeTagContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	withFailingPrompter(t)
+
+	err := RunAddTag(AddTagArgs{Name: "infra"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "getting prompter")
+	assert.Contains(t, err.Error(), "prompter boom")
 }
 
 // --- RunGetTag ---
