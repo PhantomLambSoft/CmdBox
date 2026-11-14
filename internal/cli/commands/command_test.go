@@ -82,6 +82,12 @@ func TestCmdAddCmd_Flags(t *testing.T) {
 	assertFlag(t, f, "env", "", "stringArray", "[]")
 	assertFlag(t, f, "timeout", "", "int", "0")
 	assertFlag(t, f, "profile", "p", "string", "")
+	assertFlag(t, f, "no-prompt", "", "bool", "false")
+	assertFlag(t, f, "prompt", "", "bool", "false")
+}
+
+func TestCmdAddCmd_MutuallyExclusiveGroups(t *testing.T) {
+	assertMutuallyExclusive(t, cmdAddCmd, "no-prompt", "prompt")
 }
 
 // cmdGetCmd previously had no --profile flag registered at all, even though runCmdGet reads
@@ -225,6 +231,73 @@ func TestRunCmdAdd_NoArgsLeavesAliasAndTemplateUnset(t *testing.T) {
 	assert.Equal(t, "", got.Alias)
 	assert.False(t, got.HasTemplate)
 	assert.False(t, got.HasDescription)
+}
+
+func TestRunCmdAdd_PromptForDescriptionUnsetByDefault(t *testing.T) {
+	var got handlers.AddCmdArgs
+	stubHandlerCall(t, &callRunAddCmd, func(args handlers.AddCmdArgs) error {
+		got = args
+		return nil
+	})
+
+	cmd := freshCmdWithFlagsOf(cmdAddCmd)
+	err := runCmdAdd(cmd, []string{})
+	assert.NoError(t, err)
+	assert.Nil(t, got.PromptForDescription, "neither --prompt nor --no-prompt was passed, so the handler should fall back to settings")
+}
+
+func TestRunCmdAdd_NoPromptFlag(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		want  bool
+	}{
+		{"no-prompt=true disables prompting", "true", false},
+		{"no-prompt=false allows prompting", "false", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var got handlers.AddCmdArgs
+			stubHandlerCall(t, &callRunAddCmd, func(args handlers.AddCmdArgs) error {
+				got = args
+				return nil
+			})
+
+			cmd := freshCmdWithFlagsOf(cmdAddCmd)
+			require.NoError(t, cmd.Flags().Set("no-prompt", tc.value))
+			err := runCmdAdd(cmd, []string{})
+			assert.NoError(t, err)
+			require.NotNil(t, got.PromptForDescription)
+			assert.Equal(t, tc.want, *got.PromptForDescription)
+		})
+	}
+}
+
+func TestRunCmdAdd_PromptFlag(t *testing.T) {
+	cases := []struct {
+		name  string
+		value string
+		want  bool
+	}{
+		{"prompt=true forces prompting", "true", true},
+		{"prompt=false forces no prompting", "false", false},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var got handlers.AddCmdArgs
+			stubHandlerCall(t, &callRunAddCmd, func(args handlers.AddCmdArgs) error {
+				got = args
+				return nil
+			})
+
+			cmd := freshCmdWithFlagsOf(cmdAddCmd)
+			require.NoError(t, cmd.Flags().Set("prompt", tc.value))
+			err := runCmdAdd(cmd, []string{})
+			assert.NoError(t, err)
+			require.NotNil(t, got.PromptForDescription)
+			assert.Equal(t, tc.want, *got.PromptForDescription)
+		})
+	}
 }
 
 func TestRunCmdAdd_PropagatesHandlerError(t *testing.T) {

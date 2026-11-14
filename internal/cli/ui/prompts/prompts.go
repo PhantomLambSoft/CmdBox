@@ -48,6 +48,24 @@ func (p *Prompter) PromptForMissingVars(varName string) (string, error) {
 	return value, nil
 }
 
+func (p *Prompter) PromptForDescription() (string, error) {
+	message := "Enter description"
+	if !isInteractive() {
+		return p.promptPlain(message)
+	}
+
+	var description string
+	err := huh.NewInput().
+		Title(message).
+		Value(&description).
+		WithTheme(p.theme).
+		Run()
+	if err != nil {
+		return "", fmt.Errorf("prompting for description: %w", err)
+	}
+	return description, nil
+}
+
 func (p *Prompter) PromptConfirmation(message string) (bool, error) {
 	var confirmed bool
 	err := huh.NewConfirm().Title(message).Value(&confirmed).Run()

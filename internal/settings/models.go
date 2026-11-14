@@ -124,13 +124,19 @@ func DefaultUISettings() UISettings {
 }
 
 type ExecutionSettings struct {
-	DefaultShell   string `toml:"default_shell"`
-	CaptureOutput  bool   `toml:"capture_output"`
-	DefaultVerbose bool   `toml:"default_verbose"`
+	DefaultShell         string `toml:"default_shell"`
+	CaptureOutput        bool   `toml:"capture_output"`
+	DefaultVerbose       bool   `toml:"default_verbose"`
+	PromptForDescription bool   `toml:"prompt_for_description"`
 }
 
 func DefaultExecutionSettings() ExecutionSettings {
-	return ExecutionSettings{DefaultShell: "auto", CaptureOutput: false, DefaultVerbose: false}
+	return ExecutionSettings{
+		DefaultShell:         "auto",
+		CaptureOutput:        false,
+		DefaultVerbose:       false,
+		PromptForDescription: true,
+	}
 }
 
 type LoggingFileSettings struct {

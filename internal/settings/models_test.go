@@ -103,7 +103,7 @@ func TestDefaultUISettings(t *testing.T) {
 
 func TestDefaultExecutionSettings(t *testing.T) {
 	got := DefaultExecutionSettings()
-	want := ExecutionSettings{DefaultShell: "auto", CaptureOutput: false, DefaultVerbose: false}
+	want := ExecutionSettings{DefaultShell: "auto", CaptureOutput: false, DefaultVerbose: false, PromptForDescription: true}
 	if got != want {
 		t.Fatalf("DefaultExecutionSettings() = %+v, want %+v", got, want)
 	}

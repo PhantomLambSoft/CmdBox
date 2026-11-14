@@ -94,6 +94,10 @@ func init() {
 	cmdAddCmd.Flags().StringArray("env", nil, "Environment variable KEY=VALUE (repeatable)")
 	cmdAddCmd.Flags().Int("timeout", 0, "Timeout in seconds")
 	cmdAddCmd.Flags().StringP("profile", "p", "", "Profile to add this command to")
+	cmdAddCmd.Flags().Bool("no-prompt", false, "Do not prompt for description")
+	cmdAddCmd.Flags().Bool("prompt", false, "Prompt for description")
+
+	cmdAddCmd.MarkFlagsMutuallyExclusive("no-prompt", "prompt")
 
 	cmdGetCmd.Flags().StringP("profile", "p", "", "Profile to look in")
 
@@ -183,6 +187,15 @@ func runCmdAdd(cmd *cobra.Command, args []string) error {
 			raw.Description = description
 			raw.HasDescription = true
 		}
+	}
+
+	if cmd.Flags().Changed("no-prompt") {
+		noPrompt := getBoolFlag(cmd, "no-prompt")
+		shouldPrompt := !noPrompt
+		raw.PromptForDescription = &shouldPrompt
+	} else if cmd.Flags().Changed("prompt") {
+		shouldPrompt := getBoolFlag(cmd, "prompt")
+		raw.PromptForDescription = &shouldPrompt
 	}
 
 	if cmd.Flags().Changed("timeout") {

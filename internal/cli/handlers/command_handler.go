@@ -10,18 +10,19 @@ import (
 )
 
 type AddCmdArgs struct {
-	Alias          string
-	Template       string
-	HasTemplate    bool
-	Description    string
-	HasDescription bool
-	Interactive    bool
-	Cwd            string
-	Shell          string
-	Env            []string // raw "key=value,key=value" entries, to be parsed in handler
-	Timeout        int
-	HasTimeout     bool
-	Profile        string
+	Alias                string
+	Template             string
+	HasTemplate          bool
+	Description          string
+	HasDescription       bool
+	PromptForDescription *bool
+	Interactive          bool
+	Cwd                  string
+	Shell                string
+	Env                  []string // raw "key=value,key=value" entries, to be parsed in handler
+	Timeout              int
+	HasTimeout           bool
+	Profile              string
 }
 
 type UpdateCmdArgs struct {
@@ -108,7 +109,29 @@ func RunAddCmd(args AddCmdArgs) error {
 	}
 	if args.HasDescription {
 		input.Description = &args.Description
+	} else {
+		settingsService, err := container.GetSettingsService()
+		if err != nil {
+			return fmt.Errorf("getting settings: %w", err)
+		}
+		settings := settingsService.Get()
+		shouldPrompt := settings.ExecutionSettings.PromptForDescription
+		if args.PromptForDescription != nil {
+			shouldPrompt = *args.PromptForDescription
+		}
+		if shouldPrompt {
+			prompter, err := container.GetPrompter()
+			if err != nil {
+				return fmt.Errorf("getting prompter: %w", err)
+			}
+			description, err := prompter.PromptForDescription()
+			if err != nil {
+				return fmt.Errorf("prompting for description: %w", err)
+			}
+			input.Description = &description
+		}
 	}
+
 	if args.HasTimeout {
 		input.Timeout = &args.Timeout
 	}

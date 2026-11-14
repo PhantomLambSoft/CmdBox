@@ -4,12 +4,14 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/PhantomLambSoft/CmdBox/internal/cli/ui"
+	"github.com/PhantomLambSoft/CmdBox/internal/cli/ui/prompts"
 	"github.com/PhantomLambSoft/CmdBox/internal/container"
 	"github.com/PhantomLambSoft/CmdBox/internal/models"
 	"github.com/PhantomLambSoft/CmdBox/internal/repository"
@@ -155,17 +157,46 @@ func (f *fakeCommandService) CopyCommand(alias string, targetProfileName, newAli
 	return nil, nil
 }
 
-// withFakeContainer swaps container.GetCommandService and container.GetConsole for the duration
-// of the test, restoring the originals on cleanup. Pass a nil svc or console to simulate a
-// container resolution failure for that dependency.
+// testSettingsService builds a real *settings.Service backed by a file path that does not exist,
+// so Repository.Load leaves the given defaults untouched. Used to control
+// ExecutionSettings.PromptForDescription, which RunAddCmd reads when no --prompt/--no-prompt
+// override was passed.
+func testSettingsService(t *testing.T, promptForDescription bool) *settings.Service {
+	t.Helper()
+	repo := settings.NewSettingsRepository(filepath.Join(t.TempDir(), "nonexistent.toml"))
+	defaults := settings.DefaultSettings()
+	defaults.ExecutionSettings.PromptForDescription = promptForDescription
+	svc, err := settings.NewService(repo, &defaults, nil)
+	require.NoError(t, err)
+	return svc
+}
+
+// freshTestPrompter builds a real *prompts.Prompter bound to whatever os.Stdin is current at
+// call time. container.GetPrompter is memoized process-wide via sync.OnceValues, so if tests let
+// the real one get built it freezes onto the first test's redirected stdin and every later test's
+// withStdin swap is silently ignored. Overriding the var with this (non-memoized) constructor
+// keeps each test's prompt reads bound to its own stdin pipe.
+//
+// Shared with run_handler_test.go, which defines withStdin used by tests below.
+
+// withFakeContainer swaps container.GetCommandService, container.GetConsole,
+// container.GetSettingsService, and container.GetPrompter for the duration of the test,
+// restoring the originals on cleanup. Pass a nil svc or console to simulate a container
+// resolution failure for that dependency. Description prompting defaults to disabled
+// (ExecutionSettings.PromptForDescription = false) so existing tests that don't care about it
+// aren't left blocking on stdin; use withSettingsService to override.
 func withFakeContainer(t *testing.T, svc services.CommandService, svcErr error) {
 	t.Helper()
 
 	origSvc := container.GetCommandService
 	origConsole := container.GetConsole
+	origSettings := container.GetSettingsService
+	origPrompter := container.GetPrompter
 	t.Cleanup(func() {
 		container.GetCommandService = origSvc
 		container.GetConsole = origConsole
+		container.GetSettingsService = origSettings
+		container.GetPrompter = origPrompter
 	})
 
 	container.GetCommandService = func() (services.CommandService, error) {
@@ -178,6 +209,38 @@ func withFakeContainer(t *testing.T, svc services.CommandService, svcErr error) 
 	container.GetConsole = func() (*ui.Console, error) {
 		return ui.NewConsole(ui.NewPalette(settings.UIColors{}), false, "never", 0, 0, 0), nil
 	}
+
+	settingsSvc := testSettingsService(t, false)
+	container.GetSettingsService = func() (*settings.Service, error) {
+		return settingsSvc, nil
+	}
+	container.GetPrompter = freshTestPrompter
+}
+
+// withSettingsService overrides container.GetSettingsService for the duration of the test,
+// restoring the original on cleanup. Call after withFakeContainer to override its default.
+func withSettingsService(t *testing.T, svc *settings.Service, svcErr error) {
+	t.Helper()
+	orig := container.GetSettingsService
+	t.Cleanup(func() {
+		container.GetSettingsService = orig
+	})
+	container.GetSettingsService = func() (*settings.Service, error) {
+		return svc, svcErr
+	}
+}
+
+// withFailingPrompter makes container.GetPrompter return an error, to exercise RunAddCmd's
+// prompter-unavailable error path.
+func withFailingPrompter(t *testing.T) {
+	t.Helper()
+	orig := container.GetPrompter
+	t.Cleanup(func() {
+		container.GetPrompter = orig
+	})
+	container.GetPrompter = func() (*prompts.Prompter, error) {
+		return nil, errors.New("prompter boom")
+	}
 }
 
 // withFailingConsole makes container.GetConsole return an error, to exercise handler error paths
@@ -186,9 +249,13 @@ func withFailingConsole(t *testing.T, svc services.CommandService) {
 	t.Helper()
 	origSvc := container.GetCommandService
 	origConsole := container.GetConsole
+	origSettings := container.GetSettingsService
+	origPrompter := container.GetPrompter
 	t.Cleanup(func() {
 		container.GetCommandService = origSvc
 		container.GetConsole = origConsole
+		container.GetSettingsService = origSettings
+		container.GetPrompter = origPrompter
 	})
 	container.GetCommandService = func() (services.CommandService, error) {
 		return svc, nil
@@ -196,6 +263,11 @@ func withFailingConsole(t *testing.T, svc services.CommandService) {
 	container.GetConsole = func() (*ui.Console, error) {
 		return nil, errors.New("console boom")
 	}
+	settingsSvc := testSettingsService(t, false)
+	container.GetSettingsService = func() (*settings.Service, error) {
+		return settingsSvc, nil
+	}
+	container.GetPrompter = freshTestPrompter
 }
 
 // captureStdout redirects os.Stdout for the duration of fn and returns everything written to it.
@@ -307,6 +379,126 @@ func TestRunAddCmd_ConsoleUnavailable(t *testing.T) {
 	err := RunAddCmd(AddCmdArgs{Alias: "x", Template: "echo hi"})
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "getting console")
+}
+
+// --- RunAddCmd description prompting ---
+
+func TestRunAddCmd_HasDescription_NeverPrompts(t *testing.T) {
+	// Even with settings and an explicit override both asking to prompt, an explicit
+	// description should win and the prompter should never be consulted.
+	fake := &fakeCommandService{createCmd: &models.Command{Alias: "x"}}
+	withFakeContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	withFailingPrompter(t) // would error immediately if called
+
+	trueVal := true
+	captureStdout(t, func() {
+		err := RunAddCmd(AddCmdArgs{
+			Alias: "x", Template: "echo hi",
+			HasDescription: true, Description: "explicit",
+			PromptForDescription: &trueVal,
+		})
+		require.NoError(t, err)
+	})
+
+	require.NotNil(t, fake.createInput.Description)
+	assert.Equal(t, "explicit", *fake.createInput.Description)
+}
+
+func TestRunAddCmd_NoDescription_SettingDisabled_DoesNotPrompt(t *testing.T) {
+	fake := &fakeCommandService{createCmd: &models.Command{Alias: "x"}}
+	withFakeContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, false), nil)
+	withFailingPrompter(t) // would error immediately if called
+
+	captureStdout(t, func() {
+		err := RunAddCmd(AddCmdArgs{Alias: "x", Template: "echo hi"})
+		require.NoError(t, err)
+	})
+
+	assert.Nil(t, fake.createInput.Description)
+}
+
+func TestRunAddCmd_NoDescription_SettingEnabled_PromptsAndUsesValue(t *testing.T) {
+	fake := &fakeCommandService{createCmd: &models.Command{Alias: "x"}}
+	withFakeContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	withStdin(t, "typed description\n")
+
+	captureStdout(t, func() {
+		err := RunAddCmd(AddCmdArgs{Alias: "x", Template: "echo hi"})
+		require.NoError(t, err)
+	})
+
+	require.NotNil(t, fake.createInput.Description)
+	assert.Equal(t, "typed description", *fake.createInput.Description)
+}
+
+func TestRunAddCmd_NoDescription_OverrideForcesPromptOnWhenSettingDisabled(t *testing.T) {
+	fake := &fakeCommandService{createCmd: &models.Command{Alias: "x"}}
+	withFakeContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, false), nil)
+	withStdin(t, "forced on\n")
+
+	trueVal := true
+	captureStdout(t, func() {
+		err := RunAddCmd(AddCmdArgs{Alias: "x", Template: "echo hi", PromptForDescription: &trueVal})
+		require.NoError(t, err)
+	})
+
+	require.NotNil(t, fake.createInput.Description)
+	assert.Equal(t, "forced on", *fake.createInput.Description)
+}
+
+func TestRunAddCmd_NoDescription_OverrideForcesPromptOffWhenSettingEnabled(t *testing.T) {
+	fake := &fakeCommandService{createCmd: &models.Command{Alias: "x"}}
+	withFakeContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	withFailingPrompter(t) // would error immediately if called
+
+	falseVal := false
+	captureStdout(t, func() {
+		err := RunAddCmd(AddCmdArgs{Alias: "x", Template: "echo hi", PromptForDescription: &falseVal})
+		require.NoError(t, err)
+	})
+
+	assert.Nil(t, fake.createInput.Description)
+}
+
+func TestRunAddCmd_PromptError(t *testing.T) {
+	fake := &fakeCommandService{}
+	withFakeContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	// Close stdin immediately so the plain-prompt reader hits EOF instead of blocking.
+	withStdin(t, "")
+
+	err := RunAddCmd(AddCmdArgs{Alias: "x", Template: "echo hi"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "prompting for description")
+	assert.Zero(t, fake.createInput.Alias, "service should not be called when prompting fails")
+}
+
+func TestRunAddCmd_SettingsServiceUnavailable(t *testing.T) {
+	fake := &fakeCommandService{}
+	withFakeContainer(t, fake, nil)
+	withSettingsService(t, nil, errors.New("settings boom"))
+
+	err := RunAddCmd(AddCmdArgs{Alias: "x", Template: "echo hi"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "getting settings")
+	assert.Contains(t, err.Error(), "settings boom")
+}
+
+func TestRunAddCmd_PrompterUnavailable(t *testing.T) {
+	fake := &fakeCommandService{}
+	withFakeContainer(t, fake, nil)
+	withSettingsService(t, testSettingsService(t, true), nil)
+	withFailingPrompter(t)
+
+	err := RunAddCmd(AddCmdArgs{Alias: "x", Template: "echo hi"})
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "getting prompter")
+	assert.Contains(t, err.Error(), "prompter boom")
 }
 
 // --- RunGetCmd ---
